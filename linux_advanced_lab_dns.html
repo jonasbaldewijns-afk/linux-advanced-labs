@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Advanced — DNS Lab</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0f14;
+    --surface: #131b24;
+    --surface2: #1b2733;
+    --border: #2a3744;
+    --accent: #2dd4bf;
+    --accent2: #38bdf8;
+    --theme: var(--accent2);
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --text: #e2e8f0;
+    --muted: #7d8da0;
+    --code-bg: #0a0f14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at 15% 10%, rgba(45,212,191,0.05), transparent 40%), radial-gradient(circle at 85% 90%, rgba(56,189,248,0.05), transparent 40%);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  header {
+    border-left: 4px solid var(--theme);
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  header .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--theme); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.5rem;
+  }
+  header h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+  header p { color: var(--muted); margin-top: 0.75rem; font-size: 0.95rem; line-height: 1.6; }
+
+  .scenario-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent2); border-radius: 8px;
+    padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .scenario-box h2 { font-size: 1rem; color: var(--accent2); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .scenario-box p { color: var(--text); line-height: 1.7; font-size: 0.95rem; }
+
+  /* DNS hierarchy diagram */
+  .dns-tree {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .dns-tree h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .dns-levels { display: flex; flex-direction: column; gap: 0.5rem; }
+  .dns-level { display: flex; align-items: center; gap: 0.75rem; }
+  .dns-level-bar { width: 4px; border-radius: 2px; align-self: stretch; min-height: 28px; }
+  .dns-level-content { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 0.5rem 0.85rem; }
+  .dns-level-content .lname { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; }
+  .dns-level-content .ldesc { font-size: 0.72rem; color: var(--muted); }
+  .dns-level-content .lexample { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); }
+
+  /* record types grid */
+  .rr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
+  .rr-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-start;
+  }
+  .rr-badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+    padding: 0.2rem 0.45rem; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+  }
+  .rr-card .rr-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+  .progress-bar-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-bar-wrap span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--theme), color-mix(in oklab, var(--theme), white 35%)); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
+  .progress-count { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--theme); }
+
+  .section-title {
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.75rem; margin-top: 2.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 1rem; overflow: hidden; transition: border-color 0.2s;
+  }
+  .task-card.done { border-color: var(--accent); }
+  .task-card.done .task-header { background: rgba(45,212,191,0.05); }
+
+  .task-header {
+    padding: 1rem 1.25rem; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 1rem; user-select: none; transition: background 0.15s;
+  }
+  .task-header:hover { background: var(--surface2); }
+
+  .task-check {
+    width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 5px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; cursor: pointer; margin-top: 1px;
+  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after { content: '✓'; color: #000; font-size: 13px; font-weight: 700; }
+
+  .task-meta { flex: 1; }
+  .task-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .task-title { font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+  .task-card.done .task-title { color: var(--muted); text-decoration: line-through; }
+
+  .expand-icon { color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; transition: transform 0.2s; flex-shrink: 0; margin-top: 3px; }
+  .task-card.open .expand-icon { transform: rotate(90deg); }
+
+  .task-body { display: none; padding: 0 1.25rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .task-card.open .task-body { display: block; }
+  .task-body p { color: var(--text); line-height: 1.7; font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.75rem; }
+  .task-body code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent2); }
+
+  .cmd {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+  .cmd .comment { color: var(--muted); }
+
+  .zone-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--orange);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #fed7aa; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .zone-block .comment { color: var(--muted); }
+  .zone-block .record-type { color: var(--accent2); }
+  .zone-block .record-val { color: var(--green); }
+  .zone-block .directive { color: var(--purple); }
+
+  .named-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #c4b5fd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+
+  .hint-toggle { display: none; }
+  .answer-toggle {
+    background: none; border: 1px dashed var(--border); color: var(--muted);
+    border-radius: 5px; padding: 0.4rem 0.9rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; margin-top: 0.5rem; transition: all 0.2s;
+  }
+  .answer-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hint-box {
+    display: block; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: #d4a853;
+  }
+  .hint-box.show { display: block; }
+  .hint-box strong { color: var(--warn); }
+
+  .answer-box {
+    display: none; background: rgba(45,212,191,0.04); border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: var(--text);
+  }
+  .answer-box.show { display: block; }
+
+  .verify-block {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(56,189,248,0.05);
+    border: 1px solid rgba(56,189,248,0.2); border-radius: 6px; font-size: 0.82rem; line-height: 1.6;
+  }
+  .verify-block strong { font-family: 'JetBrains Mono', monospace; color: var(--accent2); display: block; margin-bottom: 0.4rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .verify-block code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  .concept-box {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 6px; font-size: 0.85rem; line-height: 1.65;
+  }
+  .concept-box strong { font-family: 'JetBrains Mono', monospace; color: var(--purple); display: block; margin-bottom: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  .warn-note {
+    background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: #fca5a5;
+  }
+  .warn-note strong { color: var(--danger); }
+
+  .tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+    padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.4rem;
+  }
+  .tag-install { background: rgba(45,212,191,0.12); color: var(--accent); }
+  .tag-config  { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-zone    { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-service { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-test    { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-debug   { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  footer {
+    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  }
+  footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  .reset-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ============ RANK ============ */
+  .rank-display {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+    padding: 0.18rem 0.55rem; border-radius: 20px; letter-spacing: 0.07em;
+    text-transform: uppercase; border: 1px solid; white-space: nowrap;
+    transition: all 0.3s ease;
+  }
+  .rank-bronze   { color: #cd7f32; border-color: #cd7f32; background: rgba(205,127,50,0.1); }
+  .rank-silver   { color: #a8b8c8; border-color: #a8b8c8; background: rgba(168,184,200,0.1); }
+  .rank-gold     { color: #fbbf24; border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .rank-platinum { color: #e2e8f0; border-color: #94a3b8; background: rgba(148,163,184,0.15); box-shadow: 0 0 8px rgba(148,163,184,0.2); }
+  .rank-diamond  { color: #7dd3fc; border-color: #7dd3fc; background: rgba(125,211,252,0.1); box-shadow: 0 0 10px rgba(125,211,252,0.25); }
+  .rank-challenger { color: #a78bfa; border-color: #a78bfa; background: rgba(167,139,250,0.12); box-shadow: 0 0 14px rgba(167,139,250,0.3); animation: pulse-glow 2s ease-in-out infinite; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(167,139,250,0.2); }
+    50%       { box-shadow: 0 0 22px rgba(167,139,250,0.45); }
+  }
+
+  /* ===== LAB NAV BAR ===== */
+  .lab-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; gap: 0.75rem;
+  }
+  .lab-nav a {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--muted); background: var(--surface);
+    transition: all 0.15s ease; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .lab-nav a:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .lab-nav .home-btn { border-color: var(--accent); color: var(--accent); }
+  .lab-nav .home-btn:hover { background: var(--accent); color: #000; }
+  .lab-nav .nav-side { min-width: 120px; }
+  .lab-nav .nav-side.right { text-align: right; justify-content: flex-end; }
+  .lab-nav .disabled { opacity: 0.25; pointer-events: none; }
+
+
+  /* ===== FLOATING SIDEBARS ===== */
+  /* Content is 1300px wide, so half = 650px. Sidebars sit 8px outside that. */
+
+  .lab-nav {
+    position: fixed;
+    left: max(0.5rem, calc(50% - 650px - 148px));
+    top: 50vh;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 140px;
+    margin-bottom: 0;
+    z-index: 100;
+  }
+  .lab-nav a {
+    justify-content: center;
+    text-align: center;
+  }
+  .lab-nav .nav-side.right { justify-content: center; }
+
+  .progress-sidebar {
+    position: fixed;
+    right: max(0.5rem, calc(50% - 650px - 210px));
+    top: 50vh;
+    transform: translateY(-50%);
+    width: 190px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  /* Header row */
+  .progress-sidebar .ps-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.18em;
+  }
+
+  /* Big count */
+  .progress-sidebar .ps-count-row {
+    display: flex; align-items: baseline; gap: 0.35rem;
+  }
+  .progress-sidebar .ps-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.2rem; font-weight: 700; color: var(--accent);
+    line-height: 1;
+  }
+  .progress-sidebar .ps-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--muted);
+  }
+
+  /* Pip progress track */
+  .ps-pips {
+    display: flex; flex-wrap: wrap; gap: 3px;
+  }
+  .ps-pip {
+    width: 10px; height: 10px; border-radius: 2px;
+    background: var(--border); transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+  }
+  .ps-pip.done {
+    background: var(--accent);
+    box-shadow: 0 0 4px rgba(45,212,191,0.5);
+  }
+
+  /* Rank card */
+  .ps-rank-card {
+    border-radius: 8px; padding: 0.7rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex; flex-direction: column; gap: 0.3rem;
+    transition: all 0.4s ease;
+  }
+  .ps-rank-card .ps-rank-icon { font-size: 1.4rem; line-height: 1; }
+  .ps-rank-card .ps-rank-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .ps-rank-card .ps-rank-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+  }
+
+  /* Rank colour theming */
+  .ps-rank-card.rank-bronze  { border-color: rgba(205,127,50,0.4);  background: rgba(205,127,50,0.07);  }
+  .ps-rank-card.rank-bronze  .ps-rank-name { color: #cd7f32; }
+  .ps-rank-card.rank-silver  { border-color: rgba(168,184,200,0.4); background: rgba(168,184,200,0.07); }
+  .ps-rank-card.rank-silver  .ps-rank-name { color: #a8b8c8; }
+  .ps-rank-card.rank-gold    { border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.07);  box-shadow: 0 0 12px rgba(251,191,36,0.1); }
+  .ps-rank-card.rank-gold    .ps-rank-name { color: #fbbf24; }
+  .ps-rank-card.rank-platinum{ border-color: rgba(148,163,184,0.5); background: rgba(148,163,184,0.09); box-shadow: 0 0 14px rgba(148,163,184,0.15); }
+  .ps-rank-card.rank-platinum .ps-rank-name { color: #e2e8f0; }
+  .ps-rank-card.rank-diamond { border-color: rgba(125,211,252,0.5); background: rgba(125,211,252,0.08); box-shadow: 0 0 16px rgba(125,211,252,0.2); }
+  .ps-rank-card.rank-diamond .ps-rank-name { color: #7dd3fc; }
+
+  /* Next rank preview */
+  .ps-next {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
+  }
+  .ps-next span { color: var(--warn); font-weight: 700; }
+
+  /* Sidebars active above 1200px — hide inline elements */
+  @media (min-width: 1200px) {
+    .progress-bar-wrap { display: none; }
+  }
+
+  /* Below 1200px — sidebars go inline, progress bar reappears */
+  @media (max-width: 1199px) {
+    .lab-nav {
+      position: static;
+      transform: none;
+      flex-direction: row;
+      width: auto;
+      margin-bottom: 1.75rem;
+    }
+    .lab-nav a { justify-content: flex-start; text-align: left; }
+    .lab-nav .nav-side.right { justify-content: flex-end; }
+    .progress-sidebar { display: none; }
+    .progress-bar-wrap { display: flex; }
+  }
+
+
+  /* BATCH1-GAMIFICATION */
+  /* Rank-up flash on the sidebar rank card */
+  @keyframes rank-up-flash {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+    30%  { transform: scale(1.07); box-shadow: 0 0 26px rgba(125,211,252,0.7); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+  }
+  .ps-rank-card.rank-up { animation: rank-up-flash 1s ease; }
+
+  /* Session streak chip in the sidebar */
+  .ps-streak {
+    display: none; align-items: center; gap: 0.4rem;
+    margin-top: 0.7rem; padding: 0.45rem 0.6rem;
+    border: 1px solid rgba(251,146,60,0.35);
+    background: rgba(251,146,60,0.08);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--orange);
+  }
+  .ps-streak .ps-streak-fire { font-size: 1rem; }
+  .ps-streak .ps-streak-num { font-weight: 700; }
+
+  /* Lab completion overlay */
+  .lab-complete-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10,15,20,0.78);
+    backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .lab-complete-overlay.show { display: flex; opacity: 1; }
+  .lab-complete-card {
+    text-align: center;
+    padding: 2.4rem 2.6rem;
+    border-radius: 16px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: var(--surface);
+    box-shadow: 0 0 40px rgba(125,211,252,0.25);
+    max-width: 380px;
+    animation: lc-pop 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  @keyframes lc-pop {
+    0%   { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .lab-complete-card .lc-icon { font-size: 3.2rem; line-height: 1; margin-bottom: 0.6rem; }
+  .lab-complete-card .lc-title {
+    font-size: 1.5rem; font-weight: 800; color: #7dd3fc; margin-bottom: 0.4rem;
+  }
+  .lab-complete-card .lc-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.4rem; }
+  .lab-complete-card .lc-close {
+    font-family: inherit; cursor: pointer;
+    padding: 0.55rem 1.4rem; border-radius: 8px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: rgba(125,211,252,0.1); color: #7dd3fc;
+    font-size: 0.9rem; font-weight: 600;
+    transition: background 0.2s ease;
+  }
+  .lab-complete-card .lc-close:hover { background: rgba(125,211,252,0.2); }
+
+
+  /* BATCH2-STUDY-QOL */
+  /* Copy button on command blocks */
+  .copy-btn {
+    position: absolute; top: 6px; right: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted);
+    opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .cmd:hover .copy-btn, .copy-btn:focus { opacity: 1; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
+
+  /* Mark-all-in-section control (pushed to the far right of the section bar) */
+  .section-title::after { order: 1; }
+  .section-mark-all {
+    order: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.2rem 0.55rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap;
+  }
+  .section-mark-all:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Keyboard-navigation highlight */
+  .task-card.kb-active {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
+  }
+
+  /* Keyboard hint in the sidebar */
+  .ps-kbhint {
+    margin-top: 0.7rem; font-size: 0.66rem; line-height: 1.6;
+    color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  }
+  .ps-kbhint b { color: var(--text); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <nav class="lab-nav">
+    <a class="nav-side" href="linux_advanced_lab_dhcp.html">← DHCP</a>
+    <a class="home-btn" href="index.html">⌂ Home</a>
+    <a class="nav-side right" href="linux_advanced_lab_webservers.html">Apache →</a>
+  </nav>
+
+  <div class="progress-sidebar" id="progress-sidebar">
+    <div class="ps-label">Voortgang</div>
+    <div class="ps-count-row">
+      <div class="ps-count" id="ps-count">0</div>
+      <div class="ps-total" id="ps-total">/ 0 taken</div>
+    </div>
+    <div class="ps-pips" id="ps-pips"></div>
+    <div class="ps-rank-card" id="ps-rank-card">
+      <div class="ps-rank-icon" id="ps-rank-icon">—</div>
+      <div class="ps-rank-name" id="ps-rank-name">Geen rank</div>
+      <div class="ps-rank-sub" id="ps-rank-sub">Start met taken</div>
+    </div>
+    <div class="ps-next" id="ps-next"></div>
+    <div class="ps-streak" id="ps-streak">
+      <span class="ps-streak-fire">🔥</span>
+      <span><span class="ps-streak-num">0</span> op rij</span>
+    </div>
+    <div class="ps-kbhint" id="ps-kbhint">⌨ <b>J</b>/<b>K</b> navigeren · <b>Spatie</b> afvinken</div>
+  </div>
+
+
+  <header>
+    <div class="label">PXL Linux Advanced · DNS Lab</div>
+    <h1>Domain Name System (BIND)</h1>
+    <p>Hands-on labo: BIND installeren en configureren als authoritatieve DNS-server voor het domein <code>pxl.lan</code>, een forward- en reverse zone opzetten, SELinux correct instellen, de setup testen met <code>dig</code>, en DNS via DHCP uitrollen naar de client.</p>
+  </header>
+
+  <div class="scenario-box">
+    <h2>📋 Scenario</h2>
+    <p>Je netwerk draait al met DHCP (Kea) en PAT. Nu voeg je een eigen DNS-server toe. Clients in <code>10.10.10.0/24</code> moeten namen als <code>www.pxl.lan</code> of <code>ns1.pxl.lan</code> kunnen opzoeken, en ook de omgekeerde richting moet werken (IP → naam). Externe namen (google.com) worden doorgestuurd naar Google DNS via <em>forwarding</em>. Tot slot update je de DHCP-config zodat clients automatisch jouw DNS-server krijgen.</p>
+  </div>
+
+  <!-- DNS hierarchy diagram -->
+  <div class="dns-tree">
+    <h3>🌐 De DNS-hierarchie — hoe een naam wordt opgelost</h3>
+    <div class="dns-levels">
+      <div class="dns-level">
+        <div class="dns-level-bar" style="background:var(--accent)"></div>
+        <div class="dns-level-content">
+          <div class="lname" style="color:var(--accent)">Root (".")</div>
+          <div class="ldesc">13 root-serverclusters wereldwijd. Weten wie verantwoordelijk is voor elke TLD.</div>
+          <div class="lexample">dig . NS</div>
+        </div>
+      </div>
+      <div class="dns-level">
+        <div class="dns-level-bar" style="background:var(--accent2)"></div>
+        <div class="dns-level-content">
+          <div class="lname" style="color:var(--accent2)">TLD — .lan / .be / .com</div>
+          <div class="ldesc">Top Level Domain servers weten welke nameservers verantwoordelijk zijn voor een domein.</div>
+          <div class="lexample">nslookup -type=NS pxl.be z.nsset.be</div>
+        </div>
+      </div>
+      <div class="dns-level">
+        <div class="dns-level-bar" style="background:var(--purple)"></div>
+        <div class="dns-level-content">
+          <div class="lname" style="color:var(--purple)">Authoritatieve server — jouw BIND</div>
+          <div class="ldesc">Jouw server is de autoriteit voor <code>pxl.lan</code>. Hij geeft definitieve antwoorden voor jouw zone.</div>
+          <div class="lexample">dig @10.10.10.1 www.pxl.lan</div>
+        </div>
+      </div>
+      <div class="dns-level">
+        <div class="dns-level-bar" style="background:var(--green)"></div>
+        <div class="dns-level-content">
+          <div class="lname" style="color:var(--green)">Client (resolver)</div>
+          <div class="ldesc">Vraagt een naam op. Krijgt antwoord uit de cache of via de volledige resolutieketen.</div>
+          <div class="lexample">ping www.pxl.lan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resource record types -->
+  <div class="rr-grid">
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(45,212,191,0.15);color:var(--accent)">A</span><div class="rr-desc">Naam → IPv4-adres.<br><em>www → 10.10.10.30</em></div></div>
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(251,146,60,0.15);color:var(--orange)">PTR</span><div class="rr-desc">IP → naam (reverse DNS).<br><em>30 → www.pxl.lan.</em></div></div>
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(167,139,250,0.15);color:var(--purple)">SOA</span><div class="rr-desc">Start of Authority. Metadata van de zone: primaire NS, serial, timers.</div></div>
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(56,189,248,0.15);color:var(--accent2)">NS</span><div class="rr-desc">Welke server is authoritative voor deze zone.</div></div>
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(74,222,128,0.15);color:var(--green)">CNAME</span><div class="rr-desc">Alias. <em>ftp → www</em> (verwijst naar A-record).</div></div>
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(251,191,36,0.15);color:var(--warn)">MX</span><div class="rr-desc">Mail Exchange. Welke server ontvangt e-mail voor het domein.</div></div>
+    <div class="rr-card"><span class="rr-badge" style="background:rgba(248,113,113,0.15);color:var(--danger)">TXT</span><div class="rr-desc">Vrije tekst. Gebruikt voor SPF, DMARC, verificatie.</div></div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <span>Voortgang</span>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+    <span id="rank-display" class="rank-display"></span>
+    <span class="progress-count" id="progress-count">0 / 12</span>
+  </div>
+
+  <!-- DEEL 1: INSTALLATIE -->
+  <div class="section-title">Deel 1 — Installatie & Basisconfig</div>
+
+  <div class="task-card" id="t1">
+    <div class="task-header" onclick="toggleTask('t1')">
+      <div class="task-check" onclick="toggleCheck(event,'t1')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-install">Install</span> Taak 01</div>
+        <div class="task-title">Installeer BIND en start de service</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Op de <strong>server</strong>: installeer <code>bind</code>. De daemon heet <code>named</code> (name daemon) — dat is de naam die je bij alle systemctl-commando's gebruikt.</p>
+      <div class="cmd">sudo dnf install bind
+
+<span class="comment"># Start en enable direct</span>
+sudo systemctl enable named
+sudo systemctl start named
+sudo systemctl status named</div>
+      <div class="concept-box">
+        <strong>💡 BIND vs named — twee namen, één ding</strong>
+        BIND is de softwarenaam (Berkeley Internet Name Domain). De achterliggende daemon die er op Linux voor draait heet <code>named</code>. Dat is de naam die je bij <code>systemctl</code> en alle config-bestanden ziet. Historisch staat de "d" voor "daemon" — een achtergrondproces.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>systemctl status named</code> → <code>active (running)</code>. De service draait nu als caching-only resolver (luistert alleen op localhost). Dat gaan we de volgende stap openbreken.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t2">
+    <div class="task-header" onclick="toggleTask('t2')">
+      <div class="task-check" onclick="toggleCheck(event,'t2')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-config">Config</span> Taak 02</div>
+        <div class="task-title">Pas named.conf aan: luisteren op het interne IP + forwarding</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Maak een backup van de originele config, open daarna <code>/etc/named.conf</code> en pas het <code>options { }</code>-blok aan. Je hoeft niet de hele file te herschrijven — alleen de gemarkeerde regels aanpassen of toevoegen.</p>
+      <div class="cmd">sudo cp /etc/named.conf /etc/named.conf.orig
+sudo nano /etc/named.conf</div>
+      <p>Zoek het bestaande <code>options { ... };</code>-blok en pas de volgende regels aan (ze staan er al, maar met andere waarden):</p>
+      <div class="named-block">options {
+    directory       "/var/named";
+    ...
+
+    listen-on port 53 { 127.0.0.1; 10.10.10.1; };   // ← aanpassen
+    allow-query     { localhost; 10.10.10.0/24; };    // ← aanpassen
+    allow-recursion { localhost; 10.10.10.0/24; };    // ← toevoegen
+    forwarders      { 8.8.8.8; 8.8.4.4; };           // ← toevoegen
+    ...
+};</div>
+      <div class="concept-box">
+        <strong>💡 Wat doen deze vier opties?</strong>
+        <strong>listen-on</strong>: op welke IP's luistert BIND naar DNS-queries? We voegen <code>10.10.10.1</code> toe zodat interne clients ons kunnen bereiken. <strong>allow-query</strong>: wie mag vragen stellen? Alleen ons interne subnet. <strong>allow-recursion</strong>: wie mag de server vragen om externe namen op te zoeken (Google, GitHub...)? Ook alleen intern — anders word je een open resolver die door aanvallers misbruikt kan worden. <strong>forwarders</strong>: als BIND een naam niet zelf kent, stuurt hij de query door naar Google DNS in plaats van zelf door de hele boom te klimmen.
+      </div>
+      <div class="cmd"><span class="comment"># Syntax controleren (geen output = geen fouten)</span>
+sudo named-checkconf
+
+<span class="comment"># Herstart om wijzigingen te activeren</span>
+sudo systemctl restart named</div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>sudo ss -tulnp | grep :53</code> → named luistert nu op <code>127.0.0.1:53</code> én <code>10.10.10.1:53</code>. Vroeger was het alleen localhost.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t3">
+    <div class="task-header" onclick="toggleTask('t3')">
+      <div class="task-check" onclick="toggleCheck(event,'t3')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-service">Service</span> Taak 03</div>
+        <div class="task-title">Open de firewall voor DNS (poort 53)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>DNS gebruikt zowel UDP (voor gewone queries) als TCP (voor zone transfers en grote antwoorden). De firewalld DNS-service opent beide automatisch.</p>
+      <div class="cmd"><span class="comment"># DNS toevoegen aan de interne zone (ens224)</span>
+sudo firewall-cmd --permanent --zone=internal --add-service=dns
+sudo firewall-cmd --reload
+
+<span class="comment"># Controleer</span>
+sudo firewall-cmd --zone=internal --list-services</div>
+      <div class="concept-box">
+        <strong>💡 UDP vs TCP voor DNS</strong>
+        De meeste DNS-antwoorden passen in één UDP-pakket (max 512 byte), dus UDP is de standaard — snel en zonder handshake. Antwoorden die te groot zijn (DNSSEC, zone transfers) vallen automatisch terug op TCP. Beide moeten open staan in de firewall, en <code>firewall-cmd --add-service=dns</code> doet dat in één keer.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>sudo firewall-cmd --zone=internal --list-services</code> bevat <code>dns</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEL 2: FORWARD ZONE -->
+  <div class="section-title">Deel 2 — Forward Zone (naam → IP)</div>
+
+  <div class="task-card" id="t4">
+    <div class="task-header" onclick="toggleTask('t4')">
+      <div class="task-check" onclick="toggleCheck(event,'t4')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-zone">Zone</span> Taak 04</div>
+        <div class="task-title">Definieer de zone pxl.lan in named.conf</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Voeg <strong>onderaan</strong> <code>/etc/named.conf</code> de zone-definitie toe. Hiermee zeg je tegen BIND: "voor het domein <code>pxl.lan</code> ben ik de master, en de records staan in dit bestand."</p>
+      <div class="cmd">sudo nano /etc/named.conf</div>
+      <p>Voeg toe aan het einde van het bestand:</p>
+      <div class="named-block">zone "pxl.lan" {
+    type master;
+    file "/etc/named/pxl.lan.db";
+    allow-query  { any; };
+    allow-transfer { none; };
+};</div>
+      <div class="concept-box">
+        <strong>💡 type master vs slave</strong>
+        <code>type master</code> betekent dat dit de primaire bron is van de zone-data. Een <code>slave</code> (of <code>secondary</code>) kopieert de zone via een zone transfer van de master. In productie heb je altijd minstens twee nameservers voor redundantie — hier werken we met één master. <code>allow-transfer none</code> verbiedt zone transfers naar anderen (veilig voor een labo-setup).
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t5">
+    <div class="task-header" onclick="toggleTask('t5')">
+      <div class="task-check" onclick="toggleCheck(event,'t5')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-zone">Zone</span> Taak 05</div>
+        <div class="task-title">Maak het zone-bestand aan met alle records</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Maak het zone-bestand aan op <code>/etc/named/pxl.lan.db</code> en voeg de records toe. Lees elk onderdeel — er staat veel meer informatie in dan het lijkt.</p>
+      <div class="cmd">sudo nano /etc/named/pxl.lan.db</div>
+      <div class="zone-block"><span class="directive">$TTL</span>    8h
+<span class="comment">; SOA: wie is de autoriteit voor deze zone?</span>
+@       IN  <span class="record-type">SOA</span>  ns1.pxl.lan.  administrator.pxl.lan. (
+                    <span class="record-val">2025052601</span>  <span class="comment">; Serial: YYYYMMDDNN — verhoog bij elke wijziging!</span>
+                    <span class="record-val">1d</span>          <span class="comment">; Refresh: secundaire server checkt updates</span>
+                    <span class="record-val">3h</span>          <span class="comment">; Retry: als refresh faalt, probeer opnieuw na</span>
+                    <span class="record-val">3d</span>          <span class="comment">; Expire: secondary stopt na 3d zonder contact</span>
+                    <span class="record-val">3h</span> )        <span class="comment">; Minimum TTL: hoe lang negatieve antwoorden cachen</span>
+
+<span class="comment">; Nameservers en mailservers</span>
+        IN  <span class="record-type">NS</span>   ns1.pxl.lan.
+        IN  <span class="record-type">MX</span>   10  mail.pxl.lan.
+
+<span class="comment">; A-records: naam → IP</span>
+ns1         IN  <span class="record-type">A</span>    <span class="record-val">10.10.10.1</span>
+www         IN  <span class="record-type">A</span>    <span class="record-val">10.10.10.30</span>
+mail        IN  <span class="record-type">A</span>    <span class="record-val">10.10.10.40</span>
+webserver   IN  <span class="record-type">A</span>    <span class="record-val">10.10.10.1</span>
+
+<span class="comment">; TXT-record (optioneel)</span>
+pxl.lan.    IN  <span class="record-type">TXT</span>  "DNS lab - pxl.lan zone actief"</div>
+      <div class="warn-note">
+        <strong>⚠ Vergeet de trailing dot niet!</strong> Elke volledig gekwalificeerde domeinnaam (FQDN) in een zone-bestand eindigt op een punt: <code>ns1.pxl.lan.</code> Schrijf je <code>ns1.pxl.lan</code> zonder punt, dan voegt BIND de zone-naam toe en krijg je <code>ns1.pxl.lan.pxl.lan</code> — een veelgemaakte fout die moeilijk te zien is.
+      </div>
+      <div class="cmd"><span class="comment"># Rechten instellen (root bezit, named mag lezen)</span>
+sudo chown root:named /etc/named/pxl.lan.db
+sudo chmod 640 /etc/named/pxl.lan.db
+
+<span class="comment"># Syntax controleren</span>
+sudo named-checkzone pxl.lan /etc/named/pxl.lan.db</div>
+      <div class="concept-box">
+        <strong>💡 Het serial-nummer — waarom is het zo belangrijk?</strong>
+        Het serial-nummer in de SOA is de versie van je zone. Secundaire DNS-servers vergelijken hun serial met die van de master. Is de master hoger? Dan halen ze een nieuwe kopie op (zone transfer). Is je serial <em>niet</em> verhoogd na een wijziging, dan denken secondaries dat er niets veranderd is en zien de wijziging nooit. Het YYYYMMDDNN-formaat is een conventie: datum + volgnummer van die dag.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>named-checkzone</code> eindigt met <code>OK</code>. Elke andere uitvoer bevat de regelnummer van de fout.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t6">
+    <div class="task-header" onclick="toggleTask('t6')">
+      <div class="task-check" onclick="toggleCheck(event,'t6')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-zone">Zone</span> Taak 06</div>
+        <div class="task-title">SELinux-context corrigeren en BIND herstarten</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>SELinux bewaakt welke processen welke bestanden mogen lezen. BIND mag alleen bestanden lezen met het label <code>named_zone_t</code>. Bestanden die je zelf aanmaakt kunnen een verkeerd label hebben — <code>restorecon</code> herstelt dit.</p>
+      <div class="cmd"><span class="comment"># Herstel SELinux-context op /etc/named/</span>
+sudo restorecon -Rv /etc/named/
+
+<span class="comment"># Controleer het label (moet named_zone_t zijn)</span>
+ls -Z /etc/named/pxl.lan.db
+
+<span class="comment"># Herstart BIND</span>
+sudo systemctl restart named
+sudo systemctl status named</div>
+      <div class="concept-box">
+        <strong>💡 Waarom is SELinux zo vaak de schuldige?</strong>
+        SELinux kent bestanden een beveiligingslabel toe op het moment van aanmaken, gebaseerd op de map. Als je een bestand aanmaakt in <code>/tmp</code> en het daarna verplaatst naar <code>/etc/named/</code>, houdt het het label van <code>/tmp</code>. BIND krijgt dan een "permission denied" zelfs al zijn de gewone bestandsrechten in orde. <code>restorecon</code> kijkt in de SELinux-policy op welk label een bestand zou moeten hebben op die locatie, en corrigeert het.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>sudo journalctl -u named -n 20</code> — geen fouten over permissions of zones. <code>named</code> is <code>active (running)</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEL 3: REVERSE ZONE -->
+  <div class="section-title">Deel 3 — Reverse Zone (IP → naam)</div>
+
+  <div class="task-card" id="t7">
+    <div class="task-header" onclick="toggleTask('t7')">
+      <div class="task-check" onclick="toggleCheck(event,'t7')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-zone">Zone</span> Taak 07</div>
+        <div class="task-title">Definieer de reverse zone en maak het PTR-bestand aan</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Reverse DNS werkt via een speciale zone genaamd <code>in-addr.arpa</code>. De naam ziet er raar uit: de octetten van het netwerk staan <strong>omgekeerd</strong>. Voor <code>10.10.10.0/24</code> is de zone-naam <code>10.10.10.in-addr.arpa</code>.</p>
+      <p><strong>Stap 1 — Zone-definitie in named.conf:</strong></p>
+      <div class="cmd">sudo nano /etc/named.conf</div>
+      <div class="named-block">zone "10.10.10.in-addr.arpa" {
+    type master;
+    file "/var/named/10.10.10.in-addr.arpa.zone";
+    allow-query  { any; };
+    allow-transfer { none; };
+};</div>
+      <p><strong>Stap 2 — Maak het zone-bestand aan:</strong></p>
+      <div class="cmd">sudo nano /var/named/10.10.10.in-addr.arpa.zone</div>
+      <div class="zone-block"><span class="directive">$TTL</span> 8h
+@ IN <span class="record-type">SOA</span>  ns1.pxl.lan.  administrator.pxl.lan. (
+    <span class="record-val">2025052601</span>  <span class="comment">; Serial</span>
+    <span class="record-val">1d</span>          <span class="comment">; Refresh</span>
+    <span class="record-val">3h</span>          <span class="comment">; Retry</span>
+    <span class="record-val">3d</span>          <span class="comment">; Expire</span>
+    <span class="record-val">3h</span> )        <span class="comment">; Minimum TTL</span>
+
+        IN <span class="record-type">NS</span>   ns1.pxl.lan.
+
+<span class="comment">; PTR-records: alleen het LAATSTE octet</span>
+<span class="record-val">1</span>       IN <span class="record-type">PTR</span>  ns1.pxl.lan.
+<span class="record-val">30</span>      IN <span class="record-type">PTR</span>  www.pxl.lan.</div>
+      <div class="concept-box">
+        <strong>💡 Waarom zijn de octetten omgekeerd?</strong>
+        In een normale A-record-zone gaan namen van algemeen naar specifiek: <code>www.pxl.lan</code> (links = specifiek, rechts = algemeen). In de DNS-hierarchie werkt het omgekeerd. Om IP-adressen in hetzelfde systeem te passen, worden de octetten gespiegeld: <code>10.10.10.1</code> wordt <code>1.10.10.10.in-addr.arpa</code>. In je zone-bestand gebruik je alleen het laatste octet (<code>1</code>) omdat de rest al in de zone-naam zit.
+      </div>
+      <div class="cmd"><span class="comment"># Rechten instellen</span>
+sudo chown root:named /var/named/10.10.10.in-addr.arpa.zone
+sudo chmod 640 /var/named/10.10.10.in-addr.arpa.zone
+
+<span class="comment"># Syntax check voor de reverse zone</span>
+sudo named-checkzone 10.10.10.in-addr.arpa /var/named/10.10.10.in-addr.arpa.zone
+
+<span class="comment"># Full check: beide zones + named.conf</span>
+sudo named-checkconf
+sudo systemctl restart named</div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Beide <code>named-checkzone</code>-aanroepen eindigen met <code>OK</code>. <code>named</code> herstart zonder fouten.
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEL 4: TESTEN -->
+  <div class="section-title">Deel 4 — Testen met dig</div>
+
+  <div class="task-card" id="t8">
+    <div class="task-header" onclick="toggleTask('t8')">
+      <div class="task-check" onclick="toggleCheck(event,'t8')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-test">Test</span> Taak 08</div>
+        <div class="task-title">Test forward lookup, reverse lookup en externe forwarding</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Gebruik <code>dig</code> om je DNS-server grondig te testen. Het <code>@10.10.10.1</code>-argument dwingt <code>dig</code> om specifiek jouw server te bevragen — anders gebruikt het de system-resolver.</p>
+      <div class="cmd"><span class="comment">## Test 1: Forward lookup (naam → IP)</span>
+dig @10.10.10.1 www.pxl.lan
+
+<span class="comment">## Snellere output (alleen het antwoord)</span>
+dig @10.10.10.1 www.pxl.lan +short
+
+<span class="comment">## Test 2: Reverse lookup (IP → naam)</span>
+dig @10.10.10.1 -x 10.10.10.30
+dig @10.10.10.1 -x 10.10.10.1 +short
+
+<span class="comment">## Test 3: Forwarding (externe naam via Google DNS)</span>
+dig @10.10.10.1 www.google.com +short
+
+<span class="comment">## Test 4: SOA en NS records</span>
+dig @10.10.10.1 pxl.lan SOA
+dig @10.10.10.1 pxl.lan NS
+
+<span class="comment">## Test 5: MX record</span>
+dig @10.10.10.1 pxl.lan MX</div>
+      <div class="concept-box">
+        <strong>💡 dig lezen — de ANSWER SECTION</strong>
+        De uitvoer van <code>dig</code> heeft secties: <code>QUESTION</code> (wat werd gevraagd), <code>ANSWER</code> (het antwoord), <code>AUTHORITY</code> (welke server is authoritative), <code>ADDITIONAL</code> (extra info). Kijk naar <code>status: NOERROR</code> voor succes. <code>NXDOMAIN</code> = naam bestaat niet. <code>SERVFAIL</code> = server had een intern probleem (vaak zone-bestandsfout of SELinux). <code>REFUSED</code> = query niet toegestaan (allow-query of allow-recursion).
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verwachte resultaten</strong>
+        Test 1: <code>10.10.10.30</code> · Test 2: <code>www.pxl.lan.</code> · Test 3: een geldig Google IP-adres · Test 4: SOA met serial <code>2025052601</code> · Test 5: <code>10 mail.pxl.lan.</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t9">
+    <div class="task-header" onclick="toggleTask('t9')">
+      <div class="task-check" onclick="toggleCheck(event,'t9')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-test">Test</span> Taak 09</div>
+        <div class="task-title">Update DHCP zodat clients jouw DNS krijgen (Oefening 4)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Clients krijgen hun DNS-server via DHCP. Pas de Kea-config aan zodat ze niet langer <code>8.8.8.8</code> krijgen maar jouw eigen server.</p>
+      <div class="cmd">sudo nano /etc/kea/kea-dhcp4.conf</div>
+      <p>Zoek de <code>domain-name-servers</code> optie en pas het adres aan:</p>
+      <div class="cmd"><span class="comment"># Van:</span>
+{ "name": "domain-name-servers", "data": "8.8.8.8, 8.8.4.4" }
+
+<span class="comment"># Naar:</span>
+{ "name": "domain-name-servers", "data": "10.10.10.1" }
+
+<span class="comment"># Optioneel: ook de domeinnaam meegeven</span>
+{ "name": "domain-name", "data": "pxl.lan" }</div>
+      <div class="cmd"><span class="comment"># Syntax check en herstart</span>
+sudo kea-dhcp4 -t /etc/kea/kea-dhcp4.conf
+sudo systemctl restart kea-dhcp4</div>
+      <div class="concept-box">
+        <strong>💡 Wat doet de domain-name optie?</strong>
+        Als je <code>domain-name: pxl.lan</code> meegeeft, voegt de client dit als zoekdomein toe aan <code>/etc/resolv.conf</code>. Dat betekent dat <code>ping www</code> automatisch wordt omgezet naar <code>ping www.pxl.lan</code>. Handig in een labo, maar pas op in productie — onbedoelde DNS-queries kunnen verwarrend zijn.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Test op de client</strong>
+        Op de client: herstart de interface (<code>nmcli con down/up Connection</code>). Daarna: <code>cat /etc/resolv.conf</code> moet <code>nameserver 10.10.10.1</code> tonen. Dan: <code>dig www.pxl.lan</code> (zonder <code>@</code>) → antwoord via jouw server.
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEL 5: EXTRA RECORDS -->
+  <div class="section-title">Deel 5 — Extra Records & Aanpassingen</div>
+
+  <div class="task-card" id="t10">
+    <div class="task-header" onclick="toggleTask('t10')">
+      <div class="task-check" onclick="toggleCheck(event,'t10')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-zone">Zone</span> Taak 10</div>
+        <div class="task-title">Voeg hostnames toe voor server en client (Oefening 3)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Voeg A-records toe voor je eigen server- en clientnamen. De conventie in de cursus is <code>server[JouwInitialen]</code> en <code>client[JouwInitialen]</code>. Vervang hieronder <code>XX</code> door jouw initialen.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h10')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a10')">👁 Toon aanpak</button>
+      </div>
+      <div class="hint-box" id="h10">
+        <strong>Drie stappen:</strong> 1) Open het zone-bestand (<code>/etc/named/pxl.lan.db</code>), voeg twee A-records toe, <strong>verhoog het serial-nummer</strong>. 2) Voeg PTR-records toe in het reverse zone-bestand als je ook de reverse lookup wil. 3) Valideer met <code>named-checkzone</code> en reload met <code>sudo rndc reload</code> (je hoeft niet volledig te herstarten — rndc herlaadt alleen de zones).
+      </div>
+      <div class="answer-box" id="a10">
+        <p>In <code>/etc/named/pxl.lan.db</code>:</p>
+        <div class="zone-block"><span class="comment">; Verhoog serial: 2025052601 → 2025052602</span>
+
+serverXX    IN  <span class="record-type">A</span>  <span class="record-val">10.10.10.1</span>
+clientXX    IN  <span class="record-type">A</span>  <span class="record-val">10.10.10.50</span>   <span class="comment">← jouw client-IP</span></div>
+        <div class="cmd">sudo named-checkzone pxl.lan /etc/named/pxl.lan.db
+sudo rndc reload
+
+<span class="comment"># Testen</span>
+dig @10.10.10.1 serverXX.pxl.lan +short
+dig @10.10.10.1 clientXX.pxl.lan +short</div>
+        <div class="verify-block">
+          <strong>✔ Verificatie</strong>
+          <code>dig serverXX.pxl.lan +short</code> geeft <code>10.10.10.1</code>. Vergeet de zone ook te herladen op de client (<code>nmcli con down/up</code>) als je getest hebt met de zoek-domeinnaam.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t11">
+    <div class="task-header" onclick="toggleTask('t11')">
+      <div class="task-check" onclick="toggleCheck(event,'t11')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-zone">Zone</span> Taak 11</div>
+        <div class="task-title">Voeg een CNAME-alias toe (Oefening 7)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een CNAME-record maakt een alias: <code>ftp.pxl.lan</code> kan verwijzen naar <code>www.pxl.lan</code> zonder een apart IP-adres. Zo kun je meerdere namen voor dezelfde server hebben zonder A-records te dupliceren.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h11')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a11')">👁 Toon aanpak</button>
+      </div>
+      <div class="hint-box" id="h11">
+        <strong>CNAME-syntax:</strong> <code>alias  IN  CNAME  echtenaam</code>. De "echtenaam" mag een naam binnen de zone zijn (zonder trailing dot) of een FQDN (met trailing dot). Let op: je kunt geen CNAME maken voor de zone-top (<code>@</code>), en een CNAME mag niet tegelijk met andere records voor dezelfde naam bestaan. Verhoog ook hier het serial.
+      </div>
+      <div class="answer-box" id="a11">
+        <p>In <code>/etc/named/pxl.lan.db</code>:</p>
+        <div class="zone-block">ftp         IN  <span class="record-type">CNAME</span>  www
+blog        IN  <span class="record-type">CNAME</span>  www</div>
+        <div class="cmd">sudo named-checkzone pxl.lan /etc/named/pxl.lan.db
+sudo rndc reload
+dig @10.10.10.1 ftp.pxl.lan +short</div>
+        <p>Output van <code>dig</code> voor een CNAME toont twee regels: eerst de CNAME-referentie, dan het uiteindelijke A-record.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEEL 6: TROUBLESHOOTING -->
+  <div class="section-title">Deel 6 — Troubleshooting Scenario</div>
+
+  <div class="task-card" id="t12">
+    <div class="task-header" onclick="toggleTask('t12')">
+      <div class="task-check" onclick="toggleCheck(event,'t12')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-debug">Debug</span> Taak 12</div>
+        <div class="task-title">Analyseer een kapotte DNS-setup systematisch</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een collega heeft deze config geschreven. <code>dig @10.10.10.1 www.pxl.lan</code> geeft <code>SERVFAIL</code>. Gebruik de systematische troubleshooting-volgorde om de fouten te vinden.</p>
+      <div class="zone-block"><span class="comment">; Probleemzone — vind de fouten</span>
+$TTL 8h
+@ IN SOA ns1.pxl.lan administrator.pxl.lan. (    ← (1)
+    2025052601
+    1d
+    3h
+    3d
+    3h )
+
+    IN NS  ns1.pxl.lan.
+    IN MX  10 mail.pxl.lan
+
+www IN A  10.10.10.30
+ns1 IN A  10.10.10.1
+10  IN PTR www.pxl.lan.                           ← (2)</div>
+      <p>Gebruik deze commando's om te debuggen:</p>
+      <div class="cmd"><span class="comment"># Stap 1: werkt named überhaupt?</span>
+sudo systemctl status named
+
+<span class="comment"># Stap 2: zone-file syntax</span>
+sudo named-checkzone pxl.lan /etc/named/pxl.lan.db
+<span class="comment"># → toont regelnummer van fouten</span>
+
+<span class="comment"># Stap 3: named.conf syntax</span>
+sudo named-checkconf
+
+<span class="comment"># Stap 4: logs</span>
+sudo journalctl -u named -n 30
+<span class="comment"># Zoek naar: REFUSED, permission denied, zone not loaded</span>
+
+<span class="comment"># Stap 5: firewall</span>
+sudo firewall-cmd --zone=internal --list-services | grep dns
+
+<span class="comment"># Stap 6: SELinux</span>
+sudo ausearch -m avc -ts recent | grep named</div>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h12')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a12')">👁 Toon analyse</button>
+      </div>
+      <div class="hint-box" id="h12">
+        Kijk naar twee klassieke zone-bestandsfouten: <strong>1)</strong> De SOA-regel heeft geen punt aan het einde van <code>ns1.pxl.lan</code> — wat doet BIND dan met die naam? <strong>2)</strong> Een PTR-record staat in de forward zone-file — daar hoort het niet. PTR-records horen in de reverse zone (<code>in-addr.arpa</code>), en dan ook alleen met het laatste octet, niet het volledige IP. <strong>3)</strong> De MX-record einidgt zonder trailing dot — wat gaat er mis?
+      </div>
+      <div class="answer-box" id="a12">
+        <p><strong>Drie fouten in deze zone-file:</strong></p>
+        <p><strong>1. SOA — ontbrekende trailing dot:</strong> <code>ns1.pxl.lan</code> zonder punt wordt <code>ns1.pxl.lan.pxl.lan</code>. BIND accepteert dit soms maar de zone is incorrect. Fix: <code>ns1.pxl.lan.</code></p>
+        <p><strong>2. PTR-record in de forward zone:</strong> <code>10 IN PTR www.pxl.lan.</code> staat in het forward zone-bestand. PTR-records horen in de reverse zone (<code>in-addr.arpa</code>). Hier zorgt het voor een parseerfout of onverwacht gedrag. Fix: verwijder uit de forward zone, voeg toe aan de reverse zone.</p>
+        <p><strong>3. MX-record — ontbrekende trailing dot:</strong> <code>mail.pxl.lan</code> zonder punt → <code>mail.pxl.lan.pxl.lan</code>. Fix: <code>mail.pxl.lan.</code></p>
+        <div class="cmd"><span class="comment"># Na de fixes altijd:</span>
+sudo named-checkzone pxl.lan /etc/named/pxl.lan.db
+sudo rndc reload
+dig @10.10.10.1 pxl.lan MX</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>PXL Linux Advanced · DNS Lab (BIND)</p>
+    <button class="reset-btn" onclick="resetAll()">↺ Reset voortgang</button>
+  </footer>
+
+</div>
+
+<script>
+  const TOTAL = 12;
+
+  function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
+
+  function toggleCheck(e, id) {
+    e.stopPropagation();
+    const card = document.getElementById(id);
+    card.querySelector('.task-check').classList.toggle('checked');
+    card.classList.toggle('done');
+    updateProgress();
+    onTaskToggled(check.classList.contains('checked'));
+    saveState();
+  }
+
+  function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+  function toggleAnswer(id) { document.getElementById(id).classList.toggle('show'); }
+
+  function updateProgress() {
+    const RANKS = [
+      { pct: 100, key: 'challenger', icon: '⚔️', label: 'Challenger' },
+      { pct: 100, key: 'diamond',    icon: '💠', label: 'Diamond'    },
+      { pct:  85, key: 'platinum',   icon: '🪙', label: 'Platinum'   },
+      { pct:  70, key: 'gold',       icon: '🥇', label: 'Gold'       },
+      { pct:  40, key: 'silver',     icon: '🥈', label: 'Silver'     },
+      { pct:   1, key: 'bronze',     icon: '🥉', label: 'Bronze'     },
+    ];
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = done + ' / ' + TOTAL;
+
+    const rankEl = document.getElementById('rank-display');
+    if (rankEl) {
+      const rank = RANKS.find(r => pct >= r.pct);
+      // Diamond for 100% within single lab, Challenger reserved for full suite on index
+      const labRank = rank && rank.key === 'challenger' ? RANKS[1] : rank;
+      if (labRank) {
+        rankEl.textContent = labRank.icon + ' ' + labRank.label;
+        rankEl.className = 'rank-display rank-' + labRank.key;
+      } else {
+        rankEl.textContent = '';
+        rankEl.className = 'rank-display';
+      }
+    }
+
+    // Drive progress sidebar
+    const psCount    = document.getElementById('ps-count');
+    const psTotal    = document.getElementById('ps-total');
+    const psPips     = document.getElementById('ps-pips');
+    const psRankCard = document.getElementById('ps-rank-card');
+    const psRankIcon = document.getElementById('ps-rank-icon');
+    const psRankName = document.getElementById('ps-rank-name');
+    const psRankSub  = document.getElementById('ps-rank-sub');
+    const psNext     = document.getElementById('ps-next');
+
+    if (psCount) psCount.textContent = done;
+    if (psTotal) psTotal.textContent = '/ ' + TOTAL + ' taken';
+
+    // Pips
+    if (psPips) {
+      psPips.innerHTML = '';
+      for (let i = 1; i <= TOTAL; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'ps-pip' + (i <= done ? ' done' : '');
+        psPips.appendChild(pip);
+      }
+    }
+
+    // Rank card
+    const ALL_RANKS = [
+      { pct: 100, key: 'diamond',  icon: '💠', label: 'Diamond',  sub: 'Lab voltooid!' },
+      { pct:  85, key: 'platinum', icon: '🪙', label: 'Platinum', sub: 'Bijna daar...' },
+      { pct:  70, key: 'gold',     icon: '🥇', label: 'Gold',     sub: 'Goed bezig!'  },
+      { pct:  40, key: 'silver',   icon: '🥈', label: 'Silver',   sub: 'Op dreef!'    },
+      { pct:   1, key: 'bronze',   icon: '🥉', label: 'Bronze',   sub: 'Gestart!'     },
+    ];
+    const currentRank = ALL_RANKS.find(r => pct >= r.pct);
+    const nextRank    = currentRank ? ALL_RANKS[ALL_RANKS.indexOf(currentRank) - 1] : ALL_RANKS[ALL_RANKS.length - 1];
+
+    if (psRankCard) {
+      psRankCard.className = 'ps-rank-card' + (currentRank ? ' rank-' + currentRank.key : '');
+      if (psRankIcon) psRankIcon.textContent = currentRank ? currentRank.icon : '—';
+      if (psRankName) psRankName.textContent = currentRank ? currentRank.label : 'Geen rank';
+      if (psRankSub)  psRankSub.textContent  = currentRank ? currentRank.sub  : 'Start met taken';
+    }
+
+    // Next rank preview
+    if (psNext) {
+      if (!currentRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor 🥉 Bronze';
+      } else if (nextRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        if (needed > 0) {
+          psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor ' + nextRank.icon + ' ' + nextRank.label;
+        } else {
+          psNext.innerHTML = '';
+        }
+      } else {
+        psNext.innerHTML = '';
+      }
+    }
+  }
+
+  function saveState() {
+    const state = {};
+    for (let i = 1; i <= TOTAL; i++) {
+      const card = document.getElementById('t' + i);
+      if (card) state['t' + i] = card.classList.contains('done');
+    }
+    try { localStorage.setItem('lab_dns_state', JSON.stringify(state)); } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('lab_dns_state');
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      for (const [id, done] of Object.entries(state)) {
+        if (done) {
+          const card = document.getElementById(id);
+          if (card) {
+            card.classList.add('done');
+            card.querySelector('.task-check').classList.add('checked');
+          }
+        }
+      }
+      updateProgress();
+    } catch(e) {}
+  }
+
+  function resetAll() {
+    if (!confirm('Voortgang resetten?')) return;
+    document.querySelectorAll('.task-check').forEach(c => c.classList.remove('checked'));
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('done'));
+    updateProgress();
+    try { localStorage.removeItem('lab_dns_state'); } catch(e) {}
+  }
+
+  /* BATCH1-GAMIFICATION */
+  // Rank level derived independently from the checked-task count.
+  // 0 = none, 1 bronze, 2 silver, 3 gold, 4 platinum, 5 diamond.
+  function currentRankLevel() {
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    if (pct >= 100) return 5;
+    if (pct >= 85)  return 4;
+    if (pct >= 70)  return 3;
+    if (pct >= 40)  return 2;
+    if (pct >= 1)   return 1;
+    return 0;
+  }
+
+  let prevRankLevel = 0;      // seeded on load so we don't animate stale state
+  let rankBaselineSet = false;
+  let sessionStreak = 0;      // in-memory only: resets when the page closes
+
+  function seedRankBaseline() {
+    prevRankLevel = currentRankLevel();
+    rankBaselineSet = true;
+  }
+
+  function checkRankTransition() {
+    const newLevel = currentRankLevel();
+    if (rankBaselineSet && newLevel > prevRankLevel) {
+      flashRankCard();
+      if (newLevel === 5) showCompletionOverlay();
+    }
+    prevRankLevel = newLevel;
+  }
+  function onTaskToggled(nowChecked) {
+    updateStreak(nowChecked);
+    checkRankTransition();
+  }
+
+  function updateStreak(nowChecked) {
+    if (nowChecked) sessionStreak++;
+    else sessionStreak = 0;   // unchecking breaks the streak
+    const el = document.getElementById('ps-streak');
+    if (!el) return;
+    if (sessionStreak >= 2) {
+      el.style.display = 'flex';
+      const num = el.querySelector('.ps-streak-num');
+      if (num) num.textContent = sessionStreak;
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  function flashRankCard() {
+    const card = document.getElementById('ps-rank-card');
+    if (!card) return;
+    card.classList.remove('rank-up');
+    void card.offsetWidth;          // force reflow so the animation can re-trigger
+    card.classList.add('rank-up');
+    setTimeout(() => card.classList.remove('rank-up'), 1000);
+  }
+
+  function showCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.add('show');
+  }
+  function closeCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.remove('show');
+  }
+
+  loadState();
+  seedRankBaseline();
+
+  /* BATCH2-STUDY-QOL */
+  // ---- clipboard with HTTP fallback (VM deploys are not secure contexts) ----
+  function writeClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('execCommand failed'));
+      } catch (err) { reject(err); }
+    });
+  }
+
+  function copyCmd(cmd, btn) {
+    const clone = cmd.cloneNode(true);
+    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
+    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    const text = clone.textContent.trim();
+    writeClipboard(text).then(() => {
+      btn.textContent = '✓ Gekopieerd';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Kopieer'; btn.classList.remove('copied'); }, 1400);
+    }).catch(() => {
+      btn.textContent = 'Mislukt';
+      setTimeout(() => { btn.textContent = 'Kopieer'; }, 1400);
+    });
+  }
+
+  // ---- mark all tasks in a section (toggles: all-done -> clears, else fills) ----
+  function tasksInSection(sectionEl) {
+    const tasks = [];
+    let el = sectionEl.nextElementSibling;
+    while (el && !el.classList.contains('section-title')) {
+      if (el.classList.contains('task-card')) tasks.push(el);
+      el = el.nextElementSibling;
+    }
+    return tasks;
+  }
+
+  function markSection(sectionEl) {
+    const tasks = tasksInSection(sectionEl);
+    if (!tasks.length) return;
+    const allDone = tasks.every(t => t.classList.contains('done'));
+    const target = !allDone;
+    tasks.forEach(t => {
+      const chk = t.querySelector('.task-check');
+      t.classList.toggle('done', target);
+      if (chk) chk.classList.toggle('checked', target);
+    });
+    updateProgress();
+    saveState();
+    checkRankTransition();   // milestone effects, but no streak change for bulk ops
+  }
+
+  // ---- keyboard navigation: J/K move, Space toggles, Esc deselects ----
+  let kbIndex = -1;
+  function kbCards() { return Array.from(document.querySelectorAll('.task-card')); }
+  function highlightKb() {
+    const cards = kbCards();
+    cards.forEach((c, i) => c.classList.toggle('kb-active', i === kbIndex));
+    if (kbIndex >= 0 && cards[kbIndex]) {
+      cards[kbIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  function handleKbNav(e) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'button' || tag === 'a' || e.target.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const cards = kbCards();
+    if (!cards.length) return;
+    const k = e.key.toLowerCase();
+    if (k === 'j') {
+      kbIndex = kbIndex < 0 ? 0 : Math.min(cards.length - 1, kbIndex + 1);
+      highlightKb(); e.preventDefault();
+    } else if (k === 'k') {
+      kbIndex = kbIndex <= 0 ? 0 : kbIndex - 1;
+      highlightKb(); e.preventDefault();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      if (kbIndex >= 0 && cards[kbIndex]) {
+        toggleCheck({ stopPropagation() {} }, cards[kbIndex].id);
+        e.preventDefault();
+      }
+    } else if (e.key === 'Escape') {
+      kbIndex = -1; highlightKb();
+    }
+  }
+
+  function initStudyQol() {
+    document.querySelectorAll('.cmd').forEach(cmd => {
+      if (cmd.querySelector('.copy-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.type = 'button';
+      btn.textContent = 'Kopieer';
+      btn.addEventListener('click', () => copyCmd(cmd, btn));
+      cmd.appendChild(btn);
+    });
+    document.querySelectorAll('.section-title').forEach(sec => {
+      if (sec.querySelector('.section-mark-all')) return;
+      const btn = document.createElement('button');
+      btn.className = 'section-mark-all';
+      btn.type = 'button';
+      btn.textContent = '✓ sectie';
+      btn.title = 'Vink alle taken in deze sectie af (of wis ze)';
+      btn.addEventListener('click', () => markSection(sec));
+      sec.appendChild(btn);
+    });
+    document.addEventListener('keydown', handleKbNav);
+  }
+
+  initStudyQol();
+</script>
+
+<div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeCompletionOverlay()">
+  <div class="lab-complete-card" onclick="event.stopPropagation()">
+    <div class="lc-icon">💠</div>
+    <div class="lc-title">Lab Voltooid!</div>
+    <div class="lc-sub">Alle taken afgevinkt — Diamond rank bereikt. Sterk werk!</div>
+    <button class="lc-close" onclick="closeCompletionOverlay()">Sluiten</button>
+  </div>
+</div>
+</body>
+</html>

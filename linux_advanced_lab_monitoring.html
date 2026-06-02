@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Advanced — Monitoring Lab (processen &amp; logging)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0f14;
+    --surface: #131b24;
+    --surface2: #1b2733;
+    --border: #2a3744;
+    --accent: #2dd4bf;
+    --accent2: #38bdf8;
+    --theme: var(--pink);
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --text: #e2e8f0;
+    --muted: #7d8da0;
+    --code-bg: #0a0f14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at 15% 8%, rgba(74,222,128,0.05), transparent 40%), radial-gradient(circle at 85% 92%, rgba(244,114,182,0.05), transparent 40%);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  header {
+    border-left: 4px solid var(--theme);
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  header .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--theme); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.5rem;
+  }
+  header h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+  header p { color: var(--muted); margin-top: 0.75rem; font-size: 0.95rem; line-height: 1.6; }
+
+  .scenario-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent2); border-radius: 8px;
+    padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .scenario-box h2 { font-size: 1rem; color: var(--accent2); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .scenario-box p { color: var(--text); line-height: 1.7; font-size: 0.95rem; }
+
+  /* process hierarchy diagram */
+  .hierarchy {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .hierarchy h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .tree-display { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.8; }
+  .tree-display .root  { color: var(--purple); font-weight: 700; }
+  .tree-display .parent{ color: var(--accent2); font-weight: 700; }
+  .tree-display .child { color: var(--green); }
+  .tree-display .conn  { color: var(--muted); }
+  .tree-display .note  { color: var(--muted); font-style: italic; font-family: 'Syne', sans-serif; font-size: 0.78rem; padding-left: 0.5rem; }
+
+  /* nice range bar */
+  .nice-scale {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .nice-scale h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .scale-bar {
+    display: flex; height: 32px; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--border); margin-bottom: 0.4rem;
+  }
+  .scale-seg { flex: 1; display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+  }
+  .scale-seg.hi  { background: linear-gradient(90deg, #16a34a, #22c55e); color: white; flex: 4; }
+  .scale-seg.zero{ background: var(--surface2); color: var(--text); flex: 1; }
+  .scale-seg.lo  { background: linear-gradient(90deg, #f59e0b, #dc2626); color: white; flex: 4; }
+  .scale-labels { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.6rem; }
+  .scale-note { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .scale-note b { color: var(--text); }
+
+  /* priority pyramid */
+  .pyramid {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .pyramid h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .level { display: flex; align-items: center; gap: 0.7rem; padding: 0.35rem 0.7rem; border-radius: 4px; margin-bottom: 0.2rem; }
+  .level .num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); min-width: 1ch; }
+  .level .nm { font-family: 'JetBrains Mono', monospace; font-weight: 700; min-width: 80px; }
+  .level .desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  .level.l0 { background: rgba(125,141,160,0.05); } .level.l0 .nm { color: var(--muted); }
+  .level.l1 { background: rgba(125,141,160,0.05); } .level.l1 .nm { color: var(--muted); }
+  .level.l2 { background: rgba(125,141,160,0.05); } .level.l2 .nm { color: var(--muted); }
+  .level.l3 { background: rgba(251,191,36,0.07); } .level.l3 .nm { color: var(--warn); }
+  .level.l4 { background: rgba(248,113,113,0.07); } .level.l4 .nm { color: var(--danger); }
+  .level.l5 { background: rgba(248,113,113,0.1); }  .level.l5 .nm { color: var(--danger); }
+  .level.l6 { background: rgba(248,113,113,0.15); } .level.l6 .nm { color: var(--danger); }
+  .level.l7 { background: rgba(248,113,113,0.2); }  .level.l7 .nm { color: var(--danger); font-weight: 700; }
+
+  /* logging arch flow */
+  .log-arch {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .log-arch h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .arch-row { display: flex; align-items: stretch; gap: 0.5rem; flex-wrap: wrap; }
+  .arch-node { flex: 1; min-width: 130px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.85rem; }
+  .arch-node .an-name { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem; }
+  .arch-node .an-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+  .arch-node.src .an-name { color: var(--green); }
+  .arch-node.jd  .an-name { color: var(--accent2); }
+  .arch-node.rs  .an-name { color: var(--orange); }
+  .arch-node.out .an-name { color: var(--purple); }
+  .arch-arrow { display: flex; align-items: center; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+
+  .progress-bar-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-bar-wrap span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--theme), color-mix(in oklab, var(--theme), white 35%)); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
+  .progress-count { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--theme); }
+
+  .section-title {
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.75rem; margin-top: 2.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .part-banner {
+    margin-top: 3rem; margin-bottom: 0.5rem; padding: 0.9rem 1.25rem;
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 1rem; letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .part-banner.a { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.3); color: var(--green); }
+  .part-banner.b { background: rgba(244,114,182,0.08); border: 1px solid rgba(244,114,182,0.3); color: var(--pink); }
+  .part-banner .pb-sub { font-family: 'Syne', sans-serif; font-weight: 400; font-size: 0.82rem; color: var(--muted); }
+
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 1rem; overflow: hidden; transition: border-color 0.2s;
+  }
+  .task-card.done { border-color: var(--accent); }
+  .task-card.done .task-header { background: rgba(45,212,191,0.05); }
+
+  .task-header {
+    padding: 1rem 1.25rem; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 1rem; user-select: none; transition: background 0.15s;
+  }
+  .task-header:hover { background: var(--surface2); }
+
+  .task-check {
+    width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 5px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; cursor: pointer; margin-top: 1px;
+  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after { content: '✓'; color: #000; font-size: 13px; font-weight: 700; }
+
+  .task-meta { flex: 1; }
+  .task-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .task-title { font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+  .task-card.done .task-title { color: var(--muted); text-decoration: line-through; }
+
+  .expand-icon { color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; transition: transform 0.2s; flex-shrink: 0; margin-top: 3px; }
+  .task-card.open .expand-icon { transform: rotate(90deg); }
+
+  .task-body { display: none; padding: 0 1.25rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .task-card.open .task-body { display: block; }
+  .task-body p { color: var(--text); line-height: 1.7; font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.75rem; }
+  .task-body code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent2); }
+  .task-body ul, .task-body ol { margin: 0.5rem 0 0.75rem 1.25rem; line-height: 1.7; font-size: 0.9rem; }
+  .task-body li { margin-bottom: 0.3rem; }
+
+  .cmd {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+  .cmd .comment { color: var(--muted); }
+  .cmd .out { color: var(--muted); }
+
+  /* log output block */
+  .log-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--pink);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem; color: #ddd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .log-block .ts    { color: var(--muted); }
+  .log-block .host  { color: var(--accent2); }
+  .log-block .prog  { color: var(--purple); font-weight: 700; }
+  .log-block .warn  { color: var(--warn); }
+  .log-block .err   { color: var(--danger); }
+  .log-block .ok    { color: var(--green); }
+  .log-block .comment { color: var(--muted); font-style: italic; }
+
+  /* config block */
+  .conf-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--orange);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #ddd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .conf-block .key { color: var(--accent2); }
+  .conf-block .val { color: var(--green); }
+  .conf-block .facility { color: var(--orange); font-weight: 700; }
+  .conf-block .pri { color: var(--warn); }
+  .conf-block .path { color: var(--purple); }
+  .conf-block .comment { color: var(--muted); font-style: italic; }
+
+  /* ps output block */
+  .ps-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--green);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; color: #ddd; margin: 0.5rem 0; white-space: pre; overflow-x: auto; line-height: 1.7;
+  }
+  .ps-block .header { color: var(--accent2); font-weight: 700; }
+  .ps-block .user { color: var(--green); }
+  .ps-block .pid { color: var(--warn); }
+  .ps-block .stat { color: var(--purple); }
+
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  .hint-toggle { display: none; }
+  .answer-toggle {
+    background: none; border: 1px dashed var(--border); color: var(--muted);
+    border-radius: 5px; padding: 0.4rem 0.9rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .answer-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hint-box {
+    display: block; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: #d4a853;
+  }
+  .hint-box.show { display: block; }
+  .hint-box strong { color: var(--warn); }
+  .hint-box code { color: var(--warn); background: rgba(251,191,36,0.12); padding: 0.05rem 0.3rem; border-radius: 3px; }
+
+  .answer-box {
+    display: none; background: rgba(45,212,191,0.04); border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: var(--text);
+  }
+  .answer-box.show { display: block; }
+  .answer-box p { margin-top: 0.5rem; }
+
+  .verify-block {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(56,189,248,0.05);
+    border: 1px solid rgba(56,189,248,0.2); border-radius: 6px; font-size: 0.82rem; line-height: 1.6;
+  }
+  .verify-block strong { font-family: 'JetBrains Mono', monospace; color: var(--accent2); display: block; margin-bottom: 0.4rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .verify-block code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  .concept-box {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 6px; font-size: 0.85rem; line-height: 1.65;
+  }
+  .concept-box strong { font-family: 'JetBrains Mono', monospace; color: var(--purple); display: block; margin-bottom: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .concept-box code { color: var(--purple); background: rgba(167,139,250,0.1); }
+
+  .warn-note {
+    background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: #fca5a5;
+  }
+  .warn-note strong { color: var(--danger); }
+  .warn-note code { color: #fca5a5; background: rgba(248,113,113,0.1); }
+
+  .info-note {
+    background: rgba(56,189,248,0.05); border: 1px solid rgba(56,189,248,0.25);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: var(--text);
+  }
+  .info-note strong { color: var(--accent2); }
+  .info-note code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  /* signal table */
+  .sig-table {
+    width: 100%; border-collapse: collapse; margin: 0.75rem 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; overflow: hidden;
+  }
+  .sig-table th, .sig-table td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .sig-table th { background: var(--surface2); color: var(--accent2); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sig-table td.sig { color: var(--orange); font-weight: 700; }
+  .sig-table td.num { color: var(--warn); }
+  .sig-table td.use { color: var(--muted); font-family: 'Syne', sans-serif; font-size: 0.85rem; }
+  .sig-table tr:last-child td { border-bottom: none; }
+
+  .tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+    padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.4rem;
+  }
+  .tag-concept  { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-proc     { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-signal   { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-jd       { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-rs       { background: rgba(244,114,182,0.15); color: var(--pink); }
+  .tag-prio     { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .tag-exam     { background: rgba(248,113,113,0.18); color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+
+  footer {
+    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  }
+  footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  .reset-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ============ RANK ============ */
+  .rank-display {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+    padding: 0.18rem 0.55rem; border-radius: 20px; letter-spacing: 0.07em;
+    text-transform: uppercase; border: 1px solid; white-space: nowrap;
+    transition: all 0.3s ease;
+  }
+  .rank-bronze   { color: #cd7f32; border-color: #cd7f32; background: rgba(205,127,50,0.1); }
+  .rank-silver   { color: #a8b8c8; border-color: #a8b8c8; background: rgba(168,184,200,0.1); }
+  .rank-gold     { color: #fbbf24; border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .rank-platinum { color: #e2e8f0; border-color: #94a3b8; background: rgba(148,163,184,0.15); box-shadow: 0 0 8px rgba(148,163,184,0.2); }
+  .rank-diamond  { color: #7dd3fc; border-color: #7dd3fc; background: rgba(125,211,252,0.1); box-shadow: 0 0 10px rgba(125,211,252,0.25); }
+  .rank-challenger { color: #a78bfa; border-color: #a78bfa; background: rgba(167,139,250,0.12); box-shadow: 0 0 14px rgba(167,139,250,0.3); animation: pulse-glow 2s ease-in-out infinite; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(167,139,250,0.2); }
+    50%       { box-shadow: 0 0 22px rgba(167,139,250,0.45); }
+  }
+
+  /* ===== LAB NAV BAR ===== */
+  .lab-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; gap: 0.75rem;
+  }
+  .lab-nav a {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--muted); background: var(--surface);
+    transition: all 0.15s ease; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .lab-nav a:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .lab-nav .home-btn { border-color: var(--accent); color: var(--accent); }
+  .lab-nav .home-btn:hover { background: var(--accent); color: #000; }
+  .lab-nav .nav-side { min-width: 120px; }
+  .lab-nav .nav-side.right { text-align: right; justify-content: flex-end; }
+  .lab-nav .disabled { opacity: 0.25; pointer-events: none; }
+
+
+  /* ===== FLOATING SIDEBARS ===== */
+  /* Content is 1300px wide, so half = 650px. Sidebars sit 8px outside that. */
+
+  .lab-nav {
+    position: fixed;
+    left: max(0.5rem, calc(50% - 650px - 148px));
+    top: 50vh;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 140px;
+    margin-bottom: 0;
+    z-index: 100;
+  }
+  .lab-nav a {
+    justify-content: center;
+    text-align: center;
+  }
+  .lab-nav .nav-side.right { justify-content: center; }
+
+  .progress-sidebar {
+    position: fixed;
+    right: max(0.5rem, calc(50% - 650px - 210px));
+    top: 50vh;
+    transform: translateY(-50%);
+    width: 190px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  /* Header row */
+  .progress-sidebar .ps-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.18em;
+  }
+
+  /* Big count */
+  .progress-sidebar .ps-count-row {
+    display: flex; align-items: baseline; gap: 0.35rem;
+  }
+  .progress-sidebar .ps-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.2rem; font-weight: 700; color: var(--accent);
+    line-height: 1;
+  }
+  .progress-sidebar .ps-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--muted);
+  }
+
+  /* Pip progress track */
+  .ps-pips {
+    display: flex; flex-wrap: wrap; gap: 3px;
+  }
+  .ps-pip {
+    width: 10px; height: 10px; border-radius: 2px;
+    background: var(--border); transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+  }
+  .ps-pip.done {
+    background: var(--accent);
+    box-shadow: 0 0 4px rgba(45,212,191,0.5);
+  }
+
+  /* Rank card */
+  .ps-rank-card {
+    border-radius: 8px; padding: 0.7rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex; flex-direction: column; gap: 0.3rem;
+    transition: all 0.4s ease;
+  }
+  .ps-rank-card .ps-rank-icon { font-size: 1.4rem; line-height: 1; }
+  .ps-rank-card .ps-rank-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .ps-rank-card .ps-rank-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+  }
+
+  /* Rank colour theming */
+  .ps-rank-card.rank-bronze  { border-color: rgba(205,127,50,0.4);  background: rgba(205,127,50,0.07);  }
+  .ps-rank-card.rank-bronze  .ps-rank-name { color: #cd7f32; }
+  .ps-rank-card.rank-silver  { border-color: rgba(168,184,200,0.4); background: rgba(168,184,200,0.07); }
+  .ps-rank-card.rank-silver  .ps-rank-name { color: #a8b8c8; }
+  .ps-rank-card.rank-gold    { border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.07);  box-shadow: 0 0 12px rgba(251,191,36,0.1); }
+  .ps-rank-card.rank-gold    .ps-rank-name { color: #fbbf24; }
+  .ps-rank-card.rank-platinum{ border-color: rgba(148,163,184,0.5); background: rgba(148,163,184,0.09); box-shadow: 0 0 14px rgba(148,163,184,0.15); }
+  .ps-rank-card.rank-platinum .ps-rank-name { color: #e2e8f0; }
+  .ps-rank-card.rank-diamond { border-color: rgba(125,211,252,0.5); background: rgba(125,211,252,0.08); box-shadow: 0 0 16px rgba(125,211,252,0.2); }
+  .ps-rank-card.rank-diamond .ps-rank-name { color: #7dd3fc; }
+
+  /* Next rank preview */
+  .ps-next {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
+  }
+  .ps-next span { color: var(--warn); font-weight: 700; }
+
+  /* Sidebars active above 1200px — hide inline elements */
+  @media (min-width: 1200px) {
+    .progress-bar-wrap { display: none; }
+  }
+
+  /* Below 1200px — sidebars go inline, progress bar reappears */
+  @media (max-width: 1199px) {
+    .lab-nav {
+      position: static;
+      transform: none;
+      flex-direction: row;
+      width: auto;
+      margin-bottom: 1.75rem;
+    }
+    .lab-nav a { justify-content: flex-start; text-align: left; }
+    .lab-nav .nav-side.right { justify-content: flex-end; }
+    .progress-sidebar { display: none; }
+    .progress-bar-wrap { display: flex; }
+  }
+
+
+  /* BATCH1-GAMIFICATION */
+  /* Rank-up flash on the sidebar rank card */
+  @keyframes rank-up-flash {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+    30%  { transform: scale(1.07); box-shadow: 0 0 26px rgba(125,211,252,0.7); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+  }
+  .ps-rank-card.rank-up { animation: rank-up-flash 1s ease; }
+
+  /* Session streak chip in the sidebar */
+  .ps-streak {
+    display: none; align-items: center; gap: 0.4rem;
+    margin-top: 0.7rem; padding: 0.45rem 0.6rem;
+    border: 1px solid rgba(251,146,60,0.35);
+    background: rgba(251,146,60,0.08);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--orange);
+  }
+  .ps-streak .ps-streak-fire { font-size: 1rem; }
+  .ps-streak .ps-streak-num { font-weight: 700; }
+
+  /* Lab completion overlay */
+  .lab-complete-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10,15,20,0.78);
+    backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .lab-complete-overlay.show { display: flex; opacity: 1; }
+  .lab-complete-card {
+    text-align: center;
+    padding: 2.4rem 2.6rem;
+    border-radius: 16px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: var(--surface);
+    box-shadow: 0 0 40px rgba(125,211,252,0.25);
+    max-width: 380px;
+    animation: lc-pop 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  @keyframes lc-pop {
+    0%   { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .lab-complete-card .lc-icon { font-size: 3.2rem; line-height: 1; margin-bottom: 0.6rem; }
+  .lab-complete-card .lc-title {
+    font-size: 1.5rem; font-weight: 800; color: #7dd3fc; margin-bottom: 0.4rem;
+  }
+  .lab-complete-card .lc-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.4rem; }
+  .lab-complete-card .lc-close {
+    font-family: inherit; cursor: pointer;
+    padding: 0.55rem 1.4rem; border-radius: 8px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: rgba(125,211,252,0.1); color: #7dd3fc;
+    font-size: 0.9rem; font-weight: 600;
+    transition: background 0.2s ease;
+  }
+  .lab-complete-card .lc-close:hover { background: rgba(125,211,252,0.2); }
+
+
+  /* BATCH2-STUDY-QOL */
+  /* Copy button on command blocks */
+  .copy-btn {
+    position: absolute; top: 6px; right: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted);
+    opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .cmd:hover .copy-btn, .copy-btn:focus { opacity: 1; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
+
+  /* Mark-all-in-section control (pushed to the far right of the section bar) */
+  .section-title::after { order: 1; }
+  .section-mark-all {
+    order: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.2rem 0.55rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap;
+  }
+  .section-mark-all:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Keyboard-navigation highlight */
+  .task-card.kb-active {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
+  }
+
+  /* Keyboard hint in the sidebar */
+  .ps-kbhint {
+    margin-top: 0.7rem; font-size: 0.66rem; line-height: 1.6;
+    color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  }
+  .ps-kbhint b { color: var(--text); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <nav class="lab-nav">
+    <a class="nav-side" href="linux_advanced_lab_firewall.html">← Firewall</a>
+    <a class="home-btn" href="index.html">⌂ Home</a>
+    <a class="nav-side right" href="linux_advanced_lab_containers.html">Containers →</a>
+  </nav>
+
+  <div class="progress-sidebar" id="progress-sidebar">
+    <div class="ps-label">Voortgang</div>
+    <div class="ps-count-row">
+      <div class="ps-count" id="ps-count">0</div>
+      <div class="ps-total" id="ps-total">/ 0 taken</div>
+    </div>
+    <div class="ps-pips" id="ps-pips"></div>
+    <div class="ps-rank-card" id="ps-rank-card">
+      <div class="ps-rank-icon" id="ps-rank-icon">—</div>
+      <div class="ps-rank-name" id="ps-rank-name">Geen rank</div>
+      <div class="ps-rank-sub" id="ps-rank-sub">Start met taken</div>
+    </div>
+    <div class="ps-next" id="ps-next"></div>
+    <div class="ps-streak" id="ps-streak">
+      <span class="ps-streak-fire">🔥</span>
+      <span><span class="ps-streak-num">0</span> op rij</span>
+    </div>
+    <div class="ps-kbhint" id="ps-kbhint">⌨ <b>J</b>/<b>K</b> navigeren · <b>Spatie</b> afvinken</div>
+  </div>
+
+
+  <header>
+    <div class="label">PXL Linux Advanced · Monitoring</div>
+    <h1>Processen &amp; Logging — kijken wat er gebeurt</h1>
+    <p>Twee onmisbare skills voor een sysadmin: weten <em>wat er nu draait</em> op je server, en <em>terugzien wat er gebeurd is</em>. Eerst leer je processen oplijsten, prioriteren en beëindigen (<code>ps</code>, <code>top</code>, <code>nice</code>, <code>kill</code>). Daarna duik je in het logging-systeem van RHEL — <code>journald</code> voor snel filteren, <code>rsyslog</code> voor klassieke tekstlogs, plus <code>logger</code> en <code>logrotate</code>. Samen geven ze je het volledige beeld: live monitoring én historische diagnose.</p>
+  </header>
+
+  <div class="scenario-box">
+    <h2>📋 Scenario</h2>
+    <p>Een collega meldt dat de server "traag" aanvoelt. Je moet uitzoeken welk proces de CPU opslokt, eventueel iets afsluiten of in prioriteit verlagen. Een dag later — andere zaak — ontdek je dat iemand 's nachts heeft proberen inloggen via SSH met een verkeerd wachtwoord. Wie was het, vanaf waar, wanneer precies? Beide vragen los je op met de tools uit dit hoofdstuk. Werk op <code>ServerXX</code>; voor de logging-oefeningen test je vanaf <code>clientXX</code>.</p>
+  </div>
+
+  <!-- PROCESS HIERARCHY -->
+  <div class="hierarchy">
+    <h3>🌳 Wat is een proces? Parent &amp; child</h3>
+    <div class="tree-display">
+<span class="conn">└─</span> <span class="root">systemd</span> <span class="note">(PID 1, de "moeder van alle processen")</span>
+   <span class="conn">├─</span> <span class="parent">sshd</span> <span class="note">(daemon, draait als root)</span>
+   <span class="conn">│   └─</span> <span class="child">sshd: student@pts/0</span> <span class="note">(child: jouw SSH-sessie)</span>
+   <span class="conn">│        └─</span> <span class="child">bash</span> <span class="note">(child: jouw shell)</span>
+   <span class="conn">│             └─</span> <span class="child">nano file.txt</span> <span class="note">(child: jouw editor)</span>
+   <span class="conn">├─</span> <span class="parent">httpd</span> <span class="note">(parent)</span>
+   <span class="conn">│   ├─</span> <span class="child">httpd</span> <span class="note">(worker child 1)</span>
+   <span class="conn">│   ├─</span> <span class="child">httpd</span> <span class="note">(worker child 2)</span>
+   <span class="conn">│   └─</span> <span class="child">httpd</span> <span class="note">(worker child 3)</span>
+   <span class="conn">└─</span> <span class="parent">NetworkManager</span>
+    </div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-top:0.9rem;line-height:1.55">
+      Elk proces krijgt een unieke <strong>PID</strong> en wordt gestart door een <strong>parent</strong>. Children erven omgevingsvariabelen, rechten en open file descriptors. Start je <code>nano</code> 15 keer? Dan zijn dat 15 aparte processen met 15 verschillende PID's, allemaal children van je bash.
+    </p>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <span>Voortgang</span>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+    <span id="rank-display" class="rank-display"></span>
+    <span class="progress-count" id="progress-count">0 / 16</span>
+  </div>
+
+  <!-- =================================================================== -->
+  <div class="part-banner a">
+    PART A · Processen &amp; services
+    <span class="pb-sub">wat draait er, wie heeft prioriteit, hoe stop je het netjes</span>
+  </div>
+
+  <!-- =================== DEEL 1: PROCESSEN BEKIJKEN =================== -->
+  <div class="section-title">Deel 1 — Processen bekijken</div>
+
+  <div class="task-card" id="t1">
+    <div class="task-header" onclick="toggleTask('t1')">
+      <div class="task-check" onclick="toggleCheck(event,'t1')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-proc">ps</span> Taak 01</div>
+        <div class="task-title"><code>ps</code>: snapshot van actieve processen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p><code>ps</code> geeft een momentopname van wat er draait — niet live, gewoon "op dit moment". De command-line opties komen uit drie tradities (BSD, UNIX, GNU) die door elkaar gebruikt worden, wat soms verwarrend is.</p>
+      <div class="cmd"><span class="comment"># enkel je eigen processen in deze shell</span>
+ps
+
+<span class="comment"># meer detail: user, %cpu, %mem, status, command</span>
+ps u
+
+<span class="comment"># ALLE processen op het systeem (incl. daemons zonder terminal)</span>
+ps aux</div>
+      <div class="ps-block"><span class="header">USER       PID  %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND</span>
+<span class="user">root</span>         <span class="pid">1</span>   0.0  0.3  171944 12892 ?        <span class="stat">Ss</span>   10:00   0:02 /usr/lib/systemd/systemd
+<span class="user">student</span>   <span class="pid">1389</span>   0.0  0.1    9120  5748 pts/0    <span class="stat">Ss</span>   10:37   0:00 -bash
+<span class="user">student</span>   <span class="pid">7593</span>   0.1  0.0   10068  1564 pts/0    <span class="stat">R+</span>   11:20   0:00 ps aux</div>
+      <div class="concept-box">
+        <strong>De kolommen die je echt nodig hebt</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>PID</code> — uniek nummer; gebruik je voor <code>kill</code> of <code>renice</code>.</li>
+          <li><code>USER</code> — wie heeft het proces gestart? Belangrijk voor rechten en SELinux.</li>
+          <li><code>%CPU / %MEM</code> — verbruik. Snel zien welke processen "duur" zijn.</li>
+          <li><code>VSZ / RSS</code> — virtueel geheugen vs werkelijk RAM-verbruik. <code>RSS</code> is meestal de relevante.</li>
+          <li><code>STAT</code> — <code>R</code> running, <code>S</code> sleeping, <code>T</code> stopped, <code>Z</code> zombie. Plus modifiers: <code>+</code> foreground, <code>s</code> sessieleider.</li>
+          <li><code>COMMAND</code> — het commando dat het proces startte.</li>
+        </ul>
+      </div>
+      <div class="cmd"><span class="comment"># enkel specifieke kolommen tonen</span>
+ps -eo pid,user,nice,comm
+
+<span class="comment"># sorteer op geheugengebruik, hoogste eerst</span>
+ps aux --sort=-%mem | head
+
+<span class="comment"># sorteer op CPU</span>
+ps aux --sort=-%cpu | head</div>
+      <div class="info-note">
+        <strong>ℹ Het <code>-</code>teken bij <code>--sort</code>:</strong> met <code>--sort=-%mem</code> sorteer je <em>aflopend</em> (hoogste eerst). Zonder min-teken (<code>--sort=%mem</code>) is het oplopend.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>ps aux | wc -l</code> toont hoeveel processen er draaien. <code>ps -eo pid,user,comm --sort=-%mem | head</code> toont de top geheugengebruikers met enkel de kolommen die je vroeg.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t2">
+    <div class="task-header" onclick="toggleTask('t2')">
+      <div class="task-check" onclick="toggleCheck(event,'t2')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-proc">top</span> Taak 02</div>
+        <div class="task-title"><code>top</code>: live monitoring met sneltoetsen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Waar <code>ps</code> een foto is, is <code>top</code> een video. Het scherm ververst zich elke paar seconden en je kan <em>tijdens</em> de weergave sorteren en zelfs ingrijpen. Druk <code>q</code> om te stoppen.</p>
+      <div class="cmd">top</div>
+      <div class="concept-box">
+        <strong>De sneltoetsen die je moet kennen</strong>
+        <ul style="margin-top:0.3rem">
+          <li><kbd>M</kbd> — sorteer op <strong>geheugen</strong>gebruik (Memory).</li>
+          <li><kbd>P</kbd> — sorteer op <strong>CPU</strong>-gebruik (de standaard, Processor).</li>
+          <li><kbd>R</kbd> — sorteervolgorde omkeren (Reverse).</li>
+          <li><kbd>1</kbd> — elke CPU-core apart tonen i.p.v. één gemiddelde.</li>
+          <li><kbd>k</kbd> — een proces <strong>k</strong>illen (vraagt PID + signaal).</li>
+          <li><kbd>r</kbd> — een proces <strong>r</strong>eprioriteren (renice; vraagt PID + nice-waarde).</li>
+          <li><kbd>h</kbd> — help. <kbd>q</kbd> — quit.</li>
+        </ul>
+      </div>
+      <div class="info-note">
+        <strong>ℹ Modernere alternatieven:</strong> <code>htop</code> (gekleurde, scrollbare versie, vaak met <code>dnf install htop</code> beschikbaar) en <code>btop</code> (zelfs mooier). Voor het examen blijft <code>top</code> de standaard die altijd aanwezig is.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Open <code>top</code>, druk <kbd>M</kbd> → bovenaan staat het proces met het meeste geheugen. Druk <kbd>P</kbd> → hetzelfde maar nu voor CPU. Druk <kbd>q</kbd> om af te sluiten.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 2: ACHTERGROND/PRIORITEIT =================== -->
+  <div class="section-title">Deel 2 — Achtergrond, voorgrond en prioriteit</div>
+
+  <div class="task-card" id="t3">
+    <div class="task-header" onclick="toggleTask('t3')">
+      <div class="task-check" onclick="toggleCheck(event,'t3')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-proc">jobs</span> Taak 03</div>
+        <div class="task-title">Voorgrond ↔ achtergrond schakelen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een commando dat je gewoon intypt blokkeert je terminal tot het klaar is — dat is <em>voorgrond</em>. Wil je het laten doorlopen terwijl jij wat anders doet, dan zet je het in de <em>achtergrond</em>.</p>
+      <div class="cmd"><span class="comment"># & aan het eind = meteen in achtergrond starten</span>
+sleep 300 &amp;
+<span class="out"># [1] 1676    ← job-nummer + PID</span>
+
+<span class="comment"># welke jobs heeft deze shell op de achtergrond?</span>
+jobs
+<span class="out"># [1]+  Running    sleep 300 &</span>
+
+<span class="comment"># haal job 1 terug naar voorgrond</span>
+fg %1
+<span class="out"># shell is weer geblokkeerd door sleep ...</span>
+
+<span class="comment"># pauzeer het voorgrondproces met Ctrl+Z</span>
+<span class="comment"># ^Z → [1]+  Stopped    sleep 300</span>
+
+<span class="comment"># laat het verder draaien, maar in de achtergrond</span>
+bg %1</div>
+      <div class="concept-box">
+        <strong>De cyclus visueel</strong>
+        Start (voorgrond) → <kbd>Ctrl+Z</kbd> → <em>gestopt</em> → <code>bg</code> → <em>draait in achtergrond</em> → <code>fg</code> → terug voorgrond → klaar.
+        <br><br>
+        <strong>job-nummer vs PID:</strong> <code>jobs</code> geeft een lokaal nummer (<code>%1</code>, <code>%2</code>) dat alleen in <em>deze</em> shell geldt. Een PID is systeembreed uniek. <code>fg %1</code> en <code>fg 1676</code> doen hetzelfde voor een proces in jouw shell.
+      </div>
+      <div class="warn-note">
+        <strong>Achtergrondjobs en je shell:</strong> sluit je je terminal, dan stoppen achtergrondjobs standaard mee (SIGHUP). Wil je een proces dat een logout overleeft, gebruik dan <code>nohup commando &amp;</code>, of beter nog <code>systemd-run --user</code> of een <code>screen</code>/<code>tmux</code>-sessie.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je kan een <code>sleep</code> achter elkaar starten (&amp;), terughalen (fg), pauzeren (Ctrl+Z) en hervatten (bg). <code>jobs</code> toont de huidige status.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t4">
+    <div class="task-header" onclick="toggleTask('t4')">
+      <div class="task-check" onclick="toggleCheck(event,'t4')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-proc">nice</span> Taak 04</div>
+        <div class="task-title"><code>nice</code> en <code>renice</code>: CPU-prioriteit regelen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Elke proces krijgt een <strong>nice-waarde</strong> die zijn voorrang op de CPU bepaalt. Het bereik is <code>-20</code> tot <code>+19</code>. Lager = hogere prioriteit (egoïstischer); hoger = lagere prioriteit ("aardiger" voor anderen).</p>
+
+      <div class="nice-scale">
+        <h3>De nice-schaal — lager = meer voorrang</h3>
+        <div class="scale-labels">
+          <span>-20 (hoogste prio)</span><span>0 (default)</span><span>+19 (laagste prio)</span>
+        </div>
+        <div class="scale-bar">
+          <div class="scale-seg hi">enkel root</div>
+          <div class="scale-seg zero">0</div>
+          <div class="scale-seg lo">iedereen mag</div>
+        </div>
+        <div class="scale-note">
+          <b>Gewone gebruiker:</b> kan enkel nice-waarde verhogen (0 → 19), niet verlagen.<br>
+          <b>Root:</b> kan elk proces beide kanten op zetten (-20 → 19).
+        </div>
+      </div>
+
+      <div class="cmd"><span class="comment"># een proces starten MET een nice-waarde</span>
+nice -n 10 sleep 300 &amp;
+ps -o pid,nice,comm
+<span class="out"># PID  NI COMMAND</span>
+<span class="out"># 1679 10 sleep</span>
+
+<span class="comment"># de nice-waarde van een DRAAIEND proces aanpassen</span>
+sudo renice -n -5 -p 1679
+<span class="out"># 1679 (process ID): oude prioriteit is 10, nieuwe prioriteit is -5</span></div>
+      <div class="concept-box">
+        <strong>Waarom een proces "nice" maken?</strong>
+        Een lange, niet-urgente taak (een back-up, een grote videoconversie) wil je niet je interactieve werk laten vertragen. Geef hem nice <code>+10</code> of <code>+15</code> en hij krijgt enkel CPU als niemand anders ze gebruikt. Een latentie-gevoelige dienst (audio, real-time) kan je als root juist <code>-5</code> meegeven. <strong>Wees voorzichtig met negatieve waarden:</strong> ze kunnen systeemdaemons en je shell vertragen.
+      </div>
+      <div class="warn-note">
+        <strong>Asymmetrie voor gewone gebruikers:</strong> jij kan een <em>eigen</em> proces wel "minder belangrijk" maken (nice verhogen), maar je kan het niet meer terugdraaien naar een lagere waarde dan je het hebt gezet. Enkel root mag nice <em>verlagen</em>. Dit voorkomt dat een gewone gebruiker zijn programma's voorrang kan geven op systeemtaken.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>ps -o pid,nice,comm</code> toont de NI-kolom met je gewenste waarde. Een gewone gebruiker krijgt "permission denied" bij <code>renice -n -1</code>; met <code>sudo</code> lukt het wel.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 3: KILL/SIGNALEN =================== -->
+  <div class="section-title">Deel 3 — Processen beëindigen (en pauzeren)</div>
+
+  <div class="task-card" id="t5">
+    <div class="task-header" onclick="toggleTask('t5')">
+      <div class="task-check" onclick="toggleCheck(event,'t5')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-signal">kill</span> Taak 05</div>
+        <div class="task-title"><code>kill</code>, <code>killall</code> en het hele palet aan signalen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>"Kill" is misleidend: het commando stuurt eigenlijk een <em>signaal</em> naar een proces. Sommige signalen vragen netjes "wil je stoppen?", andere forceren onmiddellijk de dood. Daar zit het meeste leerwerk.</p>
+      <div class="cmd"><span class="comment"># standaard signaal = SIGTERM (15) — "stop netjes als je kan"</span>
+kill 1679
+
+<span class="comment"># SIGKILL (9) — niet te negeren, niet op te vangen</span>
+kill -9 1679
+
+<span class="comment"># killall stuurt naar ALLE processen met die naam</span>
+killall nano
+
+<span class="comment"># signaal met naam in plaats van nummer (gelijkwaardig)</span>
+kill -SIGTERM 1679
+kill -SIGKILL 1679</div>
+
+      <table class="sig-table">
+        <thead><tr><th>Signaal</th><th>Nr.</th><th>Wat het doet</th></tr></thead>
+        <tbody>
+          <tr><td class="sig">SIGHUP</td><td class="num">1</td><td class="use">"Herlaad je config" — of: je terminal is weg. Veel daemons interpreteren dit als "lees config opnieuw".</td></tr>
+          <tr><td class="sig">SIGINT</td><td class="num">2</td><td class="use">Onderbreek — het signaal van <kbd>Ctrl+C</kbd>.</td></tr>
+          <tr><td class="sig">SIGKILL</td><td class="num">9</td><td class="use">Onmiddellijk + onvoorwaardelijk doden. Kan <em>niet</em> opgevangen of genegeerd worden.</td></tr>
+          <tr><td class="sig">SIGTERM</td><td class="num">15</td><td class="use"><b>Standaard van <code>kill</code></b>. "Sluit netjes af." Proces krijgt kans om op te ruimen.</td></tr>
+          <tr><td class="sig">SIGSTOP</td><td class="num">19</td><td class="use">Pauzeer het proces — niet te negeren. Geen <code>kill</code>, maar een echte vriespauze.</td></tr>
+          <tr><td class="sig">SIGTSTP</td><td class="num">20</td><td class="use">Terminal stop — het signaal van <kbd>Ctrl+Z</kbd>. Vriendelijker variant van SIGSTOP.</td></tr>
+          <tr><td class="sig">SIGCONT</td><td class="num">18</td><td class="use">Hervat een gepauzeerd proces.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="concept-box">
+        <strong>SIGTERM vs SIGKILL — gebruik altijd eerst de zachte</strong>
+        <code>kill PID</code> (= SIGTERM) geeft het proces de kans om openstaande bestanden te flushen, verbindingen netjes te sluiten, tijdelijke bestanden op te ruimen. Een database die je met <code>kill -9</code> doodt, kan corrupte data achterlaten. Gebruik <code>-9</code> alleen als <code>kill</code> niet helpt.
+      </div>
+      <div class="info-note">
+        <strong>ℹ Alle signalen op je systeem:</strong> <code>kill -l</code> toont de volledige lijst. Nummers kunnen ietsje verschillen tussen Unix-varianten, dus deze lijst is je referentie voor de actieve machine.
+      </div>
+      <div class="warn-note">
+        <strong>SIGSTOP/SIGCONT is geen kill:</strong> SIGSTOP <em>bevriest</em> het proces alsof iemand op pauze heeft gedrukt — het verbruikt geen CPU, maar leeft nog. Pas met SIGCONT speelt het verder. Probeer dit zelf met <code>gedit</code>: open gedit, doe in een andere terminal <code>kill -SIGSTOP &lt;PID&gt;</code>, typ in gedit (niets verschijnt), dan <code>kill -SIGCONT &lt;PID&gt;</code> — al je toetsaanslagen komen plots tevoorschijn.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>kill -l</code> lijst alle signalen op. Je begrijpt het verschil tussen SIGTERM (vragen), SIGKILL (forceren) en SIGSTOP (pauzeren).
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 4: PROCESS EXAM =================== -->
+  <div class="section-title">Deel 4 — Examenoefeningen: processen</div>
+
+  <div class="task-card" id="t6">
+    <div class="task-header" onclick="toggleTask('t6')">
+      <div class="task-check" onclick="toggleCheck(event,'t6')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 06</div>
+        <div class="task-title">Oefeningen 1–6: oplijsten, sorteren, top, killen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+
+      <p><strong>Oef 1.</strong> Lijst alle processen op met volledige kolommen, pipe naar <code>less</code>.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a6a')">👁 Toon aanpak Oef 1</button>
+      </div>
+      <div class="answer-box" id="a6a">
+        <div class="cmd">ps aux | less</div>
+        <p><code>aux</code> = <strong>a</strong>lle processen (ook van andere users) + extended <strong>u</strong>ser-kolommen + ook die zonder controlling <strong>x</strong>-terminal (daemons). <code>less</code> opent een pager waarin je kan scrollen met pijltjes/PgUp/PgDn, zoeken met <code>/term</code>, afsluiten met <code>q</code>.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 2.</strong> Lijst alle processen op, gesorteerd per gebruiker, naar <code>less</code>.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h6b')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a6b')">👁 Toon aanpak Oef 2</button>
+      </div>
+      <div class="hint-box" id="h6b">
+        De <code>--sort</code>-optie van <code>ps</code> accepteert kolomnamen. Hoe heet de user-kolom?
+      </div>
+      <div class="answer-box" id="a6b">
+        <div class="cmd">ps aux --sort=user | less</div>
+        <p>Geen min-teken vooraan, dus alfabetisch oplopend (a→z). Wil je z→a: <code>--sort=-user</code>.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 3.</strong> Lijst alle processen op met enkel: PID, user, nice-waarde, commando.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h6c')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a6c')">👁 Toon aanpak Oef 3</button>
+      </div>
+      <div class="hint-box" id="h6c">
+        <code>-o</code> = output format. Geef de gewenste kolomnamen met komma's gescheiden: <code>pid,user,nice,comm</code>. Gebruik <code>-e</code> om <em>alle</em> processen te krijgen (anders krijg je enkel die van je shell).
+      </div>
+      <div class="answer-box" id="a6c">
+        <div class="cmd">ps -eo pid,user,nice,comm</div>
+        <p><code>-e</code> = <em>every</em> proces, <code>-o</code> = output enkel deze kolommen. Tip: <code>comm</code> toont het commando zonder argumenten; <code>cmd</code> (of <code>args</code>) toont het volledige commando.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 4.</strong> Start <code>top</code>, sorteer eerst op CPU, dan op geheugen.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a6d')">👁 Toon aanpak Oef 4</button>
+      </div>
+      <div class="answer-box" id="a6d">
+        <p>Druk <code>top</code> → daarna <kbd>P</kbd> (sorteren op <strong>P</strong>rocessor/CPU, standaard al actief) → vervolgens <kbd>M</kbd> (sorteren op <strong>M</strong>emory). Afsluiten: <kbd>q</kbd>.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 5.</strong> Start <code>nano</code> in de achtergrond als jezelf (niet als root). Gebruik <code>top</code> om dit proces te stoppen.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h6e')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a6e')">👁 Toon aanpak Oef 5</button>
+      </div>
+      <div class="hint-box" id="h6e">
+        Achtergrond = <code>&amp;</code>. Binnen <code>top</code>: <kbd>k</kbd> vraagt om een PID en signaal.
+      </div>
+      <div class="answer-box" id="a6e">
+        <div class="cmd">nano &amp;
+<span class="out"># [1] 12345</span>
+top</div>
+        <p>In <code>top</code>: druk <kbd>k</kbd> → tik de PID (<code>12345</code>) → <kbd>Enter</kbd> → tik signaal (laat leeg of <code>15</code> voor SIGTERM) → <kbd>Enter</kbd>. Het nano-proces is weg.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 6.</strong> Start <code>nano</code> 20 keer in de achtergrond. Stop ze allemaal met één commando.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h6f')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a6f')">👁 Toon aanpak Oef 6</button>
+      </div>
+      <div class="hint-box" id="h6f">
+        Bash heeft een <code>for</code>-loop, en er bestaat een commando dat alle processen met een bepaalde naam in één klap stopt.
+      </div>
+      <div class="answer-box" id="a6f">
+        <div class="cmd"><span class="comment"># 20 nano-processen starten</span>
+for i in {1..20}; do nano &amp; done
+jobs | wc -l        <span class="comment"># controleer: 20</span>
+
+<span class="comment"># allemaal tegelijk stoppen op naam</span>
+killall nano</div>
+        <p><code>killall</code> stuurt standaard SIGTERM naar élk proces met die naam. Voorzichtig: <em>elk</em> nano sterft, ook eventueel echt werk-in-uitvoering.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="task-card" id="t7">
+    <div class="task-header" onclick="toggleTask('t7')">
+      <div class="task-check" onclick="toggleCheck(event,'t7')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 07</div>
+        <div class="task-title">Oefeningen 7–11: nice/renice + SIGSTOP/SIGCONT</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+
+      <p><strong>Oef 7.</strong> Start <code>nano</code> met nice-waarde <code>5</code>, als gewone gebruiker.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a7a')">👁 Toon aanpak Oef 7</button>
+      </div>
+      <div class="answer-box" id="a7a">
+        <div class="cmd">nice -n 5 nano &amp;
+ps -o pid,nice,comm
+<span class="out">#   PID  NI COMMAND</span>
+<span class="out"># 12345   5 nano</span></div>
+        <p>Positieve waarde → werkt zonder <code>sudo</code> (je verlaagt prioriteit, mag iedereen).</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 8.</strong> Verander de nice-waarde van dat <code>nano</code>-proces naar <code>7</code>. Controleer.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a7b')">👁 Toon aanpak Oef 8</button>
+      </div>
+      <div class="answer-box" id="a7b">
+        <div class="cmd"><span class="comment"># renice mag (waarde verhogen, eigen proces)</span>
+renice -n 7 -p 12345
+ps -o pid,nice,comm -p 12345</div>
+        <p>Van 5 → 7 = verhogen (= minder prioriteit). Mag zonder sudo, want je gaat de "verkeerde" kant op vanuit het perspectief van de gebruiker.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 9.</strong> Verander de nice-waarde van datzelfde <code>nano</code> naar <code>-7</code>. Controleer.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h7c')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a7c')">👁 Toon aanpak Oef 9</button>
+      </div>
+      <div class="hint-box" id="h7c">
+        Negatieve nice-waarde = méér prioriteit = enkel root mag.
+      </div>
+      <div class="answer-box" id="a7c">
+        <div class="cmd">sudo renice -n -7 -p 12345
+ps -o pid,nice,comm -p 12345
+<span class="out">#   PID  NI COMMAND</span>
+<span class="out"># 12345  -7 nano</span></div>
+        <p>Zonder <code>sudo</code>: "permission denied". Met sudo: lukt, want root mag elke kant op. Dit toont meteen de asymmetrische regel uit Taak 4.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 10.</strong> Start <code>gedit</code>, gebruik <code>kill</code> om het te pauzeren. Probeer te typen — er gebeurt niets.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h7d')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a7d')">👁 Toon aanpak Oef 10</button>
+      </div>
+      <div class="hint-box" id="h7d">
+        "Pauzeren" = SIGSTOP (niet doden). Welk signaalnummer is dat?
+      </div>
+      <div class="answer-box" id="a7d">
+        <div class="cmd"><span class="comment"># start gedit (in achtergrond, anders blokkeert het je shell)</span>
+gedit &amp;
+<span class="out"># [1] 23456</span>
+
+<span class="comment"># pauzeer met SIGSTOP (= signaal 19)</span>
+kill -SIGSTOP 23456
+<span class="comment"># of: kill -19 23456</span></div>
+        <p>gedit is nu "bevroren": het bestaat nog, maar reageert niet. Klik in gedit en typ wat — er gebeurt niets, want het proces verwerkt geen events. <code>ps -o pid,stat,comm -p 23456</code> toont de <code>T</code>-status (stopped).</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 11.</strong> Gebruik <code>killall</code> om <code>gedit</code> te hervatten. De getypte tekst verschijnt opeens.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h7e')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a7e')">👁 Toon aanpak Oef 11</button>
+      </div>
+      <div class="hint-box" id="h7e">
+        "Hervatten" = SIGCONT.
+      </div>
+      <div class="answer-box" id="a7e">
+        <div class="cmd">killall -SIGCONT gedit
+<span class="comment"># of: killall -18 gedit</span>
+<span class="comment"># of: kill -SIGCONT 23456</span></div>
+        <p>De getypte tekst — die het OS in de input-buffer had bewaard — wordt nu in één klap verwerkt en verschijnt. Mooi bewijs dat SIGSTOP de tijd letterlijk stilzet voor dat proces.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <div class="part-banner b">
+    PART B · Logging
+    <span class="pb-sub">journald, rsyslog, logger, logrotate — terugzien wat er gebeurd is</span>
+  </div>
+
+  <!-- LOGGING ARCHITECTURE -->
+  <div class="log-arch">
+    <h3>🔌 De RHEL log-pipeline</h3>
+    <div class="arch-row">
+      <div class="arch-node src">
+        <div class="an-name">kernel · services · apps</div>
+        <div class="an-desc">Sturen meldingen via <code>/dev/log</code>, sockets of de syslog-API.</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node jd">
+        <div class="an-name">systemd-journald</div>
+        <div class="an-desc">Verzamelt alles. Binaire DB (<code>/var/log/journal/</code>). Snel filterbaar via <code>journalctl</code>.</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node rs">
+        <div class="an-name">rsyslog</div>
+        <div class="an-desc">Krijgt events van journald. Schrijft klassieke tekstlogs.</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node out">
+        <div class="an-name">/var/log/*</div>
+        <div class="an-desc"><code>messages</code>, <code>secure</code>, <code>cron</code>, <code>maillog</code>, <code>boot.log</code>, …</div>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:0.8rem;margin-top:0.9rem;line-height:1.55;text-align:center">
+      <code>journald</code> verzamelt, <code>rsyslog</code> verspreidt naar tekstbestanden. Beide tegelijk: voor snel filteren gebruik je <code>journalctl</code>, voor read-only forensics op een kapotte schijf zijn de tekstbestanden in <code>/var/log</code> handiger.
+    </p>
+  </div>
+
+  <!-- =================== DEEL 5: JOURNALD =================== -->
+  <div class="section-title">Deel 5 — journald &amp; journalctl</div>
+
+  <div class="task-card" id="t8">
+    <div class="task-header" onclick="toggleTask('t8')">
+      <div class="task-check" onclick="toggleCheck(event,'t8')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-jd">journald</span> Taak 08</div>
+        <div class="task-title">journald: status + persistent vs volatile storage</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p><code>systemd-journald</code> is de service die alles verzamelt. Check eerst dat hij draait, dan bekijk je waar logs bewaard worden.</p>
+      <div class="cmd">systemctl status systemd-journald</div>
+      <div class="concept-box">
+        <strong>Volatile vs persistent</strong>
+        De belangrijkste optie heet <code>Storage=</code> in <code>journald.conf</code>:
+        <ul style="margin-top:0.3rem">
+          <li><code>volatile</code> — logs enkel in RAM (<code>/run/log/journal</code>). Verdwijnen bij reboot. Snel maar geen geheugen.</li>
+          <li><code>persistent</code> — logs op schijf (<code>/var/log/journal</code>). Blijven bewaard.</li>
+          <li><code>auto</code> (default op RHEL) — persistent <em>als</em> <code>/var/log/journal</code> bestaat, anders volatile. Dus: zorg dat die map bestaat.</li>
+        </ul>
+      </div>
+      <div class="cmd"><span class="comment"># bestaat de persistente map?</span>
+ls -ld /var/log/journal
+
+<span class="comment"># bestaat hij niet? aanmaken + journald herstarten</span>
+sudo mkdir -p /var/log/journal
+sudo systemctl restart systemd-journald
+
+<span class="comment"># config aanpassen — kopieer eerst de standaard naar /etc</span>
+sudo cp /usr/lib/systemd/journald.conf /etc/systemd/journald.conf
+sudo nano /etc/systemd/journald.conf</div>
+      <div class="conf-block"><span class="key">Storage</span>=<span class="val">persistent</span>
+<span class="comment"># haal de # voor de regel weg om de waarde te activeren</span></div>
+      <div class="info-note">
+        <strong>ℹ Drie configniveaus voor systemd-services:</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>/usr/lib/systemd/journald.conf</code> — pakketstandaard. <em>Nooit</em> bewerken (overschreven bij update).</li>
+          <li><code>/etc/systemd/journald.conf</code> — jouw wijzigingen, één bestand voor alles.</li>
+          <li><code>/etc/systemd/journald.conf.d/*.conf</code> — drop-ins per afzonderlijke wijziging. Schoner als je veel aanpassingen doet.</li>
+        </ul>
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>systemctl status systemd-journald</code> → <code>active (running)</code>. <code>ls /var/log/journal/</code> toont een directory per machine-ID; logs overleven nu een reboot.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t9">
+    <div class="task-header" onclick="toggleTask('t9')">
+      <div class="task-check" onclick="toggleCheck(event,'t9')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-jd">journalctl</span> Taak 09</div>
+        <div class="task-title">Filteren met <code>journalctl</code>: -u, -b, -p, --since, -x, -f</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Het systeemlogboek is enorm. De kunst is filteren. Eerst de anatomie van een logregel:</p>
+      <div class="log-block"><span class="ts">dec 10 18:12:05</span> <span class="host">ServerXX</span> <span class="prog">gnome-shell[1784]:</span> Detected async api for thumbnails</div>
+      <ul style="font-size:0.85rem;color:var(--muted);margin:0.5rem 0 0.75rem 1.25rem;line-height:1.65">
+        <li><strong>tijdstempel</strong> — wanneer.</li>
+        <li><strong>hostname</strong> — welke machine.</li>
+        <li><strong>proces[PID]</strong> — welk programma genereerde de regel.</li>
+        <li><strong>bericht</strong> — de eigenlijke melding.</li>
+      </ul>
+
+      <div class="concept-box">
+        <strong>De zes filteropties die je echt nodig hebt</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>-e</code> / <code>--pager-end</code> — spring meteen naar het einde (recentste). Bijna altijd gebruiken.</li>
+          <li><code>-u UNIT</code> — enkel events van één service: <code>journalctl -u sshd</code> (Tab-completion werkt!).</li>
+          <li><code>-b</code> — alleen sinds laatste boot. <code>-b -1</code> = vorige boot, <code>-b -2</code> = die ervoor. <code>--list-boots</code> toont een overzicht.</li>
+          <li><code>-p PRIO</code> — enkel events van die prioriteit of hoger (zie Taak 11). <code>journalctl -p warning -b</code>.</li>
+          <li><code>--since</code> / <code>--until</code> — tijdsbereik: <code>--since "2025-04-27 09:00"</code>, <code>--since yesterday</code>, <code>--since "5 hours ago"</code>.</li>
+          <li><code>-x</code> — voeg extra uitleg (catalog) toe aan elke regel, indien beschikbaar.</li>
+          <li><code>-f</code> — <em>follow</em>: live updates, zoals <code>tail -f</code>. Stop met <kbd>Ctrl+C</kbd>.</li>
+          <li><code>--dmesg</code> — enkel kernel-berichten.</li>
+        </ul>
+      </div>
+
+      <div class="cmd"><span class="comment"># de klassieke "wat is er gisteren misgegaan met ssh"</span>
+sudo journalctl -u sshd --since yesterday
+
+<span class="comment"># services die crashten sinds deze boot</span>
+sudo journalctl -p err -b
+
+<span class="comment"># live volgen tijdens troubleshooting</span>
+sudo journalctl -f
+
+<span class="comment"># 5 regels van NetworkManager, drie boots geleden</span>
+sudo journalctl -u NetworkManager -b -3 -n 5 --no-pager
+
+<span class="comment"># events binnen één dag</span>
+sudo journalctl --since "2025-04-27" --until "2025-04-28"</div>
+
+      <div class="info-note">
+        <strong>ℹ Wie ziet wat?</strong> Root ziet alles, gewone gebruikers vooral hun eigen processen. Wil je een gewone gebruiker volledig inzage geven (zonder sudo)? Voeg hem toe aan de <code>systemd-journal</code>-groep:
+        <div class="cmd" style="margin-top:0.4rem">sudo usermod -aG systemd-journal student</div>
+      </div>
+      <div class="info-note">
+        <strong>ℹ Geldige tijdsformaten</strong> voor <code>--since</code>/<code>--until</code>: <code>"2022-11-23 23:02:15"</code>, <code>"2022-09-01"</code>, <code>"12:00"</code>, <code>now</code>, <code>today</code>, <code>yesterday</code>, <code>"5 hours ago"</code>, <code>"-5 min"</code>.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je kan de logs van sshd sinds gisteren tonen, errors in deze boot vinden, en live nieuwe events volgen. Tab-completion na <code>-u </code> toont een lijst van services.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t10">
+    <div class="task-header" onclick="toggleTask('t10')">
+      <div class="task-check" onclick="toggleCheck(event,'t10')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-prio">Prioriteit</span> Taak 10</div>
+        <div class="task-title">De 8 prioriteitsniveaus — wat is "normaal" en wat is "brandend"</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Elke logregel krijgt een <strong>severity level</strong>, van bijna-niets tot ramp. Bij <code>journalctl -p X</code> krijg je alles vanaf dat niveau <em>en hoger</em>.</p>
+
+      <div class="pyramid">
+        <h3>Van triviaal naar catastrofaal</h3>
+        <div class="level l0"><span class="num">7</span><span class="nm">debug</span><span class="desc">Zeer gedetailleerde info — alleen relevant bij actieve foutopsporing.</span></div>
+        <div class="level l1"><span class="num">6</span><span class="nm">info</span><span class="desc">Normale operationele meldingen. "Service gestart."</span></div>
+        <div class="level l2"><span class="num">5</span><span class="nm">notice</span><span class="desc">Opvallend maar niet fout. "Config herladen."</span></div>
+        <div class="level l3"><span class="num">4</span><span class="nm">warning</span><span class="desc">Iets klopt niet helemaal. <strong>Goede startfilter bij troubleshooting.</strong></span></div>
+        <div class="level l4"><span class="num">3</span><span class="nm">err</span><span class="desc">Fout, maar service draait nog. "Kan bestand niet schrijven."</span></div>
+        <div class="level l5"><span class="num">2</span><span class="nm">crit</span><span class="desc">Ernstige fout in een belangrijk onderdeel.</span></div>
+        <div class="level l6"><span class="num">1</span><span class="nm">alert</span><span class="desc">Onmiddellijke actie nodig.</span></div>
+        <div class="level l7"><span class="num">0</span><span class="nm">emerg</span><span class="desc">Systeem onbruikbaar. <code>*.emerg :omusrmsg:*</code> = stuur het naar elke ingelogde user.</span></div>
+      </div>
+
+      <div class="cmd"><span class="comment"># standaard troubleshoot-filter: warning en erger</span>
+sudo journalctl -p warning -b
+
+<span class="comment"># zwaarste alleen</span>
+sudo journalctl -p crit -b
+
+<span class="comment"># één voorbeeld: sudo zonder rechten genereert een 'notice'</span>
+journalctl | grep "NOT in sudoers"</div>
+      <div class="log-block"><span class="ts">dec 10 01:54:59</span> <span class="host">ServerXX</span> <span class="prog">sudo[5753]:</span> <span class="warn">jacob : user NOT in sudoers</span> ; TTY=pts/0 ; PWD=/home/student ; COMMAND=/usr/sbin/useradd jef</div>
+      <div class="concept-box">
+        <strong>Kleurweergave in journalctl</strong>
+        Veel terminal-themes kleuren automatisch:
+        <ul style="margin-top:0.3rem">
+          <li><span style="color:var(--muted)">grijs/wit</span> — debug, info, notice (de ruis)</li>
+          <li><span style="color:var(--warn)">geel</span> — warning</li>
+          <li><span style="color:var(--danger)">rood</span> — err, crit, alert, emerg (waar je naar zoekt)</li>
+        </ul>
+        Bij een storing scan je dus eerst op rode regels.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>journalctl -p err -b</code> toont enkel error en zwaarder. <code>journalctl -p debug</code> toont werkelijk alles (vaak duizenden regels).
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 6: RSYSLOG =================== -->
+  <div class="section-title">Deel 6 — rsyslog: de tekstlogs in /var/log</div>
+
+  <div class="task-card" id="t11">
+    <div class="task-header" onclick="toggleTask('t11')">
+      <div class="task-check" onclick="toggleCheck(event,'t11')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-rs">rsyslog</span> Taak 11</div>
+        <div class="task-title">De klassieke logbestanden in <code>/var/log/</code></div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p><code>rsyslog</code> krijgt events van <code>journald</code> en schrijft ze naar tekstbestanden. Waarom <em>ook</em> tekst, als journald al alles in een DB heeft? Omdat tekst altijd leesbaar is — zelfs als je de harddisk uit een kapotte server haalt en in een andere machine prikt, kan je <code>less /var/log/messages</code> doen. Met een binaire journald-DB lukt dat niet zo makkelijk.</p>
+      <div class="cmd">ls -l /var/log/</div>
+      <div class="concept-box">
+        <strong>De vier bestanden die je moet kennen op RHEL</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>/var/log/messages</code> — algemene systeemmeldingen.</li>
+          <li><code>/var/log/secure</code> — authenticatie &amp; beveiliging: SSH-logins, sudo-gebruik, mislukte authenticatie. <strong>Eerste plek bij een hack-vermoeden.</strong></li>
+          <li><code>/var/log/cron</code> — geplande taken (wat draaide, wanneer, met welke output).</li>
+          <li><code>/var/log/boot.log</code> — meldingen tijdens de opstart.</li>
+        </ul>
+      </div>
+      <div class="cmd"><span class="comment"># bestanden zijn niet wereldleesbaar — gebruik sudo</span>
+sudo less /var/log/secure
+sudo tail -20 /var/log/messages
+
+<span class="comment"># mislukte SSH-pogingen vinden</span>
+sudo grep "Failed password" /var/log/secure
+
+<span class="comment"># sudo-gebruik bekijken</span>
+sudo grep sudo /var/log/secure</div>
+      <div class="log-block"><span class="ts">Dec 10 01:54:59</span> <span class="host">ServerXX</span> <span class="prog">sudo:</span> <span class="warn">jacob : user NOT in sudoers</span> ; TTY=pts/0 ; PWD=/home/student ; COMMAND=/usr/sbin/useradd jef
+<span class="ts">Dec 10 18:36:26</span> <span class="host">ServerXX</span> <span class="prog">sudo:</span> <span class="ok">student : TTY=pts/0</span> ; COMMAND=/usr/bin/dnf install tree</div>
+      <div class="info-note">
+        <strong>ℹ Welk gereedschap voor welke vraag?</strong> Weet je het keyword waarop je zoekt → <code>grep</code> in <code>/var/log/secure</code> is snel. Weet je het niet → <code>journalctl</code> met filters (per service, per tijd) is efficiënter. In de praktijk gebruik je beide door elkaar.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>ls /var/log/</code> toont in elk geval <code>messages</code>, <code>secure</code>, <code>cron</code>. Je vindt je eigen sudo-gebruik terug in <code>/var/log/secure</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t12">
+    <div class="task-header" onclick="toggleTask('t12')">
+      <div class="task-check" onclick="toggleCheck(event,'t12')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-rs">rsyslog</span> Taak 12</div>
+        <div class="task-title">rsyslog.conf: facilities × prioriteiten = bestemming</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Wat komt in welk bestand terecht? Dat wordt geregeld in <code>/etc/rsyslog.conf</code> in de sectie <code>#### RULES ####</code>. Elke regel matcht op <strong>facility.priority</strong> en routeert naar een bestand (of remote host).</p>
+      <div class="cmd">sudo nano /etc/rsyslog.conf</div>
+      <div class="conf-block"><span class="comment">#### RULES ####</span>
+
+<span class="comment"># Log alles vanaf 'info', behalve mail/authpriv/cron, naar /var/log/messages</span>
+<span class="facility">*</span>.<span class="pri">info</span>;<span class="facility">mail</span>.none;<span class="facility">authpriv</span>.none;<span class="facility">cron</span>.none   <span class="path">/var/log/messages</span>
+
+<span class="comment"># Authenticatie- en beveiligingsberichten gaan naar /var/log/secure</span>
+<span class="facility">authpriv</span>.<span class="pri">*</span>                                          <span class="path">/var/log/secure</span>
+
+<span class="comment"># Alle mail-events</span>
+<span class="facility">mail</span>.<span class="pri">*</span>                                              <span class="path">-/var/log/maillog</span>
+
+<span class="comment"># Geplande taken</span>
+<span class="facility">cron</span>.<span class="pri">*</span>                                              <span class="path">/var/log/cron</span>
+
+<span class="comment"># Noodgevallen: stuur naar elke ingelogde gebruiker</span>
+<span class="facility">*</span>.<span class="pri">emerg</span>                                            <span class="path">:omusrmsg:*</span>
+
+<span class="comment"># Boot-meldingen naar boot.log</span>
+<span class="facility">local7</span>.<span class="pri">*</span>                                            <span class="path">/var/log/boot.log</span></div>
+      <div class="concept-box">
+        <strong>De syntax in één zin</strong>
+        <code>facility.priority   bestemming</code>. Facility = <em>welke "afdeling"</em> stuurde het bericht (mail, cron, authpriv, kern, local0-7, of <code>*</code>). Priority = <em>hoe ernstig</em> (zie Taak 10), waarbij <code>*</code> alles is en <code>none</code> niets. Bestemming kan een bestand zijn, of <code>@host</code> voor een remote syslog-server, of <code>:omusrmsg:*</code> voor "stuur naar alle gebruikers".
+      </div>
+      <div class="info-note">
+        <strong>ℹ De minteken-truc:</strong> <code>-/var/log/maillog</code> (met streepje vooraan) betekent: "schrijf <em>asynchroon</em>, zonder elke regel meteen naar disk te flushen". Sneller voor logs met veel volume zoals mail. Nadeel: bij een crash kan je de laatste paar regels missen.
+      </div>
+      <div class="info-note">
+        <strong>ℹ Remote logging:</strong> de <code>@</code>-prefix stuurt naar een centrale logserver — handig in een bedrijf met veel machines:
+        <div class="cmd" style="margin-top:0.4rem"><span class="comment"># alle errors naar een centrale logserver</span>
+*.err   @logger.pxl.be       <span class="comment"># UDP</span>
+*.err   @@logger.pxl.be      <span class="comment"># TCP (betrouwbaarder)</span></div>
+      </div>
+      <div class="info-note">
+        <strong>ℹ Drop-ins:</strong> onderaan <code>rsyslog.conf</code> staat <code>include(file="/etc/rsyslog.d/*.conf" mode="optional")</code>. Bestanden in die map worden automatisch ingelezen. Voor eigen regels maak je liever <code>/etc/rsyslog.d/10-mijneigen.conf</code> dan dat je <code>/etc/rsyslog.conf</code> rechtstreeks bewerkt.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je vindt de RULES-sectie en kan voorspellen welk bestand een bepaalde melding zal ontvangen. Een SSH-login → <code>/var/log/secure</code>. Een cron-job → <code>/var/log/cron</code>. Een normale info-melding → <code>/var/log/messages</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 7: LOGGER + LOGROTATE =================== -->
+  <div class="section-title">Deel 7 — Eigen logs schrijven &amp; logs onderhouden</div>
+
+  <div class="task-card" id="t13">
+    <div class="task-header" onclick="toggleTask('t13')">
+      <div class="task-check" onclick="toggleCheck(event,'t13')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-rs">logger</span> Taak 13</div>
+        <div class="task-title"><code>logger</code>: zelf logs schrijven vanuit een script</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Wil je jouw eigen scripts of cron-jobs sporen achterlaten in het systeemlog? Het commando <code>logger</code> stuurt een bericht door <em>als ware het een echte log-event</em>, met facility, priority en al.</p>
+      <div class="cmd"><span class="comment"># simpel: bericht naar het systeemlog</span>
+logger "system going down for maintenance"
+
+<span class="comment"># controleer in journalctl</span>
+journalctl -n 5 --no-pager</div>
+      <div class="log-block"><span class="ts">dec 11 09:45:47</span> <span class="host">ServerXX</span> <span class="prog">student[34023]:</span> system going down for maintenance</div>
+      <div class="cmd"><span class="comment"># met expliciete prioriteit + tag</span>
+logger -p user.err -t backup-script "Backup of /home failed!"
+
+<span class="comment"># vaak gebruikt in scripts:</span>
+<span class="comment"># #!/bin/bash</span>
+<span class="comment"># logger -t mijnscript "Run gestart"</span>
+<span class="comment"># ... werk ...</span>
+<span class="comment"># logger -t mijnscript -p user.err "Iets ging mis"</span></div>
+      <div class="concept-box">
+        <strong>Waarom is dit handig?</strong>
+        Scripts die ergens 's nachts in cron draaien moeten <em>ergens</em> hun sporen achterlaten. Schrijven naar een eigen tekstbestand kan, maar dan zoek je later op tien plekken. Met <code>logger</code> komt het in het systeemlog en kan je het filteren met <code>journalctl -t mijnscript</code> of <code>grep mijnscript /var/log/messages</code>. Eén centrale plek voor diagnose.
+      </div>
+      <div class="info-note">
+        <strong>ℹ Format:</strong> <code>logger -p facility.priority -t tag "bericht"</code>. Tags zoals <code>backup-script</code> maken het later makkelijk filteren. Veelgebruikte facilities voor eigen scripts: <code>user</code>, <code>local0</code> tot <code>local7</code>.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Na <code>logger "test123"</code> vind je het terug met <code>journalctl | grep test123</code> én in <code>/var/log/messages</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t14">
+    <div class="task-header" onclick="toggleTask('t14')">
+      <div class="task-check" onclick="toggleCheck(event,'t14')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-rs">logrotate</span> Taak 14</div>
+        <div class="task-title"><code>logrotate</code>: logs onderhouden zonder dat ze je schijf opvreten</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een logbestand waar nooit iets uit verwijderd wordt, groeit oneindig. Daarom draait er dagelijks een <code>logrotate</code>-cron die oude logs <em>roteert</em> (hernoemt, comprimeert) en de oudste verwijdert.</p>
+      <div class="cmd">sudo nano /etc/logrotate.conf</div>
+      <div class="conf-block"><span class="comment"># rotate log files weekly</span>
+<span class="key">weekly</span>
+
+<span class="comment"># keep 4 weeks worth of backlogs</span>
+<span class="key">rotate</span> <span class="val">4</span>
+
+<span class="comment"># create new (empty) log files after rotating old ones</span>
+<span class="key">create</span>
+
+<span class="comment"># use date as a suffix of the rotated file</span>
+<span class="key">dateext</span>
+
+<span class="comment"># uncomment if you want your log files compressed</span>
+<span class="comment">#compress</span>
+
+<span class="comment"># packages drop log rotation information into this directory</span>
+<span class="key">include</span> <span class="path">/etc/logrotate.d</span></div>
+
+      <div class="concept-box">
+        <strong>Wat doet elke directive?</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>weekly</code> — roteer wekelijks (alternatieven: <code>daily</code>, <code>monthly</code>, <code>size 100M</code>).</li>
+          <li><code>rotate 4</code> — bewaar 4 oudere versies; de 5de wordt verwijderd.</li>
+          <li><code>create</code> — maak meteen een nieuw, leeg logbestand aan met dezelfde rechten.</li>
+          <li><code>dateext</code> — geef de geroteerde bestanden een datumsuffix (<code>messages-20250428</code>) i.p.v. <code>.1</code>, <code>.2</code>, …</li>
+          <li><code>compress</code> — gzip de oude bestanden (bespaart enorm veel schijf).</li>
+          <li><code>include /etc/logrotate.d</code> — per pakket eigen regels: <code>/etc/logrotate.d/httpd</code>, <code>.../nginx</code>, <code>.../syslog</code>, …</li>
+        </ul>
+      </div>
+      <div class="cmd"><span class="comment"># bekijk wat logrotate per pakket geconfigureerd heeft</span>
+ls /etc/logrotate.d/
+
+<span class="comment"># forceer een rotate-run nu (handig om je config te testen)</span>
+sudo logrotate -fv /etc/logrotate.conf
+
+<span class="comment"># dry-run: laat zien wat ER ZOU gebeuren, zonder iets aan te raken</span>
+sudo logrotate -d /etc/logrotate.conf</div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Na <code>ls /var/log/</code> zie je bestanden zoals <code>messages-20250420</code> of <code>messages.1.gz</code> — bewijs dat rotatie werkt.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 8: LOGGING EXAM =================== -->
+  <div class="section-title">Deel 8 — Examenoefeningen: logging</div>
+
+  <div class="task-card" id="t15">
+    <div class="task-header" onclick="toggleTask('t15')">
+      <div class="task-check" onclick="toggleCheck(event,'t15')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 15</div>
+        <div class="task-title">Oefeningen 1–9: journalctl filteren</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+
+      <p><strong>Oef 1.</strong> Bekijk je systeemlogs.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a15a')">👁 Toon aanpak Oef 1</button>
+      </div>
+      <div class="answer-box" id="a15a">
+        <div class="cmd">sudo journalctl
+<span class="comment"># navigeer met pijltjes/PgUp/PgDn, zoek met /, sluit af met q</span>
+
+<span class="comment"># sneller: spring meteen naar het einde</span>
+sudo journalctl -e</div>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 2.</strong> Vind het eerste voorkomen van <em>"file system"</em> met <code>less</code>.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h15b')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a15b')">👁 Toon aanpak Oef 2</button>
+      </div>
+      <div class="hint-box" id="h15b">
+        journalctl opent standaard met de pager <code>less</code>. In <code>less</code> zoek je met <code>/</code> gevolgd door de zoekterm.
+      </div>
+      <div class="answer-box" id="a15b">
+        <div class="cmd">sudo journalctl
+<span class="comment"># druk: /file system   (en Enter)</span>
+<span class="comment"># spring naar volgend voorkomen: n   (vorige: N)</span></div>
+        <p>De pager opent bij het begin van de logs; <code>/file system</code> springt naar de eerste hit. <code>n</code> = next match. <code>q</code> sluit af.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 3.</strong> Alle log-events van <code>NetworkManager</code>.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a15c')">👁 Toon aanpak Oef 3</button>
+      </div>
+      <div class="answer-box" id="a15c">
+        <div class="cmd">sudo journalctl -u NetworkManager
+<span class="comment"># de .service mag je weglaten</span>
+<span class="comment"># tip: na -u kan je Tab-completion gebruiken</span></div>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 4.</strong> Alle logs met prioriteit <em>critical</em> of hoger.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a15d')">👁 Toon aanpak Oef 4</button>
+      </div>
+      <div class="answer-box" id="a15d">
+        <div class="cmd">sudo journalctl -p crit</div>
+        <p><code>-p crit</code> = crit én alles erger (alert + emerg). Een schone server heeft hier hopelijk weinig output.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 5.</strong> Events van de allereerste boot, geschreven naar <code>~/first_boot</code>.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h15e')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a15e')">👁 Toon aanpak Oef 5</button>
+      </div>
+      <div class="hint-box" id="h15e">
+        Gebruik <code>--list-boots</code> om de offset van de oudste boot te vinden, en redirect met <code>&gt;</code> naar een bestand.
+      </div>
+      <div class="answer-box" id="a15e">
+        <div class="cmd"><span class="comment"># overzicht van alle bewaarde boots — noteer de hoogste offset</span>
+sudo journalctl --list-boots
+
+<span class="comment"># bv. oudste = -12, dan:</span>
+sudo journalctl -b -12 &gt; ~/first_boot
+
+<span class="comment"># controleer</span>
+head -5 ~/first_boot</div>
+        <p><code>journalctl --list-boots</code> lijst alle opstartsessies met hun offset (-0 = huidige, -1 = vorige, …). Hoe ver terug je kan gaan hangt af van je storage-instelling (Taak 8).</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 6.</strong> Alle events voor de week van 26 februari.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a15f')">👁 Toon aanpak Oef 6</button>
+      </div>
+      <div class="answer-box" id="a15f">
+        <div class="cmd">sudo journalctl --since "2024-02-26" --until "2024-03-04"
+<span class="comment"># maandag t/m zondag van die week</span></div>
+        <p>Datumformaat is <code>YYYY-MM-DD</code>. Wil je ook tijd: <code>"2024-02-26 09:00"</code>. <code>--until</code> is exclusief, dus om de hele zondag mee te nemen tot <code>"2024-03-04"</code> (= maandag 00:00).</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 7.</strong> Toon minstens 20 events van <code>NetworkManager</code>.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a15g')">👁 Toon aanpak Oef 7</button>
+      </div>
+      <div class="answer-box" id="a15g">
+        <div class="cmd">sudo journalctl -u NetworkManager -n 20 --no-pager</div>
+        <p><code>-n 20</code> = laatste 20 regels. <code>--no-pager</code> = niet openen in less (handig om de output meteen te zien/te kopiëren).</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 8.</strong> Alle events van de week van 26 februari met prioriteit <em>warning</em> of hoger.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a15h')">👁 Toon aanpak Oef 8</button>
+      </div>
+      <div class="answer-box" id="a15h">
+        <div class="cmd">sudo journalctl --since "2024-02-26" --until "2024-03-04" -p warning</div>
+        <p>Combineer gewoon <code>--since</code>/<code>--until</code> met <code>-p</code> — filters stapelen.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oef 9.</strong> Alle events van de <code>auth</code>-facility (rsyslog).</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h15i')">💡 Hint</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a15i')">👁 Toon aanpak Oef 9</button>
+      </div>
+      <div class="hint-box" id="h15i">
+        Filteren op rsyslog-facility doe je met <code>SYSLOG_FACILITY=</code>. Welke nummer hoort bij <code>auth</code>? (zie <code>man journalctl</code> of een tabel: auth=4, authpriv=10).
+      </div>
+      <div class="answer-box" id="a15i">
+        <div class="cmd"><span class="comment"># auth-facility heeft nummer 4 in syslog</span>
+sudo journalctl SYSLOG_FACILITY=4
+
+<span class="comment"># authpriv (privé authenticatie) = 10</span>
+sudo journalctl SYSLOG_FACILITY=10</div>
+        <p><code>journalctl</code> ondersteunt veld-filters in de vorm <code>FIELD=value</code> (zonder streepje). Andere voorbeelden: <code>_PID=1234</code>, <code>_UID=1000</code>, <code>_HOSTNAME=ServerXX</code>. De manpage van <code>journalctl</code> en <code>systemd.journal-fields</code> heeft de volledige lijst.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="task-card" id="t16">
+    <div class="task-header" onclick="toggleTask('t16')">
+      <div class="task-check" onclick="toggleCheck(event,'t16')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 16</div>
+        <div class="task-title">Oefening 10: aparte logfile voor authpriv-info via SSH-test</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p><strong>Oef 10.</strong> Maak <code>/etc/rsyslog.d/10-myauth.conf</code> aan dat alle <code>authpriv</code>-berichten vanaf <code>info</code> opslaat in <code>/var/log/myauth</code>. Herstart rsyslog, log dan vanaf de client in via SSH met een fout wachtwoord, en controleer dat het in <code>myauth</code> staat.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h16')">💡 Hint Oef 10</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a16')">👁 Toon aanpak Oef 10</button>
+      </div>
+      <div class="hint-box" id="h16">
+        Eén configregel met de syntax <code>facility.priority   /pad/naar/log</code>. Plaats hem in <code>/etc/rsyslog.d/</code> — die map wordt automatisch ingelezen door de <code>include()</code>-regel in <code>rsyslog.conf</code>. Daarna <code>systemctl restart rsyslog</code> en test met <code>ssh student@server1</code> + opzettelijk fout wachtwoord.
+      </div>
+      <div class="answer-box" id="a16">
+        <p><strong>1. Configbestand aanmaken</strong> op de server:</p>
+        <div class="cmd">sudo nano /etc/rsyslog.d/10-myauth.conf</div>
+        <div class="conf-block"><span class="comment"># alle authpriv-berichten vanaf info-niveau</span>
+<span class="facility">authpriv</span>.<span class="pri">info</span>     <span class="path">/var/log/myauth</span></div>
+        <p><code>authpriv.info</code> = facility "authpriv", prioriteit "info" en hoger. SSH-authenticatie loopt over deze facility.</p>
+
+        <p><strong>2. rsyslog herladen</strong> zodat de nieuwe regel actief wordt:</p>
+        <div class="cmd">sudo systemctl restart rsyslog
+
+<span class="comment"># controleer dat het bestand nog niet bestaat (rsyslog maakt het bij eerste write)</span>
+ls -l /var/log/myauth 2&gt;/dev/null || echo "bestaat nog niet, normaal"</div>
+
+        <p><strong>3. Vanaf de client een SSH met fout wachtwoord:</strong></p>
+        <div class="cmd"><span class="comment"># op clientXX</span>
+ssh student@ServerXX
+<span class="comment"># tik bewust 2-3 keer een fout wachtwoord, dan Ctrl+C</span></div>
+
+        <p><strong>4. Op de server controleren:</strong></p>
+        <div class="cmd">sudo cat /var/log/myauth</div>
+        <div class="log-block"><span class="ts">May 28 14:22:01</span> <span class="host">ServerXX</span> <span class="prog">sshd[3421]:</span> <span class="warn">Failed password</span> for student from 10.10.10.10 port 51234 ssh2
+<span class="ts">May 28 14:22:01</span> <span class="host">ServerXX</span> <span class="prog">sshd[3421]:</span> <span class="warn">Failed password</span> for student from 10.10.10.10 port 51234 ssh2
+<span class="ts">May 28 14:22:05</span> <span class="host">ServerXX</span> <span class="prog">sshd[3421]:</span> Disconnected from authenticating user student 10.10.10.10 port 51234 [preauth]</div>
+        <div class="concept-box">
+          <strong>Waarom dit een nuttige skill is</strong>
+          In een echte omgeving wil je vaak <em>één specifiek soort log</em> apart hebben — bv. enkel SSH-pogingen — om makkelijker te monitoren of door te sturen naar een SIEM. Met één rsyslog-regel in een drop-in bestand voeg je die filter toe zonder de hoofdconfig te raken. Dit is exact hetzelfde patroon als <code>/etc/firewalld/zones/</code> of <code>/etc/systemd/system/</code>: <strong>nooit de hoofdconfig bewerken, altijd een eigen bestand in de <code>.d</code>-map droppen</strong>.
+        </div>
+        <div class="info-note">
+          <strong>ℹ Dezelfde events staan ook in <code>/var/log/secure</code></strong> (door de standaardregel <code>authpriv.*  /var/log/secure</code>). Je nieuwe regel <em>dupliceert</em> ze — rsyslog past élke matchende regel toe, niet enkel de eerste. Dat is anders dan bij <code>http_access</code> in Squid of bij nftables-chains.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>PXL Linux Advanced · Monitoring Lab (processen &amp; logging)</p>
+    <button class="reset-btn" onclick="resetAll()">↺ Reset voortgang</button>
+  </footer>
+
+</div>
+
+<script>
+  const TOTAL = 16;
+
+  function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
+
+  function toggleCheck(e, id) {
+    e.stopPropagation();
+    const card = document.getElementById(id);
+    card.querySelector('.task-check').classList.toggle('checked');
+    card.classList.toggle('done');
+    updateProgress();
+    onTaskToggled(check.classList.contains('checked'));
+    saveState();
+  }
+
+  function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+  function toggleAnswer(id) { document.getElementById(id).classList.toggle('show'); }
+
+  function updateProgress() {
+    const RANKS = [
+      { pct: 100, key: 'challenger', icon: '⚔️', label: 'Challenger' },
+      { pct: 100, key: 'diamond',    icon: '💠', label: 'Diamond'    },
+      { pct:  85, key: 'platinum',   icon: '🪙', label: 'Platinum'   },
+      { pct:  70, key: 'gold',       icon: '🥇', label: 'Gold'       },
+      { pct:  40, key: 'silver',     icon: '🥈', label: 'Silver'     },
+      { pct:   1, key: 'bronze',     icon: '🥉', label: 'Bronze'     },
+    ];
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = done + ' / ' + TOTAL;
+
+    const rankEl = document.getElementById('rank-display');
+    if (rankEl) {
+      const rank = RANKS.find(r => pct >= r.pct);
+      // Diamond for 100% within single lab, Challenger reserved for full suite on index
+      const labRank = rank && rank.key === 'challenger' ? RANKS[1] : rank;
+      if (labRank) {
+        rankEl.textContent = labRank.icon + ' ' + labRank.label;
+        rankEl.className = 'rank-display rank-' + labRank.key;
+      } else {
+        rankEl.textContent = '';
+        rankEl.className = 'rank-display';
+      }
+    }
+
+    // Drive progress sidebar
+    const psCount    = document.getElementById('ps-count');
+    const psTotal    = document.getElementById('ps-total');
+    const psPips     = document.getElementById('ps-pips');
+    const psRankCard = document.getElementById('ps-rank-card');
+    const psRankIcon = document.getElementById('ps-rank-icon');
+    const psRankName = document.getElementById('ps-rank-name');
+    const psRankSub  = document.getElementById('ps-rank-sub');
+    const psNext     = document.getElementById('ps-next');
+
+    if (psCount) psCount.textContent = done;
+    if (psTotal) psTotal.textContent = '/ ' + TOTAL + ' taken';
+
+    // Pips
+    if (psPips) {
+      psPips.innerHTML = '';
+      for (let i = 1; i <= TOTAL; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'ps-pip' + (i <= done ? ' done' : '');
+        psPips.appendChild(pip);
+      }
+    }
+
+    // Rank card
+    const ALL_RANKS = [
+      { pct: 100, key: 'diamond',  icon: '💠', label: 'Diamond',  sub: 'Lab voltooid!' },
+      { pct:  85, key: 'platinum', icon: '🪙', label: 'Platinum', sub: 'Bijna daar...' },
+      { pct:  70, key: 'gold',     icon: '🥇', label: 'Gold',     sub: 'Goed bezig!'  },
+      { pct:  40, key: 'silver',   icon: '🥈', label: 'Silver',   sub: 'Op dreef!'    },
+      { pct:   1, key: 'bronze',   icon: '🥉', label: 'Bronze',   sub: 'Gestart!'     },
+    ];
+    const currentRank = ALL_RANKS.find(r => pct >= r.pct);
+    const nextRank    = currentRank ? ALL_RANKS[ALL_RANKS.indexOf(currentRank) - 1] : ALL_RANKS[ALL_RANKS.length - 1];
+
+    if (psRankCard) {
+      psRankCard.className = 'ps-rank-card' + (currentRank ? ' rank-' + currentRank.key : '');
+      if (psRankIcon) psRankIcon.textContent = currentRank ? currentRank.icon : '—';
+      if (psRankName) psRankName.textContent = currentRank ? currentRank.label : 'Geen rank';
+      if (psRankSub)  psRankSub.textContent  = currentRank ? currentRank.sub  : 'Start met taken';
+    }
+
+    // Next rank preview
+    if (psNext) {
+      if (!currentRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor 🥉 Bronze';
+      } else if (nextRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        if (needed > 0) {
+          psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor ' + nextRank.icon + ' ' + nextRank.label;
+        } else {
+          psNext.innerHTML = '';
+        }
+      } else {
+        psNext.innerHTML = '';
+      }
+    }
+  }
+
+  function saveState() {
+    const state = {};
+    for (let i = 1; i <= TOTAL; i++) {
+      const card = document.getElementById('t' + i);
+      if (card) state['t' + i] = card.classList.contains('done');
+    }
+    try { localStorage.setItem('lab_monitoring_state', JSON.stringify(state)); } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('lab_monitoring_state');
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      for (const [id, done] of Object.entries(state)) {
+        if (done) {
+          const card = document.getElementById(id);
+          if (card) {
+            card.classList.add('done');
+            card.querySelector('.task-check').classList.add('checked');
+          }
+        }
+      }
+      updateProgress();
+    } catch(e) {}
+  }
+
+  function resetAll() {
+    if (!confirm('Voortgang resetten?')) return;
+    document.querySelectorAll('.task-check').forEach(c => c.classList.remove('checked'));
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('done'));
+    updateProgress();
+    try { localStorage.removeItem('lab_monitoring_state'); } catch(e) {}
+  }
+
+  /* BATCH1-GAMIFICATION */
+  // Rank level derived independently from the checked-task count.
+  // 0 = none, 1 bronze, 2 silver, 3 gold, 4 platinum, 5 diamond.
+  function currentRankLevel() {
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    if (pct >= 100) return 5;
+    if (pct >= 85)  return 4;
+    if (pct >= 70)  return 3;
+    if (pct >= 40)  return 2;
+    if (pct >= 1)   return 1;
+    return 0;
+  }
+
+  let prevRankLevel = 0;      // seeded on load so we don't animate stale state
+  let rankBaselineSet = false;
+  let sessionStreak = 0;      // in-memory only: resets when the page closes
+
+  function seedRankBaseline() {
+    prevRankLevel = currentRankLevel();
+    rankBaselineSet = true;
+  }
+
+  function checkRankTransition() {
+    const newLevel = currentRankLevel();
+    if (rankBaselineSet && newLevel > prevRankLevel) {
+      flashRankCard();
+      if (newLevel === 5) showCompletionOverlay();
+    }
+    prevRankLevel = newLevel;
+  }
+  function onTaskToggled(nowChecked) {
+    updateStreak(nowChecked);
+    checkRankTransition();
+  }
+
+  function updateStreak(nowChecked) {
+    if (nowChecked) sessionStreak++;
+    else sessionStreak = 0;   // unchecking breaks the streak
+    const el = document.getElementById('ps-streak');
+    if (!el) return;
+    if (sessionStreak >= 2) {
+      el.style.display = 'flex';
+      const num = el.querySelector('.ps-streak-num');
+      if (num) num.textContent = sessionStreak;
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  function flashRankCard() {
+    const card = document.getElementById('ps-rank-card');
+    if (!card) return;
+    card.classList.remove('rank-up');
+    void card.offsetWidth;          // force reflow so the animation can re-trigger
+    card.classList.add('rank-up');
+    setTimeout(() => card.classList.remove('rank-up'), 1000);
+  }
+
+  function showCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.add('show');
+  }
+  function closeCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.remove('show');
+  }
+
+  loadState();
+  seedRankBaseline();
+
+  /* BATCH2-STUDY-QOL */
+  // ---- clipboard with HTTP fallback (VM deploys are not secure contexts) ----
+  function writeClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('execCommand failed'));
+      } catch (err) { reject(err); }
+    });
+  }
+
+  function copyCmd(cmd, btn) {
+    const clone = cmd.cloneNode(true);
+    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
+    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    const text = clone.textContent.trim();
+    writeClipboard(text).then(() => {
+      btn.textContent = '✓ Gekopieerd';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Kopieer'; btn.classList.remove('copied'); }, 1400);
+    }).catch(() => {
+      btn.textContent = 'Mislukt';
+      setTimeout(() => { btn.textContent = 'Kopieer'; }, 1400);
+    });
+  }
+
+  // ---- mark all tasks in a section (toggles: all-done -> clears, else fills) ----
+  function tasksInSection(sectionEl) {
+    const tasks = [];
+    let el = sectionEl.nextElementSibling;
+    while (el && !el.classList.contains('section-title')) {
+      if (el.classList.contains('task-card')) tasks.push(el);
+      el = el.nextElementSibling;
+    }
+    return tasks;
+  }
+
+  function markSection(sectionEl) {
+    const tasks = tasksInSection(sectionEl);
+    if (!tasks.length) return;
+    const allDone = tasks.every(t => t.classList.contains('done'));
+    const target = !allDone;
+    tasks.forEach(t => {
+      const chk = t.querySelector('.task-check');
+      t.classList.toggle('done', target);
+      if (chk) chk.classList.toggle('checked', target);
+    });
+    updateProgress();
+    saveState();
+    checkRankTransition();   // milestone effects, but no streak change for bulk ops
+  }
+
+  // ---- keyboard navigation: J/K move, Space toggles, Esc deselects ----
+  let kbIndex = -1;
+  function kbCards() { return Array.from(document.querySelectorAll('.task-card')); }
+  function highlightKb() {
+    const cards = kbCards();
+    cards.forEach((c, i) => c.classList.toggle('kb-active', i === kbIndex));
+    if (kbIndex >= 0 && cards[kbIndex]) {
+      cards[kbIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  function handleKbNav(e) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'button' || tag === 'a' || e.target.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const cards = kbCards();
+    if (!cards.length) return;
+    const k = e.key.toLowerCase();
+    if (k === 'j') {
+      kbIndex = kbIndex < 0 ? 0 : Math.min(cards.length - 1, kbIndex + 1);
+      highlightKb(); e.preventDefault();
+    } else if (k === 'k') {
+      kbIndex = kbIndex <= 0 ? 0 : kbIndex - 1;
+      highlightKb(); e.preventDefault();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      if (kbIndex >= 0 && cards[kbIndex]) {
+        toggleCheck({ stopPropagation() {} }, cards[kbIndex].id);
+        e.preventDefault();
+      }
+    } else if (e.key === 'Escape') {
+      kbIndex = -1; highlightKb();
+    }
+  }
+
+  function initStudyQol() {
+    document.querySelectorAll('.cmd').forEach(cmd => {
+      if (cmd.querySelector('.copy-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.type = 'button';
+      btn.textContent = 'Kopieer';
+      btn.addEventListener('click', () => copyCmd(cmd, btn));
+      cmd.appendChild(btn);
+    });
+    document.querySelectorAll('.section-title').forEach(sec => {
+      if (sec.querySelector('.section-mark-all')) return;
+      const btn = document.createElement('button');
+      btn.className = 'section-mark-all';
+      btn.type = 'button';
+      btn.textContent = '✓ sectie';
+      btn.title = 'Vink alle taken in deze sectie af (of wis ze)';
+      btn.addEventListener('click', () => markSection(sec));
+      sec.appendChild(btn);
+    });
+    document.addEventListener('keydown', handleKbNav);
+  }
+
+  initStudyQol();
+</script>
+
+<div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeCompletionOverlay()">
+  <div class="lab-complete-card" onclick="event.stopPropagation()">
+    <div class="lc-icon">💠</div>
+    <div class="lc-title">Lab Voltooid!</div>
+    <div class="lc-sub">Alle taken afgevinkt — Diamond rank bereikt. Sterk werk!</div>
+    <button class="lc-close" onclick="closeCompletionOverlay()">Sluiten</button>
+  </div>
+</div>
+</body>
+</html>

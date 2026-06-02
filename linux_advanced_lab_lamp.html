@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Advanced — LAMP Lab (Nextcloud)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0f14;
+    --surface: #131b24;
+    --surface2: #1b2733;
+    --border: #2a3744;
+    --accent: #2dd4bf;
+    --accent2: #38bdf8;
+    --theme: var(--green);
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --text: #e2e8f0;
+    --muted: #7d8da0;
+    --code-bg: #0a0f14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at 15% 10%, rgba(45,212,191,0.05), transparent 40%), radial-gradient(circle at 85% 90%, rgba(167,139,250,0.05), transparent 40%);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  header {
+    border-left: 4px solid var(--theme);
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  header .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--theme); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.5rem;
+  }
+  header h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+  header p { color: var(--muted); margin-top: 0.75rem; font-size: 0.95rem; line-height: 1.6; }
+
+  .scenario-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent2); border-radius: 8px;
+    padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .scenario-box h2 { font-size: 1rem; color: var(--accent2); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .scenario-box p { color: var(--text); line-height: 1.7; font-size: 0.95rem; }
+
+  /* LAMP stack acronym diagram */
+  .stack {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .stack h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .stack-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .stack-layer { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem 0.75rem; text-align: center; }
+  .stack-letter { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .stack-name { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem; }
+  .stack-role { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+  .stack-layer.l .stack-letter { color: var(--green); }
+  .stack-layer.a .stack-letter { color: var(--orange); }
+  .stack-layer.m .stack-letter { color: var(--accent2); }
+  .stack-layer.p .stack-letter { color: var(--purple); }
+
+  /* HTTP→PHP→DB request flow */
+  .flow {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .flow h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .flow-row { display: flex; align-items: stretch; gap: 0.4rem; flex-wrap: wrap; }
+  .flow-step { flex: 1; min-width: 110px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.65rem 0.8rem; }
+  .flow-step .fname { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .flow-step .fdesc { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+  .flow-arrow { display: flex; align-items: center; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 1rem; }
+
+  /* alternative stacks */
+  .alt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.5rem; margin-bottom: 1.5rem; }
+  .alt-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.75rem 0.85rem; border-top: 3px solid var(--border);
+  }
+  .alt-card .alt-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .alt-card .alt-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+
+  .progress-bar-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-bar-wrap span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--theme), color-mix(in oklab, var(--theme), white 35%)); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
+  .progress-count { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--theme); }
+
+  .section-title {
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.75rem; margin-top: 2.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 1rem; overflow: hidden; transition: border-color 0.2s;
+  }
+  .task-card.done { border-color: var(--accent); }
+  .task-card.done .task-header { background: rgba(45,212,191,0.05); }
+
+  .task-header {
+    padding: 1rem 1.25rem; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 1rem; user-select: none; transition: background 0.15s;
+  }
+  .task-header:hover { background: var(--surface2); }
+
+  .task-check {
+    width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 5px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; cursor: pointer; margin-top: 1px;
+  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after { content: '✓'; color: #000; font-size: 13px; font-weight: 700; }
+
+  .task-meta { flex: 1; }
+  .task-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .task-title { font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+  .task-card.done .task-title { color: var(--muted); text-decoration: line-through; }
+
+  .expand-icon { color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; transition: transform 0.2s; flex-shrink: 0; margin-top: 3px; }
+  .task-card.open .expand-icon { transform: rotate(90deg); }
+
+  .task-body { display: none; padding: 0 1.25rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .task-card.open .task-body { display: block; }
+  .task-body p { color: var(--text); line-height: 1.7; font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.75rem; }
+  .task-body code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent2); }
+  .task-body ul, .task-body ol { margin: 0.5rem 0 0.75rem 1.25rem; line-height: 1.7; font-size: 0.9rem; }
+  .task-body li { margin-bottom: 0.3rem; }
+
+  .cmd {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+  .cmd .comment { color: var(--muted); }
+  .cmd .prompt { color: var(--green); }
+
+  /* apache config block */
+  .conf-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--orange);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #fed7aa; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .conf-block .comment { color: var(--muted); }
+  .conf-block .directive { color: var(--accent2); }
+  .conf-block .val { color: var(--green); }
+  .conf-block .tagname { color: var(--purple); }
+
+  /* sql block */
+  .sql-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #93c5fd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .sql-block .kw { color: var(--purple); font-weight: 700; }
+  .sql-block .str { color: var(--green); }
+  .sql-block .prompt { color: var(--orange); }
+  .sql-block .comment { color: var(--muted); }
+
+  /* php / html content block */
+  .php-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #c4b5fd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  .hint-toggle { display: none; }
+  .answer-toggle {
+    background: none; border: 1px dashed var(--border); color: var(--muted);
+    border-radius: 5px; padding: 0.4rem 0.9rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; margin-top: 0.5rem; transition: all 0.2s;
+  }
+  .answer-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hint-box {
+    display: block; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: #d4a853;
+  }
+  .hint-box.show { display: block; }
+  .hint-box strong { color: var(--warn); }
+
+  .answer-box {
+    display: none; background: rgba(45,212,191,0.04); border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: var(--text);
+  }
+  .answer-box.show { display: block; }
+  .answer-box p { margin-top: 0.5rem; }
+  .answer-box ul { margin: 0.4rem 0 0.5rem 1.2rem; }
+
+  .verify-block {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(56,189,248,0.05);
+    border: 1px solid rgba(56,189,248,0.2); border-radius: 6px; font-size: 0.82rem; line-height: 1.6;
+  }
+  .verify-block strong { font-family: 'JetBrains Mono', monospace; color: var(--accent2); display: block; margin-bottom: 0.4rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .verify-block code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  .concept-box {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 6px; font-size: 0.85rem; line-height: 1.65;
+  }
+  .concept-box strong { font-family: 'JetBrains Mono', monospace; color: var(--purple); display: block; margin-bottom: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .concept-box code { color: var(--purple); background: rgba(167,139,250,0.1); }
+
+  .warn-note {
+    background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: #fca5a5;
+  }
+  .warn-note strong { color: var(--danger); }
+
+  .info-note {
+    background: rgba(56,189,248,0.05); border: 1px solid rgba(56,189,248,0.25);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: var(--text);
+  }
+  .info-note strong { color: var(--accent2); }
+
+  .tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+    padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.4rem;
+  }
+  .tag-apache  { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-mariadb { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-php     { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-selinux { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .tag-nextcl  { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-test    { background: rgba(244,114,182,0.15); color: var(--pink); }
+  .tag-exam    { background: rgba(248,113,113,0.18); color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+  .tag-deep    { background: rgba(45,212,191,0.12); color: var(--accent); }
+
+  footer {
+    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  }
+  footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  .reset-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  @media (max-width: 600px) {
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ============ RANK ============ */
+  .rank-display {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+    padding: 0.18rem 0.55rem; border-radius: 20px; letter-spacing: 0.07em;
+    text-transform: uppercase; border: 1px solid; white-space: nowrap;
+    transition: all 0.3s ease;
+  }
+  .rank-bronze   { color: #cd7f32; border-color: #cd7f32; background: rgba(205,127,50,0.1); }
+  .rank-silver   { color: #a8b8c8; border-color: #a8b8c8; background: rgba(168,184,200,0.1); }
+  .rank-gold     { color: #fbbf24; border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .rank-platinum { color: #e2e8f0; border-color: #94a3b8; background: rgba(148,163,184,0.15); box-shadow: 0 0 8px rgba(148,163,184,0.2); }
+  .rank-diamond  { color: #7dd3fc; border-color: #7dd3fc; background: rgba(125,211,252,0.1); box-shadow: 0 0 10px rgba(125,211,252,0.25); }
+  .rank-challenger { color: #a78bfa; border-color: #a78bfa; background: rgba(167,139,250,0.12); box-shadow: 0 0 14px rgba(167,139,250,0.3); animation: pulse-glow 2s ease-in-out infinite; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(167,139,250,0.2); }
+    50%       { box-shadow: 0 0 22px rgba(167,139,250,0.45); }
+  }
+
+  /* ===== LAB NAV BAR ===== */
+  .lab-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; gap: 0.75rem;
+  }
+  .lab-nav a {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--muted); background: var(--surface);
+    transition: all 0.15s ease; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .lab-nav a:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .lab-nav .home-btn { border-color: var(--accent); color: var(--accent); }
+  .lab-nav .home-btn:hover { background: var(--accent); color: #000; }
+  .lab-nav .nav-side { min-width: 120px; }
+  .lab-nav .nav-side.right { text-align: right; justify-content: flex-end; }
+  .lab-nav .disabled { opacity: 0.25; pointer-events: none; }
+
+
+  /* ===== FLOATING SIDEBARS ===== */
+  /* Content is 1300px wide, so half = 650px. Sidebars sit 8px outside that. */
+
+  .lab-nav {
+    position: fixed;
+    left: max(0.5rem, calc(50% - 650px - 148px));
+    top: 50vh;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 140px;
+    margin-bottom: 0;
+    z-index: 100;
+  }
+  .lab-nav a {
+    justify-content: center;
+    text-align: center;
+  }
+  .lab-nav .nav-side.right { justify-content: center; }
+
+  .progress-sidebar {
+    position: fixed;
+    right: max(0.5rem, calc(50% - 650px - 210px));
+    top: 50vh;
+    transform: translateY(-50%);
+    width: 190px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  /* Header row */
+  .progress-sidebar .ps-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.18em;
+  }
+
+  /* Big count */
+  .progress-sidebar .ps-count-row {
+    display: flex; align-items: baseline; gap: 0.35rem;
+  }
+  .progress-sidebar .ps-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.2rem; font-weight: 700; color: var(--accent);
+    line-height: 1;
+  }
+  .progress-sidebar .ps-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--muted);
+  }
+
+  /* Pip progress track */
+  .ps-pips {
+    display: flex; flex-wrap: wrap; gap: 3px;
+  }
+  .ps-pip {
+    width: 10px; height: 10px; border-radius: 2px;
+    background: var(--border); transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+  }
+  .ps-pip.done {
+    background: var(--accent);
+    box-shadow: 0 0 4px rgba(45,212,191,0.5);
+  }
+
+  /* Rank card */
+  .ps-rank-card {
+    border-radius: 8px; padding: 0.7rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex; flex-direction: column; gap: 0.3rem;
+    transition: all 0.4s ease;
+  }
+  .ps-rank-card .ps-rank-icon { font-size: 1.4rem; line-height: 1; }
+  .ps-rank-card .ps-rank-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .ps-rank-card .ps-rank-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+  }
+
+  /* Rank colour theming */
+  .ps-rank-card.rank-bronze  { border-color: rgba(205,127,50,0.4);  background: rgba(205,127,50,0.07);  }
+  .ps-rank-card.rank-bronze  .ps-rank-name { color: #cd7f32; }
+  .ps-rank-card.rank-silver  { border-color: rgba(168,184,200,0.4); background: rgba(168,184,200,0.07); }
+  .ps-rank-card.rank-silver  .ps-rank-name { color: #a8b8c8; }
+  .ps-rank-card.rank-gold    { border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.07);  box-shadow: 0 0 12px rgba(251,191,36,0.1); }
+  .ps-rank-card.rank-gold    .ps-rank-name { color: #fbbf24; }
+  .ps-rank-card.rank-platinum{ border-color: rgba(148,163,184,0.5); background: rgba(148,163,184,0.09); box-shadow: 0 0 14px rgba(148,163,184,0.15); }
+  .ps-rank-card.rank-platinum .ps-rank-name { color: #e2e8f0; }
+  .ps-rank-card.rank-diamond { border-color: rgba(125,211,252,0.5); background: rgba(125,211,252,0.08); box-shadow: 0 0 16px rgba(125,211,252,0.2); }
+  .ps-rank-card.rank-diamond .ps-rank-name { color: #7dd3fc; }
+
+  /* Next rank preview */
+  .ps-next {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
+  }
+  .ps-next span { color: var(--warn); font-weight: 700; }
+
+  /* Sidebars active above 1200px — hide inline elements */
+  @media (min-width: 1200px) {
+    .progress-bar-wrap { display: none; }
+  }
+
+  /* Below 1200px — sidebars go inline, progress bar reappears */
+  @media (max-width: 1199px) {
+    .lab-nav {
+      position: static;
+      transform: none;
+      flex-direction: row;
+      width: auto;
+      margin-bottom: 1.75rem;
+    }
+    .lab-nav a { justify-content: flex-start; text-align: left; }
+    .lab-nav .nav-side.right { justify-content: flex-end; }
+    .progress-sidebar { display: none; }
+    .progress-bar-wrap { display: flex; }
+  }
+
+
+  /* BATCH1-GAMIFICATION */
+  /* Rank-up flash on the sidebar rank card */
+  @keyframes rank-up-flash {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+    30%  { transform: scale(1.07); box-shadow: 0 0 26px rgba(125,211,252,0.7); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+  }
+  .ps-rank-card.rank-up { animation: rank-up-flash 1s ease; }
+
+  /* Session streak chip in the sidebar */
+  .ps-streak {
+    display: none; align-items: center; gap: 0.4rem;
+    margin-top: 0.7rem; padding: 0.45rem 0.6rem;
+    border: 1px solid rgba(251,146,60,0.35);
+    background: rgba(251,146,60,0.08);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--orange);
+  }
+  .ps-streak .ps-streak-fire { font-size: 1rem; }
+  .ps-streak .ps-streak-num { font-weight: 700; }
+
+  /* Lab completion overlay */
+  .lab-complete-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10,15,20,0.78);
+    backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .lab-complete-overlay.show { display: flex; opacity: 1; }
+  .lab-complete-card {
+    text-align: center;
+    padding: 2.4rem 2.6rem;
+    border-radius: 16px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: var(--surface);
+    box-shadow: 0 0 40px rgba(125,211,252,0.25);
+    max-width: 380px;
+    animation: lc-pop 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  @keyframes lc-pop {
+    0%   { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .lab-complete-card .lc-icon { font-size: 3.2rem; line-height: 1; margin-bottom: 0.6rem; }
+  .lab-complete-card .lc-title {
+    font-size: 1.5rem; font-weight: 800; color: #7dd3fc; margin-bottom: 0.4rem;
+  }
+  .lab-complete-card .lc-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.4rem; }
+  .lab-complete-card .lc-close {
+    font-family: inherit; cursor: pointer;
+    padding: 0.55rem 1.4rem; border-radius: 8px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: rgba(125,211,252,0.1); color: #7dd3fc;
+    font-size: 0.9rem; font-weight: 600;
+    transition: background 0.2s ease;
+  }
+  .lab-complete-card .lc-close:hover { background: rgba(125,211,252,0.2); }
+
+
+  /* BATCH2-STUDY-QOL */
+  /* Copy button on command blocks */
+  .copy-btn {
+    position: absolute; top: 6px; right: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted);
+    opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .cmd:hover .copy-btn, .copy-btn:focus { opacity: 1; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
+
+  /* Mark-all-in-section control (pushed to the far right of the section bar) */
+  .section-title::after { order: 1; }
+  .section-mark-all {
+    order: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.2rem 0.55rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap;
+  }
+  .section-mark-all:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Keyboard-navigation highlight */
+  .task-card.kb-active {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
+  }
+
+  /* Keyboard hint in the sidebar */
+  .ps-kbhint {
+    margin-top: 0.7rem; font-size: 0.66rem; line-height: 1.6;
+    color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  }
+  .ps-kbhint b { color: var(--text); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <nav class="lab-nav">
+    <a class="nav-side" href="linux_advanced_lab_webservers.html">← Apache</a>
+    <a class="home-btn" href="index.html">⌂ Home</a>
+    <a class="nav-side right" href="linux_advanced_lab_samba.html">Samba →</a>
+  </nav>
+
+  <div class="progress-sidebar" id="progress-sidebar">
+    <div class="ps-label">Voortgang</div>
+    <div class="ps-count-row">
+      <div class="ps-count" id="ps-count">0</div>
+      <div class="ps-total" id="ps-total">/ 0 taken</div>
+    </div>
+    <div class="ps-pips" id="ps-pips"></div>
+    <div class="ps-rank-card" id="ps-rank-card">
+      <div class="ps-rank-icon" id="ps-rank-icon">—</div>
+      <div class="ps-rank-name" id="ps-rank-name">Geen rank</div>
+      <div class="ps-rank-sub" id="ps-rank-sub">Start met taken</div>
+    </div>
+    <div class="ps-next" id="ps-next"></div>
+    <div class="ps-streak" id="ps-streak">
+      <span class="ps-streak-fire">🔥</span>
+      <span><span class="ps-streak-num">0</span> op rij</span>
+    </div>
+    <div class="ps-kbhint" id="ps-kbhint">⌨ <b>J</b>/<b>K</b> navigeren · <b>Spatie</b> afvinken</div>
+  </div>
+
+
+  <header>
+    <div class="label">PXL Linux Advanced · LAMP Lab</div>
+    <h1>LAMP-stack & Nextcloud</h1>
+    <p>In het vorige hoofdstuk serveerde je statische HTML met Apache. Nu bouw je daar bovenop een volwaardige <em>solution stack</em>: <strong>L</strong>inux + <strong>A</strong>pache + <strong>M</strong>ariaDB + <strong>P</strong>HP. Als concrete toepassing installeer je <strong>Nextcloud</strong> — een open-source cloudplatform dat alle vier de lagen tegelijk gebruikt. Tot slot kraak je examen-oefeningen en optioneel een paar diepere "Op verkenning"-uitdagingen.</p>
+  </header>
+
+  <div class="scenario-box">
+    <h2>📋 Scenario</h2>
+    <p>Je server (<code>10.10.10.1</code>, <code>webserverXX.pxl.lan</code>) draait al met DHCP, DNS en Apache uit de vorige hoofdstukken. Een collega vraagt of jullie een eigen cloud-omgeving kunnen draaien voor de afdeling — bestanden delen, agenda, video-calls — zonder afhankelijk te zijn van Google Drive of OneDrive. Je kiest voor Nextcloud, dat een complete LAMP-stack nodig heeft. Aan het eind kan je vanaf <code>clientXX</code> in de browser inloggen op <code>http://webserverXX.pxl.lan</code> en met meerdere accounts werken. Vervang overal <code>XX</code> door je eigen servernummer.</p>
+  </div>
+
+  <!-- LAMP STACK DIAGRAM -->
+  <div class="stack">
+    <h3>📦 Wat zit er in een LAMP-stack?</h3>
+    <div class="stack-grid">
+      <div class="stack-layer l">
+        <div class="stack-letter">L</div>
+        <div class="stack-name">Linux</div>
+        <div class="stack-role">Besturings-systeem — alles draait erop</div>
+      </div>
+      <div class="stack-layer a">
+        <div class="stack-letter">A</div>
+        <div class="stack-name">Apache</div>
+        <div class="stack-role">Webserver — ontvangt HTTP-requests</div>
+      </div>
+      <div class="stack-layer m">
+        <div class="stack-letter">M</div>
+        <div class="stack-name">MariaDB</div>
+        <div class="stack-role">Database — slaat data persistent op</div>
+      </div>
+      <div class="stack-layer p">
+        <div class="stack-letter">P</div>
+        <div class="stack-name">PHP</div>
+        <div class="stack-role">Scripting — maakt pagina's dynamisch</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQUEST FLOW THROUGH LAMP -->
+  <div class="flow">
+    <h3>🌐 Eén request door de stack</h3>
+    <div class="flow-row">
+      <div class="flow-step">
+        <div class="fname" style="color:var(--green)">Browser</div>
+        <div class="fdesc">GET <code>/index.php</code></div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="fname" style="color:var(--orange)">Apache</div>
+        <div class="fdesc">Ziet <code>.php</code> en geeft door</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="fname" style="color:var(--purple)">PHP</div>
+        <div class="fdesc">Voert code uit, vraagt data</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="fname" style="color:var(--accent2)">MariaDB</div>
+        <div class="fdesc">SQL-query, geeft rijen terug</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="fname" style="color:var(--green)">HTML</div>
+        <div class="fdesc">Terug naar browser</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALTERNATIVES -->
+  <div class="section-title">Varianten — als je een letter vervangt</div>
+  <div class="alt-grid">
+    <div class="alt-card">
+      <div class="alt-name" style="color:var(--accent2)">WAMP</div>
+      <div class="alt-desc">Windows i.p.v. Linux. Vaak voor lokale dev.</div>
+    </div>
+    <div class="alt-card">
+      <div class="alt-name" style="color:var(--accent2)">MAMP</div>
+      <div class="alt-desc">macOS i.p.v. Linux. Idem.</div>
+    </div>
+    <div class="alt-card">
+      <div class="alt-name" style="color:var(--accent2)">LEMP</div>
+      <div class="alt-desc">Nginx ("Engine-X") i.p.v. Apache. Lichter & sneller voor veel concurrent users.</div>
+    </div>
+    <div class="alt-card">
+      <div class="alt-name" style="color:var(--accent2)">LAPP</div>
+      <div class="alt-desc">PostgreSQL i.p.v. MariaDB. Object-relational, vaak veiliger.</div>
+    </div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <span>Voortgang</span>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+    <span id="rank-display" class="rank-display"></span>
+    <span class="progress-count" id="progress-count">0 / 13</span>
+  </div>
+
+  <!-- =================== DEEL 1: APACHE VOOR NEXTCLOUD =================== -->
+  <div class="section-title">Deel 1 — Apache klaarmaken voor Nextcloud</div>
+
+  <div class="task-card" id="t1">
+    <div class="task-header" onclick="toggleTask('t1')">
+      <div class="task-check" onclick="toggleCheck(event,'t1')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-apache">Apache</span> Taak 01</div>
+        <div class="task-title">Nextcloud downloaden en uitpakken</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Anders dan een gewone website plaatsen we Nextcloud <strong>niet</strong> in <code>/var/www/html</code>, maar in een eigen submap <code>/var/www/nextcloud</code>. Dat is een conventie van Nextcloud zelf en houdt je standaard <code>html</code>-map vrij voor andere sites.</p>
+      <div class="cmd"><span class="comment"># httpd zou al draaien uit het vorige hoofdstuk — controleer:</span>
+sudo systemctl status httpd
+
+<span class="comment"># laat httpd door de firewall (zone "internal" voor 10.10.10.0/24)</span>
+sudo firewall-cmd --add-service=http --zone=internal --permanent
+sudo firewall-cmd --reload
+
+cd /var/www
+<span class="comment"># download de laatste stable van nextcloud.com</span>
+sudo wget https://download.nextcloud.com/server/releases/latest.tar.bz2
+
+<span class="comment"># uitpakken (let op: -j = bzip2, niet -z = gzip)</span>
+sudo tar -xjvf latest.tar.bz2
+ls -d nextcloud
+cd ~</div>
+      <div class="concept-box">
+        <strong>💡 Waarom .tar.bz2?</strong>
+        Tar bundelt een hele directorystructuur tot één bestand; <code>bzip2</code> (vlag <code>-j</code>) comprimeert het. Voor <code>.tar.gz</code> gebruik je <code>-z</code>. Vergeet je de juiste vlag, dan krijg je een cryptische foutmelding over het magic-byte.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>ls /var/www/nextcloud/</code> toont onder andere de mappen <code>apps/</code>, <code>config/</code>, <code>core/</code> en het bestand <code>index.php</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t2">
+    <div class="task-header" onclick="toggleTask('t2')">
+      <div class="task-check" onclick="toggleCheck(event,'t2')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-apache">Apache</span> Taak 02</div>
+        <div class="task-title">Een VirtualHost voor Nextcloud schrijven</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Omdat Nextcloud niet in de standaard <code>DocumentRoot</code> staat, moet Apache weten waar hij moet kijken. Maak een eigen configbestand in <code>/etc/httpd/conf.d/</code> — alles in die map wordt automatisch ingelezen.</p>
+      <div class="cmd">sudo nano /etc/httpd/conf.d/nextcloud.conf</div>
+      <div class="conf-block"><span class="tagname">&lt;VirtualHost *:80&gt;</span>
+    <span class="directive">DocumentRoot</span>  <span class="val">/var/www/nextcloud</span>
+    <span class="directive">ServerName</span>    <span class="val">webserverXX.pxl.lan</span>
+
+    <span class="tagname">&lt;Directory /var/www/nextcloud/&gt;</span>
+        <span class="directive">Require all granted</span>
+        <span class="directive">AllowOverride</span>     <span class="val">All</span>
+        <span class="directive">Options</span>           <span class="val">FollowSymLinks MultiViews</span>
+    <span class="tagname">&lt;/Directory&gt;</span>
+<span class="tagname">&lt;/VirtualHost&gt;</span></div>
+      <div class="cmd"><span class="comment"># altijd eerst syntax checken vóór je apache herlaadt</span>
+sudo httpd -t
+sudo systemctl reload httpd</div>
+      <div class="concept-box">
+        <strong>💡 Wat doet elke directive?</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>DocumentRoot</code> — waar de website-bestanden staan.</li>
+          <li><code>ServerName</code> — welke hostname matcht met deze vhost (de <code>Host:</code>-header van de browser).</li>
+          <li><code>Require all granted</code> — iedereen mag de site bekijken (geen IP-restrictie).</li>
+          <li><code>AllowOverride All</code> — Nextcloud mag z'n eigen <code>.htaccess</code>-bestanden gebruiken (URL-rewrites, beveiliging, …). Zonder dit werkt Nextcloud niet correct.</li>
+          <li><code>FollowSymLinks</code> — Apache mag symlinks volgen (Nextcloud gebruikt die intern).</li>
+          <li><code>MultiViews</code> — Apache mag raden welk bestand je bedoelt als de extensie ontbreekt (b.v. <code>/about</code> → <code>about.php</code>).</li>
+        </ul>
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>httpd -t</code> antwoordt <code>Syntax OK</code>. Surf je nu naar <code>http://webserverXX.pxl.lan</code>, dan krijg je waarschijnlijk een <em>403 Forbidden</em> of een PHP-fout — dat is normaal, we hebben nog geen PHP en SELinux blokkeert nog. Eerst de database.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 2: MARIADB =================== -->
+  <div class="section-title">Deel 2 — MariaDB (de "M")</div>
+
+  <div class="task-card" id="t3">
+    <div class="task-header" onclick="toggleTask('t3')">
+      <div class="task-check" onclick="toggleCheck(event,'t3')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-mariadb">MariaDB</span> Taak 03</div>
+        <div class="task-title">Installeer MariaDB-server (en weet wat er al staat)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>RHEL bevat soms al <code>mysql</code>-pakketten. <strong>Je kan op een RHEL-gebaseerd systeem niet zowel MySQL als MariaDB tegelijk geïnstalleerd hebben</strong> — ze claimen dezelfde bestandsnamen en services. Check eerst, verwijder zo nodig, en installeer MariaDB Server.</p>
+      <div class="cmd"><span class="comment"># wat is er al?</span>
+rpm -qa | grep -Ei 'maria|mysql'
+
+<span class="comment"># is er een mysql-server pakket geïnstalleerd? dan eerst weg:</span>
+<span class="comment"># sudo dnf remove mysql-server -y</span>
+
+<span class="comment"># installeer mariadb-server (de daemon), niet alleen mariadb (de client)</span>
+sudo dnf install mariadb-server -y
+
+sudo systemctl enable --now mariadb
+sudo systemctl status mariadb</div>
+      <div class="concept-box">
+        <strong>💡 MariaDB ↔ MySQL</strong>
+        MariaDB is een <em>fork</em> van MySQL door de oorspronkelijke ontwikkelaars, gestart toen Oracle MySQL overnam. Het is volledig open-source en (op het commando-niveau) compatibel: het commando heet nog steeds <code>mysql</code>, configfiles staan in <code>/etc/my.cnf.d/</code>, de poort is nog steeds <code>3306</code>. Voor 99% van de toepassingen is het inwisselbaar.
+      </div>
+      <div class="info-note">
+        <strong>ℹ Andere DBMS'en:</strong> <code>SQLite</code> is wereldwijd het #1 meest geïnstalleerde DBMS (zit in elke Android/iOS-app), MySQL/MariaDB is #2. <code>PostgreSQL</code> is een object-relational alternatief (LAPP-stack), bekend om strengere standaarden en uitgebreidere features dan MySQL.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>systemctl status mariadb</code> → <code>active (running)</code>. <code>ss -tlnp | grep 3306</code> toont MariaDB luisterend op localhost.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t4">
+    <div class="task-header" onclick="toggleTask('t4')">
+      <div class="task-check" onclick="toggleCheck(event,'t4')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-mariadb">MariaDB</span> Taak 04</div>
+        <div class="task-title">Beveilig de installatie met <code>mariadb-secure-installation</code></div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Vlak na installatie staat MariaDB <em>open</em>: geen root-wachtwoord, anonieme gebruikers, een test-database, remote root toegestaan. Het script <code>mariadb-secure-installation</code> loopt deze punten één voor één af.</p>
+      <div class="cmd">sudo mariadb-secure-installation</div>
+      <p>De vijf stappen die het script doorloopt:</p>
+      <ol>
+        <li><strong>Current root password</strong> → leeg laten (<kbd>Enter</kbd>), er is er nog geen.</li>
+        <li><strong>Switch to unix_socket authentication?</strong> → <kbd>Enter</kbd> (= ja). Dan logt root in via z'n Linux-account in plaats van een wachtwoord.</li>
+        <li><strong>Change the root password?</strong> → <kbd>Y</kbd>, daarna een wachtwoord ingeven (in de les: <code>pxl</code>; in een echte omgeving uiteraard sterker).</li>
+        <li><strong>Remove anonymous users?</strong> → <kbd>Enter</kbd> (= ja).</li>
+        <li><strong>Disallow root login remotely?</strong> → <kbd>Enter</kbd> (= ja).</li>
+        <li><strong>Remove test database?</strong> → <kbd>Enter</kbd> (= ja).</li>
+        <li><strong>Reload privilege tables?</strong> → <kbd>Enter</kbd> (= ja). Dit dwingt MariaDB om de nieuwe rechten meteen toe te passen zonder restart.</li>
+      </ol>
+      <div class="concept-box">
+        <strong>💡 Waarom <code>FLUSH PRIVILEGES</code>?</strong>
+        MariaDB cachet de gebruikers- en rechten-tabellen in het geheugen voor snelheid. Wijzig je iets aan accounts of rechten, dan moet je expliciet de cache verversen — anders zien je sessie de wijziging niet. Het script doet dit voor je aan het eind.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Probeer <code>mariadb -u root</code>: dat moet werken via Unix-socket. <code>mariadb -u root -h 127.0.0.1 -p</code> vraagt om je net ingestelde wachtwoord.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t5">
+    <div class="task-header" onclick="toggleTask('t5')">
+      <div class="task-check" onclick="toggleCheck(event,'t5')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-mariadb">MariaDB</span> Taak 05</div>
+        <div class="task-title">Maak een database + gebruiker voor Nextcloud</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een applicatie moet <strong>nooit</strong> als root verbinden met de database. Het golden rule is: <em>één database, één gebruiker met enkel rechten op die database</em>. Als Nextcloud later gehackt wordt, kan de aanvaller alleen de Nextcloud-database aanvallen — niet de rest van je server.</p>
+      <div class="cmd">sudo mariadb -u root</div>
+      <div class="sql-block"><span class="prompt">MariaDB [(none)]&gt;</span> <span class="kw">CREATE DATABASE</span> nextcloud
+                       <span class="kw">CHARACTER SET</span> utf8mb4
+                       <span class="kw">COLLATE</span> utf8mb4_general_ci;
+
+<span class="prompt">MariaDB [(none)]&gt;</span> <span class="kw">CREATE USER</span> <span class="str">'ncuser'</span>@<span class="str">'localhost'</span>
+                       <span class="kw">IDENTIFIED BY</span> <span class="str">'SterkWachtwoordHier'</span>;
+
+<span class="prompt">MariaDB [(none)]&gt;</span> <span class="kw">GRANT ALL PRIVILEGES ON</span> nextcloud.*
+                       <span class="kw">TO</span> <span class="str">'ncuser'</span>@<span class="str">'localhost'</span>;
+
+<span class="prompt">MariaDB [(none)]&gt;</span> <span class="kw">FLUSH PRIVILEGES</span>;
+<span class="prompt">MariaDB [(none)]&gt;</span> <span class="kw">EXIT</span>;</div>
+      <div class="concept-box">
+        <strong>💡 Waarom <code>utf8mb4</code> en niet <code>utf8</code>?</strong>
+        In MySQL/MariaDB betekent <code>utf8</code> historisch gezien maximaal 3 bytes per teken — geen emoji of zeldzame Aziatische tekens. <code>utf8mb4</code> is "echt" 4-byte UTF-8 en kan alles aan. Nextcloud vraagt dit expliciet; sla je documenten met emoji op zonder utf8mb4, dan krijg je <em>"Incorrect string value"</em>-errors.
+      </div>
+      <div class="concept-box">
+        <strong>💡 Wat is <code>'ncuser'@'localhost'</code>?</strong>
+        MariaDB identificeert een account altijd als gebruiker + host. <code>'ncuser'@'localhost'</code> mag enkel verbinden vanaf <em>dezelfde machine</em>. Maakte je <code>'ncuser'@'%'</code>, dan mag het account vanaf elk IP komen. Voor Nextcloud op dezelfde server is <code>localhost</code> exact wat je wil — strakker is veiliger.
+      </div>
+      <button class="hint-toggle" onclick="toggleHint('h5')">💡 Hint: wat als ik typo's maak in SQL?</button>
+      <div class="hint-box" id="h5">
+        <strong>Hint:</strong> SQL-commando's eindigen op <code>;</code>. Mis je die en druk je Enter, dan komt er een nieuwe regel met <code>-&gt;</code> als prompt en MariaDB blijft wachten. Typ alsnog <code>;</code> en Enter. Wil je gewoon afbreken? Typ <code>\c</code>. Wil je uit de prompt? <code>EXIT;</code> of <code>\q</code>.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>mariadb -u ncuser -p</code> → wachtwoord invoeren → de prompt moet veranderen in <code>MariaDB [(none)]&gt;</code>. Doe dan <code>SHOW DATABASES;</code> — je ziet enkel <code>information_schema</code> en <code>nextcloud</code>. Geen <code>mysql</code> systeem-database (want je hebt geen rechten). Perfect.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 3: PHP =================== -->
+  <div class="section-title">Deel 3 — PHP (de "P")</div>
+
+  <div class="task-card" id="t6">
+    <div class="task-header" onclick="toggleTask('t6')">
+      <div class="task-check" onclick="toggleCheck(event,'t6')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-php">PHP</span> Taak 06</div>
+        <div class="task-title">Installeer PHP + de modules die Nextcloud nodig heeft</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>PHP zelf is maar de basis-interpreter. Nextcloud heeft bovendien losse PHP-<em>extensions</em> nodig om foto's te kunnen verwerken (<code>imagick</code>), met MariaDB te praten (<code>mysqlnd</code>), bestanden te uploaden in stukjes, ZIP-bestanden te lezen, enzovoort. Eén ervan — <code>php-imagick</code> — zit niet in de standaard-RHEL-repos en heeft <strong>EPEL</strong> nodig.</p>
+      <div class="cmd"><span class="comment"># 1. EPEL = Extra Packages for Enterprise Linux — community-pakketten voor RHEL</span>
+sudo dnf install epel-release -y
+
+<span class="comment"># 2. installeer PHP + de Nextcloud-modules in één commando</span>
+sudo dnf install -y \
+    php php-cli php-common \
+    php-mysqlnd php-gd php-mbstring \
+    php-xml php-zip php-intl \
+    php-bcmath php-gmp php-imagick
+
+<span class="comment"># 3. controleer welke versie geïnstalleerd is</span>
+php -v</div>
+      <p>Apache laadt PHP via de module <code>mod_php</code> (uit het pakket <code>php</code>). Die module wordt automatisch geactiveerd via <code>/etc/httpd/conf.modules.d/</code> — maar je moet Apache herstarten zodat hij de module ook echt inlaadt.</p>
+      <div class="cmd">sudo systemctl restart httpd</div>
+      <div class="concept-box">
+        <strong>💡 Waar staat PHP's config?</strong>
+        Het hoofdbestand is <code>/etc/php.ini</code>. Daar pas je dingen aan als <code>memory_limit</code>, <code>upload_max_filesize</code>, <code>post_max_size</code> — belangrijk voor Nextcloud, want grote uploads worden anders afgekapt. Module-specifieke instellingen staan in <code>/etc/php.d/</code>.
+      </div>
+      <button class="hint-toggle" onclick="toggleHint('h6')">💡 Hint: test of PHP echt werkt vóór je verdergaat</button>
+      <div class="hint-box" id="h6">
+        <strong>Snelle testpagina:</strong> maak even een testbestand:
+        <div class="php-block">sudo nano /var/www/nextcloud/info.php</div>
+        <div class="php-block">&lt;?php phpinfo(); ?&gt;</div>
+        Surf naar <code>http://webserverXX.pxl.lan/info.php</code>. Krijg je een grote tabel met PHP-versie en modules → PHP werkt. <strong>Verwijder dit bestand daarna meteen</strong> — het lekt info aan aanvallers.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>php -m | grep -Ei 'mysqlnd|gd|imagick|mbstring'</code> moet alle vier de modules tonen. <code>php --version</code> toont PHP 8.x.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 4: SELINUX =================== -->
+  <div class="section-title">Deel 4 — SELinux (de onzichtbare poortwachter)</div>
+
+  <div class="task-card" id="t7">
+    <div class="task-header" onclick="toggleTask('t7')">
+      <div class="task-check" onclick="toggleCheck(event,'t7')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-selinux">SELinux</span> Taak 07</div>
+        <div class="task-title">Geef Apache de juiste SELinux-rechten op <code>/var/www/nextcloud</code></div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>SELinux is een extra beveiligingslaag bovenop de gewone Unix-rechten. Het kan een proces (zoals <code>httpd</code>) verbieden om dingen te doen die <em>"niet de bedoeling"</em> zijn — zelfs als de Unix-rechten het zouden toelaten. Standaard mag Apache <strong>enkel lezen</strong> in <code>/var/www/html</code>. Wij willen dat hij <em>schrijft</em> in <code>/var/www/nextcloud</code> (voor uploads), en <em>het netwerk op</em> kan voor sommige Nextcloud-apps.</p>
+      <p>De drie SELinux-instellingen die je nodig hebt:</p>
+      <div class="cmd"><span class="comment"># 1. Apache mag naar buiten verbinden (push-notifications, federated sharing, ...)</span>
+sudo setsebool -P httpd_can_network_connect on
+
+<span class="comment"># 2. Apache mag schrijven & lezen in zijn eigen webmappen</span>
+sudo setsebool -P httpd_unified on
+
+<span class="comment"># 3. Stel het juiste SELinux-type in op de hele Nextcloud-map</span>
+<span class="comment">#    httpd_sys_rw_content_t = "deze map mag httpd lezen EN schrijven"</span>
+sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/nextcloud(/.*)?"
+
+<span class="comment"># 4. Pas de regel daadwerkelijk toe op de bestaande bestanden</span>
+sudo restorecon -Rv /var/www/nextcloud</div>
+      <div class="concept-box">
+        <strong>💡 <code>-P</code> bij <code>setsebool</code></strong>
+        Zonder <code>-P</code> geldt de boolean tot je reboot — daarna is hij weer uit. Met <code>-P</code> (<em>persistent</em>) blijft hij over reboots heen. Vergeet deze vlag niet, anders werkt je server na een reboot plots niet meer en zoek je je dood.
+      </div>
+      <div class="concept-box">
+        <strong>💡 Wat doet <code>semanage fcontext</code> + <code>restorecon</code> precies?</strong>
+        <code>semanage fcontext -a -t TYPE "PATH"</code> schrijft een <em>regel</em> in de SELinux-policy: "alle bestanden onder dit pad moeten type X krijgen". Maar bestaande bestanden zijn daarmee nog niet veranderd. <code>restorecon -Rv</code> <em>past die regel toe</em> op de bestanden die er nu staan. De regex <code>(/.*)?</code> betekent "de map zelf én alles eronder, recursief".
+      </div>
+      <div class="warn-note">
+        <strong>Tijdelijke shortcut:</strong> in de oefeningen mag je SELinux soms in <em>permissive mode</em> zetten met <code>sudo setenforce 0</code>. Dan logt SELinux nog wél elke overtreding maar blokkeert hij niets. Handig om snel te zien of SELinux je probleem veroorzaakt. <strong>Vergeet niet <code>setenforce 1</code> achteraf</strong> — anders heb je de hele beveiliging weggegooid.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>ls -lZ /var/www/nextcloud | head -3</code> — de <code>Z</code>-kolom toont nu <code>httpd_sys_rw_content_t</code> op alle bestanden. <code>getsebool httpd_can_network_connect httpd_unified</code> toont beide op <code>on</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 5: NEXTCLOUD INSTALLEREN =================== -->
+  <div class="section-title">Deel 5 — Nextcloud installatie afronden</div>
+
+  <div class="task-card" id="t8">
+    <div class="task-header" onclick="toggleTask('t8')">
+      <div class="task-check" onclick="toggleCheck(event,'t8')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-nextcl">Nextcloud</span> Taak 08</div>
+        <div class="task-title">Eigenaarschap van de webmap goed zetten</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Op RHEL draait Apache als gebruiker <code>apache</code>. Voor Nextcloud (uploads, config wegschrijven, app-installs) moet die gebruiker écht eigenaar zijn van alles onder <code>/var/www/nextcloud</code>. Anders krijg je later in de browser-installer een melding dat de map niet schrijfbaar is.</p>
+      <div class="cmd">sudo chown -R apache:apache /var/www/nextcloud</div>
+      <div class="concept-box">
+        <strong>💡 Drie lagen rechten, drie verschillende dingen</strong>
+        <ul style="margin-top:0.3rem">
+          <li><strong>Unix-rechten</strong> (<code>chmod</code>/<code>chown</code>) — <em>wie</em> mag wat. Apache moet eigenaar zijn.</li>
+          <li><strong>SELinux-context</strong> — <em>welke "rol"</em> heeft het bestand. <code>httpd_sys_rw_content_t</code> = "Apache mag rw".</li>
+          <li><strong>Apache-config</strong> (<code>Require</code>, <code>AllowOverride</code>) — <em>wie</em> mag de URL bekijken.</li>
+        </ul>
+        Een file kan met <code>chmod 777</code> in volle glorie open staan maar nog steeds onbereikbaar zijn omdat SELinux het type verkeerd vindt. Daarom moet je alle drie correct hebben.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>ls -la /var/www/nextcloud | head</code> — eerste kolommen tonen <code>apache apache</code> als eigenaar/groep.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t9">
+    <div class="task-header" onclick="toggleTask('t9')">
+      <div class="task-check" onclick="toggleCheck(event,'t9')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-nextcl">Nextcloud</span> Taak 09</div>
+        <div class="task-title">Loop de webinstaller door in de browser</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Open op je server (of clientXX als DNS al werkt) Firefox en surf naar:</p>
+      <div class="cmd">http://webserverXX.pxl.lan</div>
+      <p>De Nextcloud-setupwizard verschijnt en vraagt 6 zaken:</p>
+      <ul>
+        <li><strong>Admin gebruikersnaam</strong> — bv. <code>student</code></li>
+        <li><strong>Admin wachtwoord</strong> — bv. <code>Server2025&amp;</code> (in productie sterker!)</li>
+        <li><strong>Database type</strong> — kies <code>MySQL/MariaDB</code> (SQLite is de default maar schaalt slecht)</li>
+        <li><strong>Database gebruiker</strong> — <code>ncuser</code> (uit Taak&nbsp;05)</li>
+        <li><strong>Database wachtwoord</strong> — <code>SterkWachtwoordHier</code></li>
+        <li><strong>Database naam</strong> — <code>nextcloud</code></li>
+        <li><strong>Database host</strong> — laat <code>localhost</code> staan (MariaDB draait op dezelfde machine)</li>
+      </ul>
+      <p>Klik op <strong>Installeren</strong>. Het systeem creëert de tabellen, slaat de credentials versleuteld op in <code>config/config.php</code> en logt je in als admin. Klik daarna op <strong>"Installeer aanbevolen apps"</strong> en sluit het welkomstvenster.</p>
+      <div class="concept-box">
+        <strong>💡 Wat gebeurt er onder de motorkap?</strong>
+        Bij "Installeren" doet de PHP-code drie dingen: (1) verbinding maken met MariaDB op poort 3306 met <code>ncuser</code>, (2) ±100 SQL-tabellen aanmaken in de <code>nextcloud</code>-database (gebruikers, bestanden, sharing, kalender, ...), (3) credentials wegschrijven in <code>config.php</code>. Doe nu <code>sudo mariadb -u root -e "USE nextcloud; SHOW TABLES;" | wc -l</code> en je ziet hoeveel tabellen er gemaakt zijn.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je ziet het Nextcloud-dashboard met "Welkom bij Nextcloud". Linksboven staat de gebruiker-avatar. <code>sudo cat /var/www/nextcloud/config/config.php</code> toont nu de verbindingsgegevens met MariaDB.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 6: GEBRUIKERS & EXTERNE TOEGANG =================== -->
+  <div class="section-title">Deel 6 — Gebruikers & toegang vanaf de client</div>
+
+  <div class="task-card" id="t10">
+    <div class="task-header" onclick="toggleTask('t10')">
+      <div class="task-check" onclick="toggleCheck(event,'t10')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-nextcl">Nextcloud</span> Taak 10</div>
+        <div class="task-title">Voeg een gewone gebruiker toe (geen admin)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een echte Nextcloud-omgeving heeft één (of een paar) admin(s) en daarnaast gewone gebruikers. Maak nu een extra account aan:</p>
+      <ol>
+        <li>Klik rechtsboven op je avatar/gebruikersnaam.</li>
+        <li>Kies <strong>Accounts</strong> (Engelstalig: <em>Users</em>).</li>
+        <li>Klik <strong>+ Nieuw account</strong>.</li>
+        <li>Geef gebruikersnaam, weergavenaam en wachtwoord op.</li>
+        <li>Klik <strong>Voeg nieuw account toe</strong>.</li>
+      </ol>
+      <p>De gebruiker verschijnt in de lijst en kan direct inloggen.</p>
+      <div class="info-note">
+        <strong>ℹ Onder water:</strong> Nextcloud schrijft het nieuwe account naar de tabel <code>oc_users</code> in MariaDB, met het wachtwoord <em>gehasht</em> (niet plain text). Je kan dat checken: <code>sudo mariadb -u root -e "SELECT uid, displayname FROM nextcloud.oc_users;"</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t11">
+    <div class="task-header" onclick="toggleTask('t11')">
+      <div class="task-check" onclick="toggleCheck(event,'t11')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-nextcl">Nextcloud</span> <span class="tag tag-test">Test</span> Taak 11</div>
+        <div class="task-title">Verbinden vanaf clientXX en <code>trusted_domains</code> aanpassen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Als je nu op clientXX surft naar <code>http://webserverXX.pxl.lan</code>, krijg je waarschijnlijk een melding <em>"Access through untrusted domain"</em>. Nextcloud heeft een eigen anti-hijack-mechanisme: enkel hostnames die in <code>config.php</code> als <code>trusted_domains</code> staan, worden geaccepteerd.</p>
+      <div class="cmd">sudo nano /var/www/nextcloud/config/config.php</div>
+      <p>Zoek het stuk <code>'trusted_domains' =&gt; array (...)</code> en breid het uit:</p>
+      <div class="conf-block">  <span class="directive">'trusted_domains'</span> =&gt; <span class="val">array (</span>
+    <span class="val">0 =&gt; 'localhost',</span>
+    <span class="val">1 =&gt; '*.pxl.lan',</span>
+  <span class="val">),</span></div>
+      <p>De wildcard <code>*.pxl.lan</code> dekt alle subdomeinen van je lab-zone in één lijn. Sla op, geen Apache-restart nodig (PHP leest <code>config.php</code> elke request).</p>
+      <p>Ga nu naar <strong>clientXX</strong> en log in via je browser. Eerste keer doorloop je een korte intro-wizard, daarna ben je binnen.</p>
+      <div class="concept-box">
+        <strong>💡 Waarom geen toegang van buiten?</strong>
+        Een NAT-router stuurt verkeer van <em>buiten</em> niet automatisch door naar interne toestellen. Wil je je Nextcloud publiek bereikbaar maken (lab-onafhankelijk), dan moet je op de NAT-router een <em>port forward</em> instellen (extern 80/443 → intern <code>10.10.10.1</code>) en idealiter ook HTTPS configureren met een echt certificaat. Voor dit labo blijven we intern.
+      </div>
+      <div class="warn-note">
+        <strong>Pas op met de syntax in config.php:</strong> dit is gewoon PHP-code. Vergeet je een komma na een entry, dan crasht heel Nextcloud met een wit scherm. Test met <code>sudo php -l /var/www/nextcloud/config/config.php</code> — je moet "No syntax errors" zien.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Vanaf clientXX surfen naar <code>http://webserverXX.pxl.lan</code> → je krijgt het Nextcloud-loginscherm, geen waarschuwing. Inloggen met de gewone gebruiker uit Taak 10 → dashboard verschijnt.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 7: EXAMENOEFENINGEN =================== -->
+  <div class="section-title">Deel 7 — Examenoefeningen (zelf doen)</div>
+
+  <div class="task-card" id="t12">
+    <div class="task-header" onclick="toggleTask('t12')">
+      <div class="task-check" onclick="toggleCheck(event,'t12')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 12</div>
+        <div class="task-title">Oefeningen 1–3: virtual hosting, HTTPS-encryptie, multi-CMS</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p><strong>Oefening 1 — Userdir virtual hosting.</strong> Activeer in <code>/etc/httpd/conf.d/userdir.conf</code> de <code>mod_userdir</code> zodat <em>elke</em> Linux-gebruiker automatisch een eigen website krijgt onder <code>~/public_html/</code>, bereikbaar via <code>http://webserverXX.pxl.lan/~gebruikersnaam</code>. Maak twee gebruikers aan met je <em>voor</em>- en <em>achternaam</em>, plaats een <code>index.html</code> in elk <code>public_html</code>, en bewijs met screenshots dat beide werken.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h12a')">💡 Hint Oef 1</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a12a')">👁 Toon aanpak Oef 1</button>
+      </div>
+      <div class="hint-box" id="h12a">
+        <strong>Hint:</strong>
+        <ul>
+          <li>In <code>userdir.conf</code>: zet <code>UserDir disabled</code> in commentaar, en zet <code>UserDir public_html</code> aan.</li>
+          <li>SELinux-boolean nodig: <code>sudo setsebool -P httpd_enable_homedirs on</code>.</li>
+          <li>De home-directory zelf moet <code>chmod 711</code> (execute voor others), <code>public_html/</code> moet <code>chmod 755</code>.</li>
+          <li>Restorecon op de home-dir of expliciet <code>chcon -R -t httpd_user_content_t ~/public_html</code>.</li>
+        </ul>
+      </div>
+      <div class="answer-box" id="a12a">
+        <p><strong>1. Activeer mod_userdir.</strong> Bewerk de config:</p>
+        <div class="cmd">sudo nano /etc/httpd/conf.d/userdir.conf</div>
+        <div class="conf-block"><span class="tagname">&lt;IfModule mod_userdir.c&gt;</span>
+    <span class="comment"># UserDir disabled            ← deze regel in commentaar zetten</span>
+    <span class="directive">UserDir</span> <span class="val">public_html</span>     <span class="comment"># ← deze aanzetten</span>
+<span class="tagname">&lt;/IfModule&gt;</span>
+
+<span class="tagname">&lt;Directory "/home/*/public_html"&gt;</span>
+    <span class="directive">Require all granted</span>
+<span class="tagname">&lt;/Directory&gt;</span></div>
+        <p><strong>2. SELinux toelaten dat Apache in homedirs leest:</strong></p>
+        <div class="cmd">sudo setsebool -P httpd_enable_homedirs on</div>
+        <p><strong>3. Twee gebruikers + hun public_html (vervang door je eigen voor-/achternaam):</strong></p>
+        <div class="cmd">sudo useradd voornaam
+sudo useradd achternaam
+sudo passwd voornaam
+sudo passwd achternaam
+
+<span class="comment"># per gebruiker: map aanmaken, rechten zetten, pagina plaatsen</span>
+sudo mkdir /home/voornaam/public_html
+echo "&lt;h1&gt;Site van voornaam&lt;/h1&gt;" | sudo tee /home/voornaam/public_html/index.html
+
+<span class="comment"># Apache moet door de home kunnen wandelen (x), en de site lezen</span>
+sudo chmod 711 /home/voornaam
+sudo chmod 755 /home/voornaam/public_html
+sudo chown -R voornaam:voornaam /home/voornaam/public_html
+
+<span class="comment"># herhaal exact hetzelfde voor 'achternaam'</span></div>
+        <p><strong>4. SELinux-context op de content + reload:</strong></p>
+        <div class="cmd">sudo restorecon -Rv /home/voornaam/public_html
+sudo restorecon -Rv /home/achternaam/public_html
+sudo httpd -t &amp;&amp; sudo systemctl reload httpd</div>
+        <p><strong>5. Testen</strong> (screenshots maken voor beide):</p>
+        <div class="cmd">curl http://webserverXX.pxl.lan/~voornaam
+curl http://webserverXX.pxl.lan/~achternaam</div>
+        <p>Beide moeten hun eigen <code>index.html</code> tonen. De <code>~</code> in de URL is precies wat <code>mod_userdir</code> vertaalt naar <code>/home/&lt;naam&gt;/public_html/</code>.</p>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+      <p><strong>Oefening 2 — Waarom HTTPS zowel symmetrische als asymmetrische encryptie gebruikt.</strong> Leg in eigen woorden uit waarom een TLS-verbinding niet gewoon één van de twee gebruikt. Tip: denk aan <em>snelheid</em>, <em>sleuteldistributie</em> en wat er gebeurt tijdens de <em>handshake</em>.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a12b')">📝 Toon modelantwoord Oef 2</button>
+      </div>
+      <div class="answer-box" id="a12b">
+        <p><strong>Asymmetrische encryptie (RSA, ECDSA) is traag</strong> — voor elke byte van je website zou je honderden CPU-cycli verbranden. <strong>Symmetrische encryptie (AES) is snel</strong>, maar heeft het probleem dat beide kanten dezelfde geheime sleutel moeten kennen — en je kan die sleutel onmogelijk over het onveilige internet sturen, want iedereen luistert mee.</p>
+        <p>HTTPS combineert het beste van beide:</p>
+        <ul>
+          <li><strong>Handshake (asymmetrisch, traag, maar veilig):</strong> de server stuurt zijn publieke sleutel uit het certificaat. De browser bedenkt een willekeurige symmetrische sessie-sleutel, encrypt die met de publieke sleutel, en stuurt ze terug. Alleen de server kan dit decrypten (hij heeft de private sleutel).</li>
+          <li><strong>Daarna (symmetrisch, snel):</strong> beide kanten gebruiken die symmetrische sessie-sleutel om de eigenlijke HTTP-data te encrypten met AES. Veel sneller, en geen onderscheppingsrisico meer want de sleutel is al uitgewisseld.</li>
+        </ul>
+        <p>Kortom: asymmetrisch voor <em>sleuteldistributie</em>, symmetrisch voor <em>bulk-data</em>.</p>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+      <p><strong>Oefening 3 — Drie CMS'en naast elkaar.</strong> Maak een nieuwe landing-page in <code>/var/www/html/index.html</code> met links naar drie CMS'en — elk in een eigen subdirectory:</p>
+      <ul>
+        <li><code>/drupal/</code> → <a href="https://www.drupal.org/download-latest/tar.gz">Drupal</a></li>
+        <li><code>/joomla/</code> → <a href="https://downloads.joomla.org/cms/joomla6/6-0-3/Joomla_6-0-3-Stable-Full_Package.tar.gz">Joomla 6</a></li>
+        <li><code>/wordpress/</code> → <a href="https://nl-be.wordpress.org/latest-nl_BE.tar.gz">WordPress NL-BE</a></li>
+      </ul>
+      <div class="warn-note">
+        <strong>Tijdens deze oefening:</strong> SELinux in permissive (<code>setenforce 0</code>) en firewall uit (<code>systemctl stop firewalld</code>) volgens de cursus, om eerst CMS-installatie aan de praat te krijgen zonder afleiding. <strong>Zet beide achteraf terug aan</strong> en los SELinux-problemen op met booleans en fcontexts. Tip om de Joomla-banner weg te krijgen: verwijder <code>media/templates/site/cassiopeia/images/logo.svg</code>.
+      </div>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h12c')">💡 Hint Oef 3</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a12c')">👁 Toon aanpak Oef 3</button>
+      </div>
+      <div class="hint-box" id="h12c">
+        <strong>Werkwijze per CMS:</strong>
+        <ol>
+          <li><code>cd /var/www/html</code> en <code>wget &lt;link&gt;</code></li>
+          <li><code>tar -xzvf &lt;bestand&gt;</code> (gzip) of <code>tar -xjvf</code> voor bzip2</li>
+          <li>Hernoem de uitgepakte map naar de gewenste naam (<code>mv drupal-X.Y drupal</code>)</li>
+          <li><code>chown -R apache:apache</code> op de map</li>
+          <li>Maak per CMS een aparte database + user in MariaDB (zoals Taak 5)</li>
+          <li>Loop de webinstaller door op <code>/drupal/</code>, <code>/joomla/</code>, <code>/wordpress/</code></li>
+        </ol>
+        <strong>index.html-skelet:</strong>
+        <div class="php-block">&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;head&gt;&lt;title&gt;Mijn CMS-portaal&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Voornaam Achternaam&lt;/h1&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;a href="/drupal/"&gt;Drupal&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="/joomla/"&gt;Joomla&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="/wordpress/"&gt;WordPress&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/body&gt;&lt;/html&gt;</div>
+      </div>
+      <div class="answer-box" id="a12c">
+        <p><strong>1. Landingspagina</strong> in <code>/var/www/html/index.html</code>:</p>
+        <div class="php-block">&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;head&gt;&lt;title&gt;CMS-portaal&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Voornaam Achternaam&lt;/h1&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;a href="/drupal/"&gt;Drupal&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="/joomla/"&gt;Joomla&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="/wordpress/"&gt;WordPress&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/body&gt;&lt;/html&gt;</div>
+        <p><strong>2. Per CMS één database + eigen user</strong> (in <code>sudo mariadb -u root</code>):</p>
+        <div class="sql-block"><span class="kw">CREATE DATABASE</span> drupal;
+<span class="kw">CREATE USER</span> <span class="str">'drupal_user'</span>@<span class="str">'localhost'</span> <span class="kw">IDENTIFIED BY</span> <span class="str">'wachtwoord'</span>;
+<span class="kw">GRANT ALL PRIVILEGES ON</span> drupal.* <span class="kw">TO</span> <span class="str">'drupal_user'</span>@<span class="str">'localhost'</span>;
+<span class="comment">-- herhaal identiek voor 'joomla' en 'wordpress'</span>
+<span class="kw">FLUSH PRIVILEGES</span>;</div>
+        <p><strong>3. Drupal downloaden &amp; uitpakken</strong> in een subdirectory:</p>
+        <div class="cmd">cd /var/www/html
+sudo wget https://www.drupal.org/download-latest/tar.gz -O drupal.tar.gz
+sudo tar -xzvf drupal.tar.gz
+sudo mv drupal-* drupal
+sudo chown -R apache:apache drupal</div>
+        <p><strong>4. Joomla</strong> (zelfde patroon):</p>
+        <div class="cmd">sudo wget "https://downloads.joomla.org/cms/joomla6/6-0-3/Joomla_6-0-3-Stable-Full_Package.tar.gz" -O joomla.tar.gz
+sudo mkdir joomla
+sudo tar -xzvf joomla.tar.gz -C joomla   <span class="comment"># Joomla pakt zonder top-map uit, dus -C in een lege map</span>
+sudo chown -R apache:apache joomla
+<span class="comment"># banner weg: verwijder het logo</span>
+sudo rm joomla/media/templates/site/cassiopeia/images/logo.svg</div>
+        <p><strong>5. WordPress:</strong></p>
+        <div class="cmd">sudo wget https://nl-be.wordpress.org/latest-nl_BE.tar.gz -O wp.tar.gz
+sudo tar -xzvf wp.tar.gz       <span class="comment"># pakt uit als 'wordpress/'</span>
+sudo chown -R apache:apache wordpress</div>
+        <p><strong>6. Webinstallers doorlopen.</strong> Surf telkens naar de subdir en geef de bijhorende database-gegevens in:</p>
+        <div class="cmd"><span class="comment"># in de browser:</span>
+http://webserverXX.pxl.lan/drupal/
+http://webserverXX.pxl.lan/joomla/
+http://webserverXX.pxl.lan/wordpress/</div>
+        <div class="warn-note">
+          <strong>Achteraf:</strong> de cursus laat je SELinux/firewall tijdelijk uit zetten. Zet ze terug aan en herstel de context: <code>sudo setenforce 1</code>, <code>sudo systemctl start firewalld</code>, <code>sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/html(/.*)?"</code>, <code>sudo restorecon -Rv /var/www/html</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 8: OP VERKENNING =================== -->
+  <div class="section-title">Deel 8 — Op verkenning… (optioneel, voor wie verder wil)</div>
+
+  <div class="task-card" id="t13">
+    <div class="task-header" onclick="toggleTask('t13')">
+      <div class="task-check" onclick="toggleCheck(event,'t13')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-deep">Deep dive</span> Taak 13</div>
+        <div class="task-title">Oefeningen 4–8: SSL voor DB, fijnmazige rechten, caching, mod_security, Ansible</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Deze vijf oefeningen zijn niet voor het examen verplicht, maar ze tillen je LAMP-stack van "het werkt" naar "het is productie-waardig". Doe er minstens één.</p>
+
+      <p><strong>Oef 4 — MariaDB over SSL.</strong> Genereer een self-signed certificaat voor de DB-server, zet <code>require_secure_transport=ON</code> in <code>/etc/my.cnf.d/mariadb-server.cnf</code>, maak een user met <code>REQUIRE SSL</code>, en bewijs dat een onversleutelde verbinding wordt geweigerd terwijl <code>mariadb --ssl-ca=... -u user -p</code> wél werkt.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h13a')">💡 Hint Oef 4</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a13a')">👁 Toon aanpak Oef 4</button>
+      </div>
+      <div class="hint-box" id="h13a">
+        <strong>Stappen kort:</strong>
+        <ol>
+          <li><code>openssl req -x509 -newkey rsa:2048 -nodes -keyout server-key.pem -out server-cert.pem -days 365</code></li>
+          <li>Verplaats naar <code>/etc/my.cnf.d/certs/</code>, <code>chown mysql:mysql</code></li>
+          <li>In <code>mariadb-server.cnf</code> sectie <code>[mariadb]</code>: <code>ssl-ca</code>, <code>ssl-cert</code>, <code>ssl-key</code>, <code>require_secure_transport=ON</code></li>
+          <li>SQL: <code>CREATE USER 'sec'@'localhost' IDENTIFIED BY 'x' REQUIRE SSL;</code></li>
+          <li>In de prompt: <code>STATUS;</code> — onderaan zie je nu <code>SSL: Cipher in use is ...</code></li>
+        </ol>
+      </div>
+      <div class="answer-box" id="a13a">
+        <p><strong>1. Certificaat + key genereren</strong> en op hun plaats zetten:</p>
+        <div class="cmd">sudo mkdir -p /etc/my.cnf.d/certs
+cd /etc/my.cnf.d/certs
+sudo openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout server-key.pem -out server-cert.pem -days 365 \
+  -subj "/CN=webserverXX.pxl.lan"
+sudo chown -R mysql:mysql /etc/my.cnf.d/certs
+sudo chmod 600 server-key.pem</div>
+        <p><strong>2. MariaDB op SSL zetten</strong> in <code>/etc/my.cnf.d/mariadb-server.cnf</code>, sectie <code>[mariadb]</code>:</p>
+        <div class="conf-block"><span class="section">[mariadb]</span>
+<span class="key">ssl-cert</span> = <span class="val">/etc/my.cnf.d/certs/server-cert.pem</span>
+<span class="key">ssl-key</span>  = <span class="val">/etc/my.cnf.d/certs/server-key.pem</span>
+<span class="key">ssl-ca</span>   = <span class="val">/etc/my.cnf.d/certs/server-cert.pem</span>
+<span class="key">require_secure_transport</span> = <span class="val">ON</span></div>
+        <div class="cmd">sudo systemctl restart mariadb</div>
+        <p><strong>3. Gebruiker die SSL verplicht maakt:</strong></p>
+        <div class="sql-block"><span class="kw">CREATE USER</span> <span class="str">'sec'</span>@<span class="str">'localhost'</span> <span class="kw">IDENTIFIED BY</span> <span class="str">'pxl'</span> <span class="kw">REQUIRE SSL</span>;
+<span class="kw">GRANT ALL PRIVILEGES ON</span> nextcloud.* <span class="kw">TO</span> <span class="str">'sec'</span>@<span class="str">'localhost'</span>;
+<span class="kw">FLUSH PRIVILEGES</span>;</div>
+        <p><strong>4. Bewijs.</strong> Zonder SSL wordt geweigerd, met SSL werkt het:</p>
+        <div class="cmd"><span class="comment"># geweigerd (require_secure_transport=ON blokkeert plain):</span>
+mariadb -u sec -p --ssl=0
+<span class="comment"># → ERROR 1045 / "Access denied" of "Secure transport required"</span>
+
+<span class="comment"># werkt mét certificaat:</span>
+mariadb -u sec -p --ssl-ca=/etc/my.cnf.d/certs/server-cert.pem
+<span class="comment"># in de prompt:</span>
+STATUS;   <span class="comment"># → "SSL: Cipher in use is TLS_AES_256_..."</span></div>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1rem 0">
+
+      <p><strong>Oef 5 — Fijnmazige DB-rechten per CMS.</strong> Bouw voort op Oef 3. Maak <code>drupal_user</code>, <code>joomla_user</code>, <code>wp_user</code> en geef elk alleen <code>GRANT ALL</code> op zijn eigen database. Log in als <code>drupal_user</code>, doe <code>SHOW DATABASES;</code> — je mag de andere CMS-databases niet eens <em>zien</em>. Probeer daarna <code>SELECT * FROM wp_database.wp_users;</code> → moet falen met <code>Access denied</code>.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a13b')">👁 Toon aanpak Oef 5</button>
+      </div>
+      <div class="answer-box" id="a13b">
+        <p>De truc zit in <code>GRANT ... ON database.*</code>: door rechten <em>per database</em> te geven, beperk je niet alleen wat een user mag <em>doen</em>, maar ook wat hij mag <em>zien</em>. <code>SHOW DATABASES</code> toont enkel databases waarop je minstens één privilege hebt.</p>
+        <div class="sql-block"><span class="comment">-- elk CMS zijn eigen user, enkel op zijn eigen database:</span>
+<span class="kw">CREATE USER</span> <span class="str">'drupal_user'</span>@<span class="str">'localhost'</span> <span class="kw">IDENTIFIED BY</span> <span class="str">'pw1'</span>;
+<span class="kw">GRANT ALL PRIVILEGES ON</span> drupal.* <span class="kw">TO</span> <span class="str">'drupal_user'</span>@<span class="str">'localhost'</span>;
+
+<span class="kw">CREATE USER</span> <span class="str">'joomla_user'</span>@<span class="str">'localhost'</span> <span class="kw">IDENTIFIED BY</span> <span class="str">'pw2'</span>;
+<span class="kw">GRANT ALL PRIVILEGES ON</span> joomla.* <span class="kw">TO</span> <span class="str">'joomla_user'</span>@<span class="str">'localhost'</span>;
+
+<span class="kw">CREATE USER</span> <span class="str">'wp_user'</span>@<span class="str">'localhost'</span> <span class="kw">IDENTIFIED BY</span> <span class="str">'pw3'</span>;
+<span class="kw">GRANT ALL PRIVILEGES ON</span> wordpress.* <span class="kw">TO</span> <span class="str">'wp_user'</span>@<span class="str">'localhost'</span>;
+
+<span class="kw">FLUSH PRIVILEGES</span>;</div>
+        <p><strong>Bewijs van isolatie:</strong></p>
+        <div class="cmd">mariadb -u drupal_user -p</div>
+        <div class="sql-block"><span class="kw">SHOW DATABASES</span>;
+<span class="comment">-- toont enkel: information_schema, drupal  (NIET joomla/wordpress)</span>
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> wordpress.wp_users;
+<span class="comment">-- ERROR 1142 (42000): SELECT command denied to user 'drupal_user'@'localhost'</span></div>
+        <p>Dit is het principe van <em>least privilege</em>: lekt één CMS, dan blijft de schade beperkt tot één database.</p>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1rem 0">
+
+      <p><strong>Oef 6 — Caching & performance.</strong> Activeer <code>opcache</code> in <code>/etc/php.d/10-opcache.ini</code>, schakel in Apache <code>mod_expires</code> en <code>mod_deflate</code> in (per file-type: <code>ExpiresByType image/jpeg "access plus 1 month"</code>, <code>AddOutputFilterByType DEFLATE text/html text/css application/javascript</code>). Meet voor en na met:</p>
+      <div class="cmd">ab -n 200 -c 10 http://webserverXX.pxl.lan/
+curl -w "@curl-format.txt" -o /dev/null -s http://webserverXX.pxl.lan/</div>
+      <p>Verwacht: een merkbare daling in <code>Time per request</code>.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a13c')">👁 Toon aanpak Oef 6</button>
+      </div>
+      <div class="answer-box" id="a13c">
+        <p><strong>1. OpCache</strong> (PHP compileert scripts één keer en cachet de bytecode in geheugen) in <code>/etc/php.d/10-opcache.ini</code>:</p>
+        <div class="conf-block"><span class="key">opcache.enable</span>=<span class="val">1</span>
+<span class="key">opcache.memory_consumption</span>=<span class="val">128</span>
+<span class="key">opcache.max_accelerated_files</span>=<span class="val">10000</span>
+<span class="key">opcache.revalidate_freq</span>=<span class="val">60</span></div>
+        <p><strong>2. Apache compressie + caching.</strong> Maak <code>/etc/httpd/conf.d/performance.conf</code>:</p>
+        <div class="conf-block"><span class="tagname">&lt;IfModule mod_deflate.c&gt;</span>
+    <span class="directive">AddOutputFilterByType DEFLATE</span> <span class="val">text/html text/css application/javascript application/json</span>
+<span class="tagname">&lt;/IfModule&gt;</span>
+
+<span class="tagname">&lt;IfModule mod_expires.c&gt;</span>
+    <span class="directive">ExpiresActive</span> <span class="val">On</span>
+    <span class="directive">ExpiresByType</span> <span class="val">image/jpeg "access plus 1 month"</span>
+    <span class="directive">ExpiresByType</span> <span class="val">text/css "access plus 1 week"</span>
+    <span class="directive">ExpiresByType</span> <span class="val">application/javascript "access plus 1 week"</span>
+<span class="tagname">&lt;/IfModule&gt;</span></div>
+        <div class="cmd">sudo systemctl restart httpd php-fpm 2&gt;/dev/null; sudo systemctl restart httpd</div>
+        <p><strong>3. Meten.</strong> <code>mod_deflate</code> verkleint de transfer (compressie), <code>mod_expires</code> laat browsers cachen (minder requests), OpCache versnelt PHP zelf:</p>
+        <div class="cmd"><span class="comment"># installeer apache-benchmark indien nodig</span>
+sudo dnf install httpd-tools -y
+
+ab -n 200 -c 10 http://webserverXX.pxl.lan/
+<span class="comment"># vergelijk "Time per request" en "Transfer rate" voor/na</span>
+
+<span class="comment"># controleer dat compressie aan staat:</span>
+curl -H "Accept-Encoding: gzip" -I http://webserverXX.pxl.lan/
+<span class="comment"># → header "Content-Encoding: gzip" moet verschijnen</span></div>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1rem 0">
+
+      <p><strong>Oef 7 — mod_security &amp; mod_evasive.</strong> Installeer <code>mod_security</code> (WAF) met de OWASP Core Rule Set, en <code>mod_evasive</code> (anti-DoS). Test een SQL-injectie aanval — bv. surf naar <code>http://webserverXX.pxl.lan/?id=1' OR '1'='1</code> → moet door mod_security geweigerd worden met 403. Simuleer een DoS met <code>ab -n 1000 -c 100</code> → mod_evasive moet je IP tijdelijk blokkeren.</p>
+      <div class="btn-row">
+        <button class="answer-toggle" onclick="toggleAnswer('a13d')">👁 Toon aanpak Oef 7</button>
+      </div>
+      <div class="answer-box" id="a13d">
+        <p><strong>1. Installeren</strong> (mod_evasive zit in EPEL, dat heb je al uit Taak 6):</p>
+        <div class="cmd">sudo dnf install mod_security mod_security_crs mod_evasive -y
+sudo systemctl restart httpd</div>
+        <p><strong>2. mod_security</strong> staat na installatie standaard al aan in <code>DetectionOnly</code>-modus. Zet hem op blokkeren in <code>/etc/httpd/conf.d/mod_security.conf</code>:</p>
+        <div class="conf-block"><span class="directive">SecRuleEngine</span> <span class="val">On</span>     <span class="comment"># was: DetectionOnly</span></div>
+        <p>De OWASP Core Rule Set (CRS) bevat al kant-en-klare regels tegen SQL-injectie, XSS, enz. — die worden automatisch ingeladen.</p>
+        <p><strong>3. mod_evasive</strong> configureren in <code>/etc/httpd/conf.d/mod_evasive.conf</code>:</p>
+        <div class="conf-block"><span class="tagname">&lt;IfModule mod_evasive24.c&gt;</span>
+    <span class="directive">DOSPageCount</span>        <span class="val">2</span>      <span class="comment"># max hits zelfde pagina / interval</span>
+    <span class="directive">DOSSiteCount</span>        <span class="val">50</span>     <span class="comment"># max hits hele site / interval</span>
+    <span class="directive">DOSPageInterval</span>     <span class="val">1</span>      <span class="comment"># interval in seconden</span>
+    <span class="directive">DOSBlockingPeriod</span>   <span class="val">10</span>     <span class="comment"># hoelang geblokkeerd (sec)</span>
+<span class="tagname">&lt;/IfModule&gt;</span></div>
+        <div class="cmd">sudo httpd -t &amp;&amp; sudo systemctl restart httpd</div>
+        <p><strong>4. Testen:</strong></p>
+        <div class="cmd"><span class="comment"># SQL-injectie → mod_security blokkeert met 403</span>
+curl -i "http://webserverXX.pxl.lan/?id=1'+OR+'1'='1"
+<span class="comment"># → HTTP/1.1 403 Forbidden</span>
+
+<span class="comment"># DoS-simulatie → mod_evasive blokkeert je IP tijdelijk</span>
+ab -n 1000 -c 100 http://webserverXX.pxl.lan/
+<span class="comment"># → na de drempel: 403's, en regels in /var/log/httpd/error_log</span></div>
+        <div class="warn-note">
+          <strong>Let op:</strong> mod_security kan ook Nextcloud zelf hinderen (false positives). In productie tune je de CRS met <em>exclusion rules</em> voor je app. Voor de oefening volstaat het de blokkering te <em>demonstreren</em>.
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1rem 0">
+
+      <p><strong>Oef 8 — Deploy automatisch met Ansible.</strong> Schrijf een playbook <code>lamp.yml</code> dat op een schone RHEL: Apache+MariaDB+PHP+EPEL installeert, de Nextcloud-vhost neerzet, de SELinux-booleans/fcontexts toepast, firewall opent, en optioneel ook Drupal/Joomla/WordPress in subdirs uitpakt met aparte databases. Test op een nieuwe VM met <code>ansible-playbook -i inventory lamp.yml</code>.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h13e')">💡 Hint Oef 8 — structuur</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a13e')">👁 Toon aanpak Oef 8</button>
+      </div>
+      <div class="hint-box" id="h13e">
+        <strong>Skeleton:</strong>
+        <div class="php-block">- hosts: webservers
+  become: yes
+  tasks:
+    - name: install LAMP packages
+      dnf:
+        name: [httpd, mariadb-server, php, php-mysqlnd, php-gd, ...]
+        state: present
+
+    - name: start &amp; enable services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop: [httpd, mariadb]
+
+    - name: SELinux booleans
+      seboolean:
+        name: "{{ item }}"
+        state: yes
+        persistent: yes
+      loop: [httpd_can_network_connect, httpd_unified]
+
+    - name: firewall
+      firewalld:
+        service: http
+        permanent: yes
+        state: enabled
+        zone: internal
+      notify: reload firewall</div>
+        Modules om in op te zoeken: <code>community.mysql.mysql_db</code>, <code>community.mysql.mysql_user</code>, <code>ansible.posix.firewalld</code>, <code>ansible.posix.seboolean</code>, <code>ansible.builtin.template</code> voor de vhost-config.
+      </div>
+      <div class="answer-box" id="a13e">
+        <p>Een werkbaar <code>lamp.yml</code>-playbook. Plaats het op je control-node, met een <code>inventory</code>-bestand dat je webserver bevat onder groep <code>webservers</code>.</p>
+        <div class="php-block">---
+- hosts: webservers
+  become: yes
+  vars:
+    nc_db: nextcloud
+    nc_user: ncuser
+    nc_pass: "SterkWachtwoordHier"
+  tasks:
+    - name: EPEL repo
+      dnf:
+        name: epel-release
+        state: present
+
+    - name: LAMP + PHP packages installeren
+      dnf:
+        name:
+          - httpd
+          - mariadb-server
+          - php
+          - php-mysqlnd
+          - php-gd
+          - php-mbstring
+          - php-xml
+          - php-zip
+          - php-intl
+          - php-imagick
+          - python3-PyMySQL   # nodig voor de mysql-modules
+        state: present
+
+    - name: services starten en enablen
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - httpd
+        - mariadb
+
+    - name: SELinux booleans
+      ansible.posix.seboolean:
+        name: "{{ item }}"
+        state: yes
+        persistent: yes
+      loop:
+        - httpd_can_network_connect
+        - httpd_unified
+
+    - name: firewall http openzetten
+      ansible.posix.firewalld:
+        service: http
+        permanent: yes
+        immediate: yes
+        state: enabled
+        zone: internal
+
+    - name: Nextcloud database
+      community.mysql.mysql_db:
+        name: "{{ nc_db }}"
+        encoding: utf8mb4
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Nextcloud db-user
+      community.mysql.mysql_user:
+        name: "{{ nc_user }}"
+        password: "{{ nc_pass }}"
+        priv: "{{ nc_db }}.*:ALL"
+        host: localhost
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: vhost neerzetten
+      ansible.builtin.template:
+        src: nextcloud.conf.j2
+        dest: /etc/httpd/conf.d/nextcloud.conf
+      notify: restart httpd
+
+  handlers:
+    - name: restart httpd
+      systemd:
+        name: httpd
+        state: restarted</div>
+        <p><strong>Uitvoeren en testen</strong> op een schone VM:</p>
+        <div class="cmd"><span class="comment"># vereiste collections eenmalig installeren</span>
+ansible-galaxy collection install community.mysql ansible.posix
+
+ansible-playbook -i inventory lamp.yml
+
+<span class="comment"># idempotentie-check: tweede run mag NIETS meer wijzigen (changed=0)</span>
+ansible-playbook -i inventory lamp.yml</div>
+        <p>De kracht van Ansible is <em>idempotentie</em>: draai je het playbook twee keer, dan verandert de tweede keer niets (<code>changed=0</code>) omdat alles al in de gewenste staat is. Dat maakt het veilig om herhaaldelijk te draaien.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>PXL Linux Advanced · LAMP Lab (Nextcloud)</p>
+    <button class="reset-btn" onclick="resetAll()">↺ Reset voortgang</button>
+  </footer>
+
+</div>
+
+<script>
+  const TOTAL = 13;
+
+  function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
+
+  function toggleCheck(e, id) {
+    e.stopPropagation();
+    const card = document.getElementById(id);
+    card.querySelector('.task-check').classList.toggle('checked');
+    card.classList.toggle('done');
+    updateProgress();
+    onTaskToggled(check.classList.contains('checked'));
+    saveState();
+  }
+
+  function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+  function toggleAnswer(id) { document.getElementById(id).classList.toggle('show'); }
+
+  function updateProgress() {
+    const RANKS = [
+      { pct: 100, key: 'challenger', icon: '⚔️', label: 'Challenger' },
+      { pct: 100, key: 'diamond',    icon: '💠', label: 'Diamond'    },
+      { pct:  85, key: 'platinum',   icon: '🪙', label: 'Platinum'   },
+      { pct:  70, key: 'gold',       icon: '🥇', label: 'Gold'       },
+      { pct:  40, key: 'silver',     icon: '🥈', label: 'Silver'     },
+      { pct:   1, key: 'bronze',     icon: '🥉', label: 'Bronze'     },
+    ];
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = done + ' / ' + TOTAL;
+
+    const rankEl = document.getElementById('rank-display');
+    if (rankEl) {
+      const rank = RANKS.find(r => pct >= r.pct);
+      // Diamond for 100% within single lab, Challenger reserved for full suite on index
+      const labRank = rank && rank.key === 'challenger' ? RANKS[1] : rank;
+      if (labRank) {
+        rankEl.textContent = labRank.icon + ' ' + labRank.label;
+        rankEl.className = 'rank-display rank-' + labRank.key;
+      } else {
+        rankEl.textContent = '';
+        rankEl.className = 'rank-display';
+      }
+    }
+
+    // Drive progress sidebar
+    const psCount    = document.getElementById('ps-count');
+    const psTotal    = document.getElementById('ps-total');
+    const psPips     = document.getElementById('ps-pips');
+    const psRankCard = document.getElementById('ps-rank-card');
+    const psRankIcon = document.getElementById('ps-rank-icon');
+    const psRankName = document.getElementById('ps-rank-name');
+    const psRankSub  = document.getElementById('ps-rank-sub');
+    const psNext     = document.getElementById('ps-next');
+
+    if (psCount) psCount.textContent = done;
+    if (psTotal) psTotal.textContent = '/ ' + TOTAL + ' taken';
+
+    // Pips
+    if (psPips) {
+      psPips.innerHTML = '';
+      for (let i = 1; i <= TOTAL; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'ps-pip' + (i <= done ? ' done' : '');
+        psPips.appendChild(pip);
+      }
+    }
+
+    // Rank card
+    const ALL_RANKS = [
+      { pct: 100, key: 'diamond',  icon: '💠', label: 'Diamond',  sub: 'Lab voltooid!' },
+      { pct:  85, key: 'platinum', icon: '🪙', label: 'Platinum', sub: 'Bijna daar...' },
+      { pct:  70, key: 'gold',     icon: '🥇', label: 'Gold',     sub: 'Goed bezig!'  },
+      { pct:  40, key: 'silver',   icon: '🥈', label: 'Silver',   sub: 'Op dreef!'    },
+      { pct:   1, key: 'bronze',   icon: '🥉', label: 'Bronze',   sub: 'Gestart!'     },
+    ];
+    const currentRank = ALL_RANKS.find(r => pct >= r.pct);
+    const nextRank    = currentRank ? ALL_RANKS[ALL_RANKS.indexOf(currentRank) - 1] : ALL_RANKS[ALL_RANKS.length - 1];
+
+    if (psRankCard) {
+      psRankCard.className = 'ps-rank-card' + (currentRank ? ' rank-' + currentRank.key : '');
+      if (psRankIcon) psRankIcon.textContent = currentRank ? currentRank.icon : '—';
+      if (psRankName) psRankName.textContent = currentRank ? currentRank.label : 'Geen rank';
+      if (psRankSub)  psRankSub.textContent  = currentRank ? currentRank.sub  : 'Start met taken';
+    }
+
+    // Next rank preview
+    if (psNext) {
+      if (!currentRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor 🥉 Bronze';
+      } else if (nextRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        if (needed > 0) {
+          psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor ' + nextRank.icon + ' ' + nextRank.label;
+        } else {
+          psNext.innerHTML = '';
+        }
+      } else {
+        psNext.innerHTML = '';
+      }
+    }
+  }
+
+  function saveState() {
+    const state = {};
+    for (let i = 1; i <= TOTAL; i++) {
+      const card = document.getElementById('t' + i);
+      if (card) state['t' + i] = card.classList.contains('done');
+    }
+    try { localStorage.setItem('lab_lamp_state', JSON.stringify(state)); } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('lab_lamp_state');
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      for (const [id, done] of Object.entries(state)) {
+        if (done) {
+          const card = document.getElementById(id);
+          if (card) {
+            card.classList.add('done');
+            card.querySelector('.task-check').classList.add('checked');
+          }
+        }
+      }
+      updateProgress();
+    } catch(e) {}
+  }
+
+  function resetAll() {
+    if (!confirm('Voortgang resetten?')) return;
+    document.querySelectorAll('.task-check').forEach(c => c.classList.remove('checked'));
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('done'));
+    updateProgress();
+    try { localStorage.removeItem('lab_lamp_state'); } catch(e) {}
+  }
+
+  /* BATCH1-GAMIFICATION */
+  // Rank level derived independently from the checked-task count.
+  // 0 = none, 1 bronze, 2 silver, 3 gold, 4 platinum, 5 diamond.
+  function currentRankLevel() {
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    if (pct >= 100) return 5;
+    if (pct >= 85)  return 4;
+    if (pct >= 70)  return 3;
+    if (pct >= 40)  return 2;
+    if (pct >= 1)   return 1;
+    return 0;
+  }
+
+  let prevRankLevel = 0;      // seeded on load so we don't animate stale state
+  let rankBaselineSet = false;
+  let sessionStreak = 0;      // in-memory only: resets when the page closes
+
+  function seedRankBaseline() {
+    prevRankLevel = currentRankLevel();
+    rankBaselineSet = true;
+  }
+
+  function checkRankTransition() {
+    const newLevel = currentRankLevel();
+    if (rankBaselineSet && newLevel > prevRankLevel) {
+      flashRankCard();
+      if (newLevel === 5) showCompletionOverlay();
+    }
+    prevRankLevel = newLevel;
+  }
+  function onTaskToggled(nowChecked) {
+    updateStreak(nowChecked);
+    checkRankTransition();
+  }
+
+  function updateStreak(nowChecked) {
+    if (nowChecked) sessionStreak++;
+    else sessionStreak = 0;   // unchecking breaks the streak
+    const el = document.getElementById('ps-streak');
+    if (!el) return;
+    if (sessionStreak >= 2) {
+      el.style.display = 'flex';
+      const num = el.querySelector('.ps-streak-num');
+      if (num) num.textContent = sessionStreak;
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  function flashRankCard() {
+    const card = document.getElementById('ps-rank-card');
+    if (!card) return;
+    card.classList.remove('rank-up');
+    void card.offsetWidth;          // force reflow so the animation can re-trigger
+    card.classList.add('rank-up');
+    setTimeout(() => card.classList.remove('rank-up'), 1000);
+  }
+
+  function showCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.add('show');
+  }
+  function closeCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.remove('show');
+  }
+
+  loadState();
+  seedRankBaseline();
+
+  /* BATCH2-STUDY-QOL */
+  // ---- clipboard with HTTP fallback (VM deploys are not secure contexts) ----
+  function writeClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('execCommand failed'));
+      } catch (err) { reject(err); }
+    });
+  }
+
+  function copyCmd(cmd, btn) {
+    const clone = cmd.cloneNode(true);
+    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
+    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    const text = clone.textContent.trim();
+    writeClipboard(text).then(() => {
+      btn.textContent = '✓ Gekopieerd';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Kopieer'; btn.classList.remove('copied'); }, 1400);
+    }).catch(() => {
+      btn.textContent = 'Mislukt';
+      setTimeout(() => { btn.textContent = 'Kopieer'; }, 1400);
+    });
+  }
+
+  // ---- mark all tasks in a section (toggles: all-done -> clears, else fills) ----
+  function tasksInSection(sectionEl) {
+    const tasks = [];
+    let el = sectionEl.nextElementSibling;
+    while (el && !el.classList.contains('section-title')) {
+      if (el.classList.contains('task-card')) tasks.push(el);
+      el = el.nextElementSibling;
+    }
+    return tasks;
+  }
+
+  function markSection(sectionEl) {
+    const tasks = tasksInSection(sectionEl);
+    if (!tasks.length) return;
+    const allDone = tasks.every(t => t.classList.contains('done'));
+    const target = !allDone;
+    tasks.forEach(t => {
+      const chk = t.querySelector('.task-check');
+      t.classList.toggle('done', target);
+      if (chk) chk.classList.toggle('checked', target);
+    });
+    updateProgress();
+    saveState();
+    checkRankTransition();   // milestone effects, but no streak change for bulk ops
+  }
+
+  // ---- keyboard navigation: J/K move, Space toggles, Esc deselects ----
+  let kbIndex = -1;
+  function kbCards() { return Array.from(document.querySelectorAll('.task-card')); }
+  function highlightKb() {
+    const cards = kbCards();
+    cards.forEach((c, i) => c.classList.toggle('kb-active', i === kbIndex));
+    if (kbIndex >= 0 && cards[kbIndex]) {
+      cards[kbIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  function handleKbNav(e) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'button' || tag === 'a' || e.target.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const cards = kbCards();
+    if (!cards.length) return;
+    const k = e.key.toLowerCase();
+    if (k === 'j') {
+      kbIndex = kbIndex < 0 ? 0 : Math.min(cards.length - 1, kbIndex + 1);
+      highlightKb(); e.preventDefault();
+    } else if (k === 'k') {
+      kbIndex = kbIndex <= 0 ? 0 : kbIndex - 1;
+      highlightKb(); e.preventDefault();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      if (kbIndex >= 0 && cards[kbIndex]) {
+        toggleCheck({ stopPropagation() {} }, cards[kbIndex].id);
+        e.preventDefault();
+      }
+    } else if (e.key === 'Escape') {
+      kbIndex = -1; highlightKb();
+    }
+  }
+
+  function initStudyQol() {
+    document.querySelectorAll('.cmd').forEach(cmd => {
+      if (cmd.querySelector('.copy-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.type = 'button';
+      btn.textContent = 'Kopieer';
+      btn.addEventListener('click', () => copyCmd(cmd, btn));
+      cmd.appendChild(btn);
+    });
+    document.querySelectorAll('.section-title').forEach(sec => {
+      if (sec.querySelector('.section-mark-all')) return;
+      const btn = document.createElement('button');
+      btn.className = 'section-mark-all';
+      btn.type = 'button';
+      btn.textContent = '✓ sectie';
+      btn.title = 'Vink alle taken in deze sectie af (of wis ze)';
+      btn.addEventListener('click', () => markSection(sec));
+      sec.appendChild(btn);
+    });
+    document.addEventListener('keydown', handleKbNav);
+  }
+
+  initStudyQol();
+</script>
+
+<div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeCompletionOverlay()">
+  <div class="lab-complete-card" onclick="event.stopPropagation()">
+    <div class="lc-icon">💠</div>
+    <div class="lc-title">Lab Voltooid!</div>
+    <div class="lc-sub">Alle taken afgevinkt — Diamond rank bereikt. Sterk werk!</div>
+    <button class="lc-close" onclick="closeCompletionOverlay()">Sluiten</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trikks' Labs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0f14;
+    --surface: #131b24;
+    --surface2: #1b2733;
+    --border: #2a3744;
+    --accent: #2dd4bf;
+    --accent2: #38bdf8;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --text: #e2e8f0;
+    --muted: #7d8da0;
+    --code-bg: #0a0f14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(56,189,248,0.06), transparent 45%),
+      radial-gradient(circle at 88% 14%, rgba(167,139,250,0.05), transparent 45%),
+      radial-gradient(circle at 50% 95%, rgba(45,212,191,0.05), transparent 50%);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2.5rem 1rem 3rem;
+  }
+
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* ============ HERO ============ */
+  header {
+    margin-bottom: 2.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: end;
+  }
+  header .left { border-left: 4px solid var(--accent); padding-left: 1.5rem; }
+  header .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--accent); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.6rem;
+  }
+  header h1 {
+    font-size: 2.6rem; font-weight: 800; line-height: 1.05; margin-bottom: 0.6rem;
+  }
+  header p {
+    color: var(--muted); font-size: 0.95rem; line-height: 1.6; max-width: 56ch;
+  }
+
+  /* aggregate progress card on the right of the hero */
+  .total-progress {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.4rem;
+    min-width: 220px;
+  }
+  .total-progress .tp-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em;
+    margin-bottom: 0.6rem;
+  }
+  .total-progress .tp-counts {
+    display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.6rem;
+  }
+  .total-progress .tp-done {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.8rem; font-weight: 700; color: var(--accent);
+  }
+  .total-progress .tp-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem; color: var(--muted);
+  }
+  .tp-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .tp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    width: 0%;
+  }
+
+  /* ============ SECTIONS ============ */
+  .section-title {
+    font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 1rem; margin-top: 2.2rem;
+    display: flex; align-items: center; gap: 0.85rem;
+  }
+  .section-title::before, .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .section-title::before { max-width: 1rem; }
+
+  /* ============ LAB CARDS GRID ============ */
+  .lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1rem;
+  }
+
+  .lab-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.3rem 1.1rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    position: relative;
+    transition: all 0.18s ease;
+    border-top-width: 3px;
+  }
+  .lab-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover, var(--accent));
+    background: var(--surface2);
+  }
+  .lab-card.complete::after { display: none; } /* replaced by rank badge */
+
+  /* ============ RANK BADGES ============ */
+  .rank-badge {
+    position: absolute; top: 0.85rem; right: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; font-weight: 700;
+    padding: 0.2rem 0.55rem; border-radius: 20px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid; display: flex; align-items: center; gap: 0.3rem;
+    transition: all 0.3s ease;
+  }
+  .rank-bronze   { color: #cd7f32; border-color: #cd7f32; background: rgba(205,127,50,0.1); }
+  .rank-silver   { color: #a8b8c8; border-color: #a8b8c8; background: rgba(168,184,200,0.1); }
+  .rank-gold     { color: #fbbf24; border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .rank-platinum { color: #e2e8f0; border-color: #94a3b8; background: rgba(148,163,184,0.15); box-shadow: 0 0 8px rgba(148,163,184,0.2); }
+  .rank-diamond  { color: #7dd3fc; border-color: #7dd3fc; background: rgba(125,211,252,0.1); box-shadow: 0 0 10px rgba(125,211,252,0.25); }
+
+  /* Challenger banner */
+  .challenger-banner {
+    display: none; margin-top: 0.8rem;
+    background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(45,212,191,0.1));
+    border: 1px solid var(--purple); border-radius: 8px;
+    padding: 0.6rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; color: var(--purple); letter-spacing: 0.05em;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  .challenger-banner.show { display: block; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(167,139,250,0.15); }
+    50%       { box-shadow: 0 0 35px rgba(167,139,250,0.35); }
+  }
+
+  /* per-section accent */
+  .lab-card.basics    { border-top-color: var(--accent2); }
+  .lab-card.basics:hover    { border-color: var(--accent2); }
+  .lab-card.services  { border-top-color: var(--green); }
+  .lab-card.services:hover  { border-color: var(--green); }
+  .lab-card.harden    { border-top-color: var(--warn); }
+  .lab-card.harden:hover    { border-color: var(--warn); }
+  .lab-card.observe   { border-top-color: var(--pink); }
+  .lab-card.observe:hover   { border-color: var(--pink); }
+  .lab-card.cloud     { border-top-color: var(--purple); }
+  .lab-card.cloud:hover     { border-color: var(--purple); }
+
+  .lab-card .top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+  }
+  .lab-card .number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .lab-card .title {
+    font-size: 1.1rem; font-weight: 700; line-height: 1.25;
+    margin-bottom: 0.1rem;
+  }
+  .lab-card .desc {
+    color: var(--muted); font-size: 0.84rem; line-height: 1.55;
+    flex: 1;
+  }
+  .lab-card .tags {
+    display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.15rem;
+  }
+  .lab-card .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    padding: 0.18rem 0.5rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--surface2);
+    color: var(--muted);
+  }
+
+  /* lab progress bar at the bottom of each card */
+  .lab-card .progress-line {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 0.3rem;
+  }
+  .lab-card .lp-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .lab-card .lp-fill {
+    height: 100%;
+    background: var(--muted);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+  .lab-card.basics   .lp-fill { background: var(--accent2); }
+  .lab-card.services .lp-fill { background: var(--green); }
+  .lab-card.harden   .lp-fill { background: var(--warn); }
+  .lab-card.observe  .lp-fill { background: var(--pink); }
+  .lab-card.cloud    .lp-fill { background: var(--purple); }
+  .lab-card .lp-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--muted);
+    white-space: nowrap; min-width: 60px; text-align: right;
+  }
+
+  /* ============ FOOTER ============ */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 1rem;
+    justify-content: space-between; align-items: center;
+  }
+  footer .left-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  footer .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  footer button {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 0.45rem 0.95rem; border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    cursor: pointer; transition: all 0.18s;
+  }
+  footer button.expand:hover { border-color: var(--accent2); color: var(--accent2); }
+  footer button.reset:hover { border-color: var(--danger); color: var(--danger); }
+
+  @media (max-width: 700px) {
+    header { grid-template-columns: 1fr; }
+    header h1 { font-size: 2rem; }
+    .lab-grid { grid-template-columns: 1fr; }
+  }
+  /* ============ COMPACT CONTROLS (hero right column) ============ */
+  .hero-right { display: flex; flex-direction: column; gap: 0.9rem; min-width: 220px; }
+  .hero-controls {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.9rem 1.1rem;
+  }
+  .hero-controls .hc-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em;
+    margin-bottom: 0.6rem;
+  }
+  .hero-controls .hc-rows { display: flex; flex-direction: column; gap: 0.4rem; }
+  .hero-controls .hc-rows span {
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: 0.8rem; color: var(--muted);
+  }
+  .hero-controls kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-bottom-width: 2px; border-radius: 4px;
+    padding: 0.1rem 0.4rem; color: var(--text); white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="left">
+      <div class="label">PXL · Linux Advanced</div>
+      <h1>Trikks' Labs</h1>
+      <p>11 interactieve labs die de volledige cursus Linux Advanced dekken. Vink af terwijl je vordert — je voortgang wordt lokaal opgeslagen in deze browser. Klik op een kaart om aan een lab te beginnen.</p>
+    </div>
+    <div class="hero-right">
+    <div class="total-progress">
+      <div class="tp-label">Totale voortgang</div>
+      <div class="tp-counts">
+        <span class="tp-done" id="tp-done">0</span>
+        <span class="tp-total" id="tp-total">/ 0 taken</span>
+      </div>
+      <div class="tp-bar"><div class="tp-bar-fill" id="tp-bar"></div></div>
+      <div class="challenger-banner" id="challenger-banner">⚔️ &nbsp;CHALLENGER — alle 11 labs voltooid</div>
+    </div>
+    <div class="hero-controls">
+      <div class="hc-label">Sneltoetsen · in de labs</div>
+      <div class="hc-rows">
+        <span><kbd>J</kbd> <kbd>K</kbd> navigeren tussen taken</span>
+        <span><kbd>Spatie</kbd> geselecteerde taak afvinken</span>
+        <span><kbd>Esc</kbd> deselecteren</span>
+      </div>
+    </div>
+    </div>
+  </header>
+
+  <!-- ============ FUNDAMENTEN ============ -->
+  <div class="section-title">Fundamenten · netwerk-essentials</div>
+  <div class="lab-grid">
+
+    <a class="lab-card basics" href="linux_advanced_lab_intro.html"
+       data-key="lab_intro_state" data-total="15">
+      <div class="top">
+        <div class="number">Lab 01 · Hoofdstuk 1</div>
+      </div>
+      <div class="title">Inleiding &amp; RHEL setup</div>
+      <div class="desc">Eerste contact met de RHEL-omgeving: gebruikers, sudo, basis netwerk- en SSH-config. Je opzet voor alle volgende labs.</div>
+      <div class="tags">
+        <span class="tag">rhel</span><span class="tag">ssh</span><span class="tag">users</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 15</span>
+      </div>
+    </a>
+
+    <a class="lab-card basics" href="linux_advanced_lab_netwerkbeheer.html"
+       data-key="lab_netwerk_state" data-total="16">
+      <div class="top">
+        <div class="number">Lab 02 · Hoofdstuk 2</div>
+      </div>
+      <div class="title">Netwerkbeheer</div>
+      <div class="desc">Interfaces, IP-configuratie en routing met <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">nmcli</code>. Twee NIC's, twee zones, gateway-rol.</div>
+      <div class="tags">
+        <span class="tag">nmcli</span><span class="tag">routing</span><span class="tag">interfaces</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 16</span>
+      </div>
+    </a>
+
+    <a class="lab-card basics" href="linux_advanced_lab_dhcp.html"
+       data-key="lab_dhcp_state" data-total="10">
+      <div class="top">
+        <div class="number">Lab 03 · Hoofdstuk 3</div>
+      </div>
+      <div class="title">DHCP-server</div>
+      <div class="desc">Kea DHCP installeren en configureren. IP-pools, reservaties, lease-bestand inspecteren.</div>
+      <div class="tags">
+        <span class="tag">kea</span><span class="tag">leases</span><span class="tag">pools</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 10</span>
+      </div>
+    </a>
+
+    <a class="lab-card basics" href="linux_advanced_lab_dns.html"
+       data-key="lab_dns_state" data-total="12">
+      <div class="top">
+        <div class="number">Lab 04 · Hoofdstuk 4</div>
+      </div>
+      <div class="title">DNS-server</div>
+      <div class="desc">BIND als master voor <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">pxl.lan</code>. Forward- en reverse-zones, recursie, troubleshooten met dig.</div>
+      <div class="tags">
+        <span class="tag">bind</span><span class="tag">zones</span><span class="tag">dig</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 12</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ============ DIENSTEN ============ -->
+  <div class="section-title">Diensten · web &amp; bestanden delen</div>
+  <div class="lab-grid">
+
+    <a class="lab-card services" href="linux_advanced_lab_webservers.html"
+       data-key="lab_webservers_state" data-total="14">
+      <div class="top">
+        <div class="number">Lab 05 · Hoofdstuk 5</div>
+      </div>
+      <div class="title">Apache webserver</div>
+      <div class="desc">Apache van scratch: virtual hosts, beveiliging, HTTPS met self-signed cert, logging en een troubleshooting-puzzel.</div>
+      <div class="tags">
+        <span class="tag">httpd</span><span class="tag">vhosts</span><span class="tag">https</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 14</span>
+      </div>
+    </a>
+
+    <a class="lab-card services" href="linux_advanced_lab_lamp.html"
+       data-key="lab_lamp_state" data-total="13">
+      <div class="top">
+        <div class="number">Lab 06 · Hoofdstuk 6</div>
+      </div>
+      <div class="title">LAMP-stack &amp; Nextcloud</div>
+      <div class="desc">Linux + Apache + MariaDB + PHP. Nextcloud installeren, met databases, SELinux-booleans en multi-CMS hosting als bonus.</div>
+      <div class="tags">
+        <span class="tag">mariadb</span><span class="tag">php</span><span class="tag">nextcloud</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 13</span>
+      </div>
+    </a>
+
+    <a class="lab-card services" href="linux_advanced_lab_samba.html"
+       data-key="lab_samba_state" data-total="14">
+      <div class="top">
+        <div class="number">Lab 07 · Hoofdstuk 7</div>
+      </div>
+      <div class="title">Samba file sharing</div>
+      <div class="desc">Drie soorten shares (public, private, homes) voor Linux- en Windows-clients. <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">smb.conf</code>, ACL's, testen vanaf de client.</div>
+      <div class="tags">
+        <span class="tag">smb</span><span class="tag">cifs</span><span class="tag">shares</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 14</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ============ HARDENING ============ -->
+  <div class="section-title">Hardening · beveiliging</div>
+  <div class="lab-grid">
+
+    <a class="lab-card harden" href="linux_advanced_lab_selinux.html"
+       data-key="lab_selinux_state" data-total="14">
+      <div class="top">
+        <div class="number">Lab 08 · Hoofdstuk 8</div>
+      </div>
+      <div class="title">SELinux</div>
+      <div class="desc">Mandatory Access Control: contexten, booleans, troubleshooten met <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">ausearch</code> en <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">sealert</code>.</div>
+      <div class="tags">
+        <span class="tag">mac</span><span class="tag">semanage</span><span class="tag">audit</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 14</span>
+      </div>
+    </a>
+
+    <a class="lab-card harden" href="linux_advanced_lab_firewall.html"
+       data-key="lab_firewall_state" data-total="18">
+      <div class="top">
+        <div class="number">Lab 09 · Hoofdstuk 9</div>
+      </div>
+      <div class="title">Firewall &amp; Proxy</div>
+      <div class="desc">firewalld → nftables met default-drop policy. Squid forward proxy en Nginx reverse proxy bovenop.</div>
+      <div class="tags">
+        <span class="tag">nftables</span><span class="tag">squid</span><span class="tag">nginx</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 18</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ============ OBSERVABILITY ============ -->
+  <div class="section-title">Observability · monitoring</div>
+  <div class="lab-grid">
+
+    <a class="lab-card observe" href="linux_advanced_lab_monitoring.html"
+       data-key="lab_monitoring_state" data-total="16">
+      <div class="top">
+        <div class="number">Lab 10 · Hoofdstuk 10</div>
+      </div>
+      <div class="title">Processen &amp; logging</div>
+      <div class="desc">Wat draait er nú? <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">ps</code>, <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">top</code>, <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--accent2);background:var(--surface2);padding:0.05rem 0.3rem;border-radius:3px">nice</code>, signalen. En wat is er gisteren gebeurd? journald, rsyslog, logrotate.</div>
+      <div class="tags">
+        <span class="tag">ps</span><span class="tag">journald</span><span class="tag">rsyslog</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 16</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ============ CLOUD-NATIVE ============ -->
+  <div class="section-title">Cloud-native · containers</div>
+  <div class="lab-grid">
+
+    <a class="lab-card cloud" href="linux_advanced_lab_containers.html"
+       data-key="lab_containers_state" data-total="11">
+      <div class="top">
+        <div class="number">Lab 11 · Hoofdstuk 11</div>
+      </div>
+      <div class="title">Virtualisatie &amp; Containers</div>
+      <div class="desc">Containers met Podman: nginx draaien, eigen image bouwen, pods, rootless, private registry en systemd-integratie.</div>
+      <div class="tags">
+        <span class="tag">podman</span><span class="tag">containerfile</span><span class="tag">pods</span>
+      </div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 11</span>
+      </div>
+    </a>
+
+  </div>
+
+  <footer>
+    <span class="left-text">PXL Linux Advanced · 11 labs · voortgang lokaal opgeslagen per browser</span>
+    <div class="actions">
+      <button class="expand" onclick="refreshAll()">↻ Voortgang verversen</button>
+      <button class="reset" onclick="resetEverything()">↺ Reset alles</button>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // Read each lab's localStorage key and update its progress bar.
+  // Each lab stores: { "t1": true, "t2": false, ... } under e.g. "lab_dhcp_state".
+
+  function getDoneCount(storageKey) {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return 0;
+      const state = JSON.parse(raw);
+      // Count entries where value === true
+      return Object.values(state).filter(v => v === true).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  const RANKS = [
+    { pct: 100, key: 'diamond',  icon: '💠', label: 'Diamond'  },
+    { pct:  85, key: 'platinum', icon: '🪙', label: 'Platinum' },
+    { pct:  70, key: 'gold',     icon: '🥇', label: 'Gold'     },
+    { pct:  40, key: 'silver',   icon: '🥈', label: 'Silver'   },
+    { pct:   1, key: 'bronze',   icon: '🥉', label: 'Bronze'   },
+  ];
+
+  function getRank(pct) {
+    for (const r of RANKS) { if (pct >= r.pct) return r; }
+    return null;
+  }
+
+  function updateAllProgress() {
+    let grandDone = 0, grandTotal = 0;
+    let allComplete = true;
+
+    document.querySelectorAll('.lab-card').forEach(card => {
+      const key = card.dataset.key;
+      const total = parseInt(card.dataset.total, 10);
+      const done = getDoneCount(key);
+
+      grandDone += done;
+      grandTotal += total;
+
+      const pct = total > 0 ? (done / total) * 100 : 0;
+      const fill = card.querySelector('.lp-fill');
+      const text = card.querySelector('.lp-text');
+
+      if (fill) fill.style.width = pct + '%';
+      if (text) text.textContent = done + ' / ' + total;
+
+      if (done === total && total > 0) {
+        card.classList.add('complete');
+      } else {
+        card.classList.remove('complete');
+        allComplete = false;
+      }
+
+      // Rank badge
+      let badge = card.querySelector('.rank-badge');
+      const rank = getRank(pct);
+      if (rank) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'rank-badge';
+          card.appendChild(badge);
+        }
+        badge.className = 'rank-badge rank-' + rank.key;
+        badge.textContent = rank.icon + ' ' + rank.label;
+      } else if (badge) {
+        badge.remove();
+      }
+    });
+
+    // total bar + challenger
+    const totalPct = grandTotal > 0 ? (grandDone / grandTotal) * 100 : 0;
+    document.getElementById('tp-done').textContent = grandDone;
+    document.getElementById('tp-total').textContent = '/ ' + grandTotal + ' taken';
+    document.getElementById('tp-bar').style.width = totalPct + '%';
+    const banner = document.getElementById('challenger-banner');
+    if (banner) banner.classList.toggle('show', allComplete && grandTotal > 0);
+  }
+
+  function refreshAll() {
+    updateAllProgress();
+  }
+
+  function resetEverything() {
+    if (!confirm('Voortgang van ALLE 11 labs wissen? Dit kan niet ongedaan gemaakt worden.')) return;
+    document.querySelectorAll('.lab-card').forEach(card => {
+      try { localStorage.removeItem(card.dataset.key); } catch (e) {}
+    });
+    updateAllProgress();
+  }
+
+  // Run on load
+  updateAllProgress();
+
+  // Also re-check progress when the user returns to this tab
+  // (handy: they complete tasks in another tab, then click back here)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updateAllProgress();
+  });
+</script>
+</body>
+</html>

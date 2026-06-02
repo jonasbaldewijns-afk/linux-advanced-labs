@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Advanced — SELinux Lab (hardening)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0f14;
+    --surface: #131b24;
+    --surface2: #1b2733;
+    --border: #2a3744;
+    --accent: #2dd4bf;
+    --accent2: #38bdf8;
+    --theme: var(--warn);
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --text: #e2e8f0;
+    --muted: #7d8da0;
+    --code-bg: #0a0f14;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at 15% 10%, rgba(251,191,36,0.05), transparent 40%), radial-gradient(circle at 85% 90%, rgba(248,113,113,0.05), transparent 40%);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  header {
+    border-left: 4px solid var(--theme);
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  header .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--theme); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.5rem;
+  }
+  header h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+  header p { color: var(--muted); margin-top: 0.75rem; font-size: 0.95rem; line-height: 1.6; }
+
+  .scenario-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent2); border-radius: 8px;
+    padding: 1.5rem; margin-bottom: 1.5rem;
+  }
+  .scenario-box h2 { font-size: 1rem; color: var(--accent2); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .scenario-box p { color: var(--text); line-height: 1.7; font-size: 0.95rem; }
+
+  /* access-model comparison */
+  .models {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .models h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .models-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.6rem; }
+  .model-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.85rem; border-top: 3px solid var(--border); }
+  .model-card.dac { border-top-color: var(--green); }
+  .model-card.acl { border-top-color: var(--accent2); }
+  .model-card.mac { border-top-color: var(--danger); }
+  .model-card .m-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .model-card .m-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.55; }
+  .model-card .m-cmd { font-size: 0.72rem; color: var(--accent2); background: var(--surface2); padding: 0.25rem 0.4rem; border-radius: 4px; margin-top: 0.4rem; font-family: 'JetBrains Mono', monospace; display: inline-block; }
+
+  /* context anatomy */
+  .anatomy {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem 1.25rem 1rem; margin-bottom: 1.5rem;
+  }
+  .anatomy h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .ctx-line { font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; text-align: center; margin-bottom: 1rem; letter-spacing: 0.02em; }
+  .ctx-line .seg { padding: 0.15rem 0.1rem; border-bottom: 3px solid; }
+  .ctx-line .u { color: var(--muted); border-color: var(--muted); }
+  .ctx-line .r { color: var(--muted); border-color: var(--muted); }
+  .ctx-line .t { color: var(--warn); border-color: var(--warn); font-weight: 700; }
+  .ctx-line .l { color: var(--muted); border-color: var(--muted); }
+  .ctx-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.4rem; }
+  .ctx-legend .leg { font-size: 0.74rem; color: var(--muted); line-height: 1.4; }
+  .ctx-legend .leg b { font-family: 'JetBrains Mono', monospace; }
+  .ctx-legend .leg.hot b { color: var(--warn); }
+
+  /* the allow-rule mental model */
+  .allow {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .allow h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .allow-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+  .allow-box { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem; text-align: center; min-width: 120px; }
+  .allow-box .ab-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem; }
+  .allow-box .ab-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 700; }
+  .allow-box.subject .ab-val { color: var(--accent2); }
+  .allow-box.target .ab-val { color: var(--warn); }
+  .allow-arrow { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-align: center; }
+
+  .progress-bar-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-bar-wrap span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--theme), color-mix(in oklab, var(--theme), white 35%)); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
+  .progress-count { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--theme); }
+
+  .section-title {
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.75rem; margin-top: 2.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 1rem; overflow: hidden; transition: border-color 0.2s;
+  }
+  .task-card.done { border-color: var(--accent); }
+  .task-card.done .task-header { background: rgba(45,212,191,0.05); }
+
+  .task-header {
+    padding: 1rem 1.25rem; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 1rem; user-select: none; transition: background 0.15s;
+  }
+  .task-header:hover { background: var(--surface2); }
+
+  .task-check {
+    width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 5px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; cursor: pointer; margin-top: 1px;
+  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after { content: '✓'; color: #000; font-size: 13px; font-weight: 700; }
+
+  .task-meta { flex: 1; }
+  .task-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .task-title { font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+  .task-card.done .task-title { color: var(--muted); text-decoration: line-through; }
+
+  .expand-icon { color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; transition: transform 0.2s; flex-shrink: 0; margin-top: 3px; }
+  .task-card.open .expand-icon { transform: rotate(90deg); }
+
+  .task-body { display: none; padding: 0 1.25rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .task-card.open .task-body { display: block; }
+  .task-body p { color: var(--text); line-height: 1.7; font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.75rem; }
+  .task-body code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent2); }
+  .task-body ul, .task-body ol { margin: 0.5rem 0 0.75rem 1.25rem; line-height: 1.7; font-size: 0.9rem; }
+  .task-body li { margin-bottom: 0.3rem; }
+
+  .cmd {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+  .cmd .comment { color: var(--muted); }
+  .cmd .out { color: var(--muted); }
+
+  /* SELinux context output block — colour the type field */
+  .ctx-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--warn);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--muted); margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .ctx-block .type { color: var(--warn); font-weight: 700; }
+  .ctx-block .good { color: var(--green); font-weight: 700; }
+  .ctx-block .bad  { color: var(--danger); font-weight: 700; }
+  .ctx-block .path { color: var(--accent2); }
+  .ctx-block .comment { color: var(--muted); font-style: italic; }
+
+  /* html sample block */
+  .html-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #c4b5fd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  .hint-toggle { display: none; }
+  .answer-toggle {
+    background: none; border: 1px dashed var(--border); color: var(--muted);
+    border-radius: 5px; padding: 0.4rem 0.9rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .answer-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hint-box {
+    display: block; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: #d4a853;
+  }
+  .hint-box.show { display: block; }
+  .hint-box strong { color: var(--warn); }
+  .hint-box code { color: var(--warn); background: rgba(251,191,36,0.12); padding: 0.05rem 0.3rem; border-radius: 3px; }
+
+  .answer-box {
+    display: none; background: rgba(45,212,191,0.04); border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: var(--text);
+  }
+  .answer-box.show { display: block; }
+  .answer-box p { margin-top: 0.5rem; }
+
+  .verify-block {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(56,189,248,0.05);
+    border: 1px solid rgba(56,189,248,0.2); border-radius: 6px; font-size: 0.82rem; line-height: 1.6;
+  }
+  .verify-block strong { font-family: 'JetBrains Mono', monospace; color: var(--accent2); display: block; margin-bottom: 0.4rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .verify-block code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  .concept-box {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 6px; font-size: 0.85rem; line-height: 1.65;
+  }
+  .concept-box strong { font-family: 'JetBrains Mono', monospace; color: var(--purple); display: block; margin-bottom: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  .concept-box code { color: var(--purple); background: rgba(167,139,250,0.1); }
+
+  .warn-note {
+    background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: #fca5a5;
+  }
+  .warn-note strong { color: var(--danger); }
+  .warn-note code { color: #fca5a5; background: rgba(248,113,113,0.1); }
+
+  .info-note {
+    background: rgba(56,189,248,0.05); border: 1px solid rgba(56,189,248,0.25);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: var(--text);
+  }
+  .info-note strong { color: var(--accent2); }
+  .info-note code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  .tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+    padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.4rem;
+  }
+  .tag-concept { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-mode    { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-ctx     { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .tag-bool    { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-port    { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-debug   { background: rgba(244,114,182,0.15); color: var(--pink); }
+  .tag-exam    { background: rgba(248,113,113,0.18); color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+
+  footer {
+    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  }
+  footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  .reset-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  @media (max-width: 600px) {
+    .ctx-line { font-size: 0.8rem; }
+  }
+
+  /* ============ RANK ============ */
+  .rank-display {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700;
+    padding: 0.18rem 0.55rem; border-radius: 20px; letter-spacing: 0.07em;
+    text-transform: uppercase; border: 1px solid; white-space: nowrap;
+    transition: all 0.3s ease;
+  }
+  .rank-bronze   { color: #cd7f32; border-color: #cd7f32; background: rgba(205,127,50,0.1); }
+  .rank-silver   { color: #a8b8c8; border-color: #a8b8c8; background: rgba(168,184,200,0.1); }
+  .rank-gold     { color: #fbbf24; border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .rank-platinum { color: #e2e8f0; border-color: #94a3b8; background: rgba(148,163,184,0.15); box-shadow: 0 0 8px rgba(148,163,184,0.2); }
+  .rank-diamond  { color: #7dd3fc; border-color: #7dd3fc; background: rgba(125,211,252,0.1); box-shadow: 0 0 10px rgba(125,211,252,0.25); }
+  .rank-challenger { color: #a78bfa; border-color: #a78bfa; background: rgba(167,139,250,0.12); box-shadow: 0 0 14px rgba(167,139,250,0.3); animation: pulse-glow 2s ease-in-out infinite; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(167,139,250,0.2); }
+    50%       { box-shadow: 0 0 22px rgba(167,139,250,0.45); }
+  }
+
+  /* ===== LAB NAV BAR ===== */
+  .lab-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; gap: 0.75rem;
+  }
+  .lab-nav a {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    text-decoration: none; padding: 0.45rem 0.9rem; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--muted); background: var(--surface);
+    transition: all 0.15s ease; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .lab-nav a:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .lab-nav .home-btn { border-color: var(--accent); color: var(--accent); }
+  .lab-nav .home-btn:hover { background: var(--accent); color: #000; }
+  .lab-nav .nav-side { min-width: 120px; }
+  .lab-nav .nav-side.right { text-align: right; justify-content: flex-end; }
+  .lab-nav .disabled { opacity: 0.25; pointer-events: none; }
+
+
+  /* ===== FLOATING SIDEBARS ===== */
+  /* Content is 1300px wide, so half = 650px. Sidebars sit 8px outside that. */
+
+  .lab-nav {
+    position: fixed;
+    left: max(0.5rem, calc(50% - 650px - 148px));
+    top: 50vh;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 140px;
+    margin-bottom: 0;
+    z-index: 100;
+  }
+  .lab-nav a {
+    justify-content: center;
+    text-align: center;
+  }
+  .lab-nav .nav-side.right { justify-content: center; }
+
+  .progress-sidebar {
+    position: fixed;
+    right: max(0.5rem, calc(50% - 650px - 210px));
+    top: 50vh;
+    transform: translateY(-50%);
+    width: 190px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  /* Header row */
+  .progress-sidebar .ps-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.18em;
+  }
+
+  /* Big count */
+  .progress-sidebar .ps-count-row {
+    display: flex; align-items: baseline; gap: 0.35rem;
+  }
+  .progress-sidebar .ps-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.2rem; font-weight: 700; color: var(--accent);
+    line-height: 1;
+  }
+  .progress-sidebar .ps-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--muted);
+  }
+
+  /* Pip progress track */
+  .ps-pips {
+    display: flex; flex-wrap: wrap; gap: 3px;
+  }
+  .ps-pip {
+    width: 10px; height: 10px; border-radius: 2px;
+    background: var(--border); transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+  }
+  .ps-pip.done {
+    background: var(--accent);
+    box-shadow: 0 0 4px rgba(45,212,191,0.5);
+  }
+
+  /* Rank card */
+  .ps-rank-card {
+    border-radius: 8px; padding: 0.7rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex; flex-direction: column; gap: 0.3rem;
+    transition: all 0.4s ease;
+  }
+  .ps-rank-card .ps-rank-icon { font-size: 1.4rem; line-height: 1; }
+  .ps-rank-card .ps-rank-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .ps-rank-card .ps-rank-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+  }
+
+  /* Rank colour theming */
+  .ps-rank-card.rank-bronze  { border-color: rgba(205,127,50,0.4);  background: rgba(205,127,50,0.07);  }
+  .ps-rank-card.rank-bronze  .ps-rank-name { color: #cd7f32; }
+  .ps-rank-card.rank-silver  { border-color: rgba(168,184,200,0.4); background: rgba(168,184,200,0.07); }
+  .ps-rank-card.rank-silver  .ps-rank-name { color: #a8b8c8; }
+  .ps-rank-card.rank-gold    { border-color: rgba(251,191,36,0.4);  background: rgba(251,191,36,0.07);  box-shadow: 0 0 12px rgba(251,191,36,0.1); }
+  .ps-rank-card.rank-gold    .ps-rank-name { color: #fbbf24; }
+  .ps-rank-card.rank-platinum{ border-color: rgba(148,163,184,0.5); background: rgba(148,163,184,0.09); box-shadow: 0 0 14px rgba(148,163,184,0.15); }
+  .ps-rank-card.rank-platinum .ps-rank-name { color: #e2e8f0; }
+  .ps-rank-card.rank-diamond { border-color: rgba(125,211,252,0.5); background: rgba(125,211,252,0.08); box-shadow: 0 0 16px rgba(125,211,252,0.2); }
+  .ps-rank-card.rank-diamond .ps-rank-name { color: #7dd3fc; }
+
+  /* Next rank preview */
+  .ps-next {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
+  }
+  .ps-next span { color: var(--warn); font-weight: 700; }
+
+  /* Sidebars active above 1200px — hide inline elements */
+  @media (min-width: 1200px) {
+    .progress-bar-wrap { display: none; }
+  }
+
+  /* Below 1200px — sidebars go inline, progress bar reappears */
+  @media (max-width: 1199px) {
+    .lab-nav {
+      position: static;
+      transform: none;
+      flex-direction: row;
+      width: auto;
+      margin-bottom: 1.75rem;
+    }
+    .lab-nav a { justify-content: flex-start; text-align: left; }
+    .lab-nav .nav-side.right { justify-content: flex-end; }
+    .progress-sidebar { display: none; }
+    .progress-bar-wrap { display: flex; }
+  }
+
+
+  /* BATCH1-GAMIFICATION */
+  /* Rank-up flash on the sidebar rank card */
+  @keyframes rank-up-flash {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+    30%  { transform: scale(1.07); box-shadow: 0 0 26px rgba(125,211,252,0.7); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 rgba(125,211,252,0); }
+  }
+  .ps-rank-card.rank-up { animation: rank-up-flash 1s ease; }
+
+  /* Session streak chip in the sidebar */
+  .ps-streak {
+    display: none; align-items: center; gap: 0.4rem;
+    margin-top: 0.7rem; padding: 0.45rem 0.6rem;
+    border: 1px solid rgba(251,146,60,0.35);
+    background: rgba(251,146,60,0.08);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--orange);
+  }
+  .ps-streak .ps-streak-fire { font-size: 1rem; }
+  .ps-streak .ps-streak-num { font-weight: 700; }
+
+  /* Lab completion overlay */
+  .lab-complete-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10,15,20,0.78);
+    backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .lab-complete-overlay.show { display: flex; opacity: 1; }
+  .lab-complete-card {
+    text-align: center;
+    padding: 2.4rem 2.6rem;
+    border-radius: 16px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: var(--surface);
+    box-shadow: 0 0 40px rgba(125,211,252,0.25);
+    max-width: 380px;
+    animation: lc-pop 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  @keyframes lc-pop {
+    0%   { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .lab-complete-card .lc-icon { font-size: 3.2rem; line-height: 1; margin-bottom: 0.6rem; }
+  .lab-complete-card .lc-title {
+    font-size: 1.5rem; font-weight: 800; color: #7dd3fc; margin-bottom: 0.4rem;
+  }
+  .lab-complete-card .lc-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.4rem; }
+  .lab-complete-card .lc-close {
+    font-family: inherit; cursor: pointer;
+    padding: 0.55rem 1.4rem; border-radius: 8px;
+    border: 1px solid rgba(125,211,252,0.5);
+    background: rgba(125,211,252,0.1); color: #7dd3fc;
+    font-size: 0.9rem; font-weight: 600;
+    transition: background 0.2s ease;
+  }
+  .lab-complete-card .lc-close:hover { background: rgba(125,211,252,0.2); }
+
+
+  /* BATCH2-STUDY-QOL */
+  /* Copy button on command blocks */
+  .copy-btn {
+    position: absolute; top: 6px; right: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted);
+    opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .cmd:hover .copy-btn, .copy-btn:focus { opacity: 1; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
+
+  /* Mark-all-in-section control (pushed to the far right of the section bar) */
+  .section-title::after { order: 1; }
+  .section-mark-all {
+    order: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.2rem 0.55rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--muted);
+    transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap;
+  }
+  .section-mark-all:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Keyboard-navigation highlight */
+  .task-card.kb-active {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
+  }
+
+  /* Keyboard hint in the sidebar */
+  .ps-kbhint {
+    margin-top: 0.7rem; font-size: 0.66rem; line-height: 1.6;
+    color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  }
+  .ps-kbhint b { color: var(--text); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <nav class="lab-nav">
+    <a class="nav-side" href="linux_advanced_lab_samba.html">← Samba</a>
+    <a class="home-btn" href="index.html">⌂ Home</a>
+    <a class="nav-side right" href="linux_advanced_lab_firewall.html">Firewall →</a>
+  </nav>
+
+  <div class="progress-sidebar" id="progress-sidebar">
+    <div class="ps-label">Voortgang</div>
+    <div class="ps-count-row">
+      <div class="ps-count" id="ps-count">0</div>
+      <div class="ps-total" id="ps-total">/ 0 taken</div>
+    </div>
+    <div class="ps-pips" id="ps-pips"></div>
+    <div class="ps-rank-card" id="ps-rank-card">
+      <div class="ps-rank-icon" id="ps-rank-icon">—</div>
+      <div class="ps-rank-name" id="ps-rank-name">Geen rank</div>
+      <div class="ps-rank-sub" id="ps-rank-sub">Start met taken</div>
+    </div>
+    <div class="ps-next" id="ps-next"></div>
+    <div class="ps-streak" id="ps-streak">
+      <span class="ps-streak-fire">🔥</span>
+      <span><span class="ps-streak-num">0</span> op rij</span>
+    </div>
+    <div class="ps-kbhint" id="ps-kbhint">⌨ <b>J</b>/<b>K</b> navigeren · <b>Spatie</b> afvinken</div>
+  </div>
+
+
+  <header>
+    <div class="label">PXL Linux Advanced · Hardening · SELinux</div>
+    <h1>Security Enhanced Linux</h1>
+    <p>In de vorige hoofdstukken mocht je SELinux soms even <em>uitzetten</em> om snel vooruit te gaan. Dat stopt hier. SELinux is een beveiligingslaag in de Linux-kernel die werkt met <strong>Mandatory Access Control</strong> — strikte, beleidsgedreven regels die zelfs <code>root</code> niet zomaar omzeilt. In dit hoofdstuk leer je hoe het werkt, hoe je de stille fouten ervan opspoort in de logs, en hoe je contexten, booleans en poorten correct aanpast in plaats van SELinux uit te schakelen.</p>
+  </header>
+
+  <div class="scenario-box">
+    <h2>📋 Scenario</h2>
+    <p>Je werkt op je RHEL-server uit de vorige hoofdstukken. Een security-audit heeft vastgesteld dat SELinux op verschillende plaatsen permissief of uitgeschakeld stond — onaanvaardbaar voor productie. Je taak: SELinux overal terug <em>enforcing</em> zetten en alle diensten (Apache, Samba, …) correct laten werken mét SELinux aan. Onderweg leer je waarom een verplaatst bestand plots niet meer geserveerd wordt, hoe een <em>stille</em> blokkering eruitziet in <code>audit.log</code>, en waarom <code>chmod 777</code> je probleem níét oplost.</p>
+  </div>
+
+  <!-- ACCESS MODELS -->
+  <div class="models">
+    <h3>🔐 Drie toegangsmodellen — waar SELinux past</h3>
+    <div class="models-grid">
+      <div class="model-card dac">
+        <div class="m-name" style="color:var(--green)">DAC</div>
+        <div class="m-desc">Discretionary Access Control. De klassieke Unix-rechten: de <em>eigenaar</em> beslist wie mag. Flexibel, maar één foute <code>chmod</code> en alles ligt open.</div>
+        <div class="m-cmd">chmod 755 file</div>
+      </div>
+      <div class="model-card acl">
+        <div class="m-name" style="color:var(--accent2)">ACL</div>
+        <div class="m-desc">Access Control Lists. Fijner dan DAC: rechten per individuele gebruiker of groep, bovenop de standaard owner/group/other.</div>
+        <div class="m-cmd">setfacl -m u:jan:rwx file</div>
+      </div>
+      <div class="model-card mac">
+        <div class="m-name" style="color:var(--danger)">MAC</div>
+        <div class="m-desc">Mandatory Access Control (= SELinux). Het <em>systeembeleid</em> beslist, niet de gebruiker. Zelfs root wordt beperkt. Afgedwongen door de kernel.</div>
+        <div class="m-cmd">policy-gedreven, automatisch</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT ANATOMY -->
+  <div class="anatomy">
+    <h3>🏷️ Anatomie van een security context</h3>
+    <div class="ctx-line">
+      <span class="seg u">unconfined_u</span>:<span class="seg r">object_r</span>:<span class="seg t">httpd_sys_content_t</span>:<span class="seg l">s0</span>
+    </div>
+    <div class="ctx-legend">
+      <div class="leg"><b>unconfined_u</b> — SELinux-gebruiker (MLS, negeren we)</div>
+      <div class="leg"><b>object_r</b> — rol (MLS, negeren we)</div>
+      <div class="leg hot"><b>httpd_sys_content_t</b> — <strong>type</strong>: dit telt!</div>
+      <div class="leg"><b>s0</b> — gevoeligheidsniveau (MLS, negeren we)</div>
+    </div>
+  </div>
+
+  <!-- ALLOW RULE MENTAL MODEL -->
+  <div class="allow">
+    <h3>⚙️ Hoe een beslissing valt: type-enforcement</h3>
+    <div class="allow-row">
+      <div class="allow-box subject">
+        <div class="ab-label">Proces (subject)</div>
+        <div class="ab-val">httpd_t</div>
+      </div>
+      <div class="allow-arrow">— mag lezen? →<br><span style="color:var(--muted)">policy lookup</span></div>
+      <div class="allow-box target">
+        <div class="ab-label">Bestand (target)</div>
+        <div class="ab-val">httpd_sys_content_t</div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:0.8rem;margin-top:0.9rem;line-height:1.5">
+      Het Apache-proces draait als type <code style="color:var(--accent2)">httpd_t</code>. Een bestand met type <code style="color:var(--warn)">httpd_sys_content_t</code> mag het lezen — want er bestaat een <code style="color:var(--green)">allow</code>-regel. Heeft het bestand een <em>ander</em> type (bv. <code style="color:var(--danger)">user_home_t</code> of <code style="color:var(--danger)">var_t</code>), dan is er geen allow-regel en blokkeert de kernel — vaak <strong>zonder zichtbare foutmelding</strong>.
+    </p>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <span>Voortgang</span>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+    <span id="rank-display" class="rank-display"></span>
+    <span class="progress-count" id="progress-count">0 / 14</span>
+  </div>
+
+  <!-- =================== DEEL 1: MODI & STATUS =================== -->
+  <div class="section-title">Deel 1 — Modi &amp; status</div>
+
+  <div class="task-card" id="t1">
+    <div class="task-header" onclick="toggleTask('t1')">
+      <div class="task-check" onclick="toggleCheck(event,'t1')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-mode">Modi</span> Taak 01</div>
+        <div class="task-title">Controleer de SELinux-status en -modus</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>SELinux kent drie modi. Eerst kijken in welke jouw systeem staat.</p>
+      <div class="cmd"><span class="comment"># korte uitvoer: enkel de actieve modus</span>
+getenforce
+
+<span class="comment"># volledige status: modus, policy-type, mount, ...</span>
+sestatus
+
+<span class="comment"># enkel of het aan/uit is, scriptbaar</span>
+selinuxenabled &amp;&amp; echo "Enabled" || echo "Disabled"</div>
+      <div class="concept-box">
+        <strong>De drie modi</strong>
+        <ul style="margin-top:0.3rem">
+          <li><strong>Enforcing</strong> — beleid wordt afgedwongen, overtredingen <em>geblokkeerd</em> én gelogd. Dit is productie.</li>
+          <li><strong>Permissive</strong> — overtredingen worden enkel <em>gelogd</em>, niet geblokkeerd. Ideaal om te troubleshooten: je ziet wat er <em>zou</em> falen zonder dat je dienst stopt.</li>
+          <li><strong>Disabled</strong> — SELinux volledig uit. Niet aanbevolen; je verliest de hele laag.</li>
+        </ul>
+      </div>
+      <div class="info-note">
+        <strong>ℹ Targeted policy:</strong> <code>sestatus</code> toont ook het policy-<em>type</em>. Standaard is dat <code>targeted</code>: enkel specifieke "interessante" diensten (httpd, sshd, named, …) worden bewaakt, de rest draait <code>unconfined</code>. De alternatieven <code>minimum</code> en <code>mls</code> (Multi-Level Security) zie je zelden.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>getenforce</code> geeft <code>Enforcing</code>, <code>Permissive</code> of <code>Disabled</code>. <code>sestatus</code> toont o.a. <code>Loaded policy name: targeted</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t2">
+    <div class="task-header" onclick="toggleTask('t2')">
+      <div class="task-check" onclick="toggleCheck(event,'t2')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-mode">Modi</span> Taak 02</div>
+        <div class="task-title">Wissel tussen modi — tijdelijk én permanent</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Er zijn twee niveaus: een <em>runtime</em>-switch (geldt tot reboot) en een <em>permanente</em> instelling in een configbestand.</p>
+      <div class="cmd"><span class="comment"># RUNTIME (tot de volgende reboot)</span>
+sudo setenforce 0      <span class="comment"># → Permissive</span>
+sudo setenforce 1      <span class="comment"># → Enforcing</span>
+<span class="comment"># mag ook met woorden: setenforce Permissive / Enforcing</span></div>
+      <div class="cmd"><span class="comment"># PERMANENT (overleeft reboot) — bewerk het configbestand</span>
+sudo nano /etc/selinux/config</div>
+      <div class="ctx-block"><span class="comment"># In /etc/selinux/config (ook bereikbaar als /etc/sysconfig/selinux):</span>
+SELINUX=<span class="good">enforcing</span>      <span class="comment"># of: permissive, disabled</span>
+SELINUXTYPE=targeted</div>
+      <div class="warn-note">
+        <strong>Let op het verschil:</strong> <code>setenforce</code> kan enkel tussen <em>enforcing</em> en <em>permissive</em> schakelen — je kan SELinux niet <em>disablen</em> tijdens runtime. Van/naar <code>disabled</code> gaan vereist het configbestand <strong>én een reboot</strong>, want de kernel moet alle bestanden opnieuw labelen. En: <em>disable nooit in productie</em> — gebruik permissive om te troubleshooten.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Na <code>setenforce 0</code> toont <code>getenforce</code> → <code>Permissive</code>. Zet daarna terug op <code>1</code>; je laat dit hoofdstuk verder in enforcing draaien.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 2: CONTEXTEN LEZEN =================== -->
+  <div class="section-title">Deel 2 — Contexten leren lezen</div>
+
+  <div class="task-card" id="t3">
+    <div class="task-header" onclick="toggleTask('t3')">
+      <div class="task-check" onclick="toggleCheck(event,'t3')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ctx">Context</span> Taak 03</div>
+        <div class="task-title">Bekijk contexten van bestanden, processen en poorten</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Bijna élke SELinux-tool toont contexten met de vlag <code>-Z</code>. Onthoud die letter — ze komt overal terug.</p>
+      <div class="cmd"><span class="comment"># bestanden</span>
+ls -Z /var/www/html/
+
+<span class="comment"># processen</span>
+ps -eZ | grep httpd
+
+<span class="comment"># je eigen gebruikerscontext</span>
+id -Z
+
+<span class="comment"># poorten (welke poort hoort bij welk type)</span>
+sudo semanage port -l | grep http</div>
+      <p>Een bestand toont bijvoorbeeld:</p>
+      <div class="ctx-block"><span class="path">/var/www/html/index.html</span>
+unconfined_u:object_r:<span class="type">httpd_sys_content_t</span>:s0</div>
+      <p>Een proces toont:</p>
+      <div class="ctx-block">system_u:system_r:<span class="type">httpd_t</span>:s0   37154 ?  httpd</div>
+      <div class="concept-box">
+        <strong>Focus op het type</strong>
+        Van de vier velden (<code>user:role:type:level</code>) draait in de <code>targeted</code>-policy alles om het <strong>type</strong> (eindigt op <code>_t</code>). De andere drie zijn vooral relevant bij MLS, dat we niet gebruiken. Onthoud: een proces met type <code>httpd_t</code> mag bij een bestand met type <code>httpd_sys_content_t</code> — dat is het hele spel.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je herkent in elke uitvoer het type-veld (eindigt op <code>_t</code>). Webcontent = <code>httpd_sys_content_t</code>, Apache-proces = <code>httpd_t</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 3: DE KERN-DEMO =================== -->
+  <div class="section-title">Deel 3 — De kern-demo: waarom een verplaatst bestand breekt</div>
+
+  <div class="task-card" id="t4">
+    <div class="task-header" onclick="toggleTask('t4')">
+      <div class="task-check" onclick="toggleCheck(event,'t4')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ctx">Context</span> Taak 04</div>
+        <div class="task-title">Schone start: herinstalleer httpd en maak index.html ter plaatse</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Om de demo zuiver te houden, vertrekken we van een verse Apache. Configbestanden worden bij herinstallatie <em>niet</em> overschreven, dus verwijderen we ze eerst expliciet.</p>
+      <div class="cmd"><span class="comment"># schone lei: weg met config + documentroot, dan httpd opnieuw</span>
+sudo rm -rf /etc/httpd
+sudo rm -rf /var/www/html
+sudo dnf remove httpd -y
+sudo dnf install httpd -y
+sudo systemctl enable --now httpd</div>
+      <p>Surf naar <code>http://localhost</code> → je krijgt de standaard Apache-testpagina. Maak nu zelf een <code>index.html</code> <strong>rechtstreeks</strong> in de webroot:</p>
+      <div class="cmd">sudo nano /var/www/html/index.html</div>
+      <div class="html-block">&lt;html&gt;
+&lt;head&gt;&lt;title&gt;mogelijkheid1&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;h1&gt;mogelijkheid1&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</div>
+      <p>Bekijk het label en vergelijk met het proces:</p>
+      <div class="cmd">ls -Z /var/www/html/index.html
+ps -eZ | grep httpd</div>
+      <div class="ctx-block">unconfined_u:object_r:<span class="good">httpd_sys_content_t</span>:s0  /var/www/html/index.html
+system_u:system_r:<span class="type">httpd_t</span>:s0  37154 ? httpd</div>
+      <div class="concept-box">
+        <strong>Waarom werkt dit meteen?</strong>
+        Een bestand dat je <em>aanmaakt in</em> <code>/var/www/html</code> erft automatisch het juiste type <code>httpd_sys_content_t</code> — want voor dat pad bestaat er een regel in de file-context-database. Het proces <code>httpd_t</code> mag dat type lezen → pagina verschijnt. Onthoud dit, want in de volgende taak gaat het mis precies omdat we het bestand ergens <em>anders</em> aanmaken.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>http://localhost</code> toont "mogelijkheid1". Het bestand draagt <code>httpd_sys_content_t</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t5">
+    <div class="task-header" onclick="toggleTask('t5')">
+      <div class="task-check" onclick="toggleCheck(event,'t5')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ctx">Context</span> Taak 05</div>
+        <div class="task-title">Het breekpunt: maak index.html in je home en verplaats het</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Verwijder het werkende bestand. Maak nu een nieuw <code>index.html</code> in je <strong>home directory</strong> en <em>verplaats</em> het naar de webroot.</p>
+      <div class="cmd">sudo rm /var/www/html/index.html
+
+<span class="comment"># aanmaken in home (NIET in de webroot)</span>
+nano ~/index.html</div>
+      <div class="html-block">&lt;html&gt;
+&lt;head&gt;&lt;title&gt;mogelijkheid2&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;h1&gt;mogelijkheid2&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</div>
+      <p>Bekijk eerst het label in je home, en verplaats dan:</p>
+      <div class="cmd">ls -Z ~/index.html
+<span class="comment"># → unconfined_u:object_r:user_home_t:s0  index.html</span>
+
+sudo mv ~/index.html /var/www/html/</div>
+      <p>Surf naar <code>http://localhost</code> → <strong>het werkt niet</strong>. Kijk waarom:</p>
+      <div class="cmd">ls -Z /var/www/html/index.html</div>
+      <div class="ctx-block">unconfined_u:object_r:<span class="bad">user_home_t</span>:s0  /var/www/html/index.html</div>
+      <div class="concept-box">
+        <strong>Waarom breekt <code>mv</code> het — en <code>cp</code> niet?</strong>
+        Bij <code>mv</code> blijft het bestand fysiek hetzelfde inode; <strong>het label reist mee</strong>. Het bestand staat nu wel in de webroot maar draagt nog steeds <code>user_home_t</code> uit je home. Het proces <code>httpd_t</code> heeft <em>geen</em> allow-regel om <code>user_home_t</code> te lezen → geblokkeerd. Had je <code>cp</code> gebruikt, dan kreeg de nieuwe kopie het type van de <em>doelmap</em> (<code>httpd_sys_content_t</code>) en had het wél gewerkt. Dit is dé klassieke SELinux-valkuil.
+      </div>
+      <div class="warn-note">
+        <strong>Verraderlijk:</strong> de gewone Unix-rechten (<code>ls -l</code>) zien er perfect uit. Je kan <code>chmod 777</code> doen tot je een ons weegt — het lost niets op, want het probleem zit in een <em>andere laag</em>: SELinux.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>http://localhost</code> faalt, en <code>ls -Z</code> toont <code>user_home_t</code> i.p.v. <code>httpd_sys_content_t</code>. Het probleem is nu zichtbaar gemaakt — in Deel 4 lossen we het op.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 4: CONTEXTEN HERSTELLEN =================== -->
+  <div class="section-title">Deel 4 — Contexten herstellen: chcon vs semanage</div>
+
+  <div class="task-card" id="t6">
+    <div class="task-header" onclick="toggleTask('t6')">
+      <div class="task-check" onclick="toggleCheck(event,'t6')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ctx">Context</span> Taak 06</div>
+        <div class="task-title">Tijdelijke fix met <code>chcon</code> (en waarom het niet blijft plakken)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p><code>chcon</code> (change context) zet handmatig een type op een bestand. Snel, maar <strong>niet persistent</strong>: een herlabeling met <code>restorecon</code> of soms gewoon een reboot overschrijft het weer.</p>
+      <div class="cmd"><span class="comment"># -t wijzigt het TYPE-deel van de context</span>
+sudo chcon -t httpd_sys_content_t /var/www/html/index.html
+
+<span class="comment"># controle + test in de browser</span>
+ls -Z /var/www/html/index.html</div>
+      <div class="concept-box">
+        <strong>De vier <code>chcon</code>-opties</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>-u</code> — wijzig het user-deel</li>
+          <li><code>-r</code> — wijzig het role-deel</li>
+          <li><code>-t</code> — wijzig het <strong>type</strong>-deel (verreweg het meest gebruikt)</li>
+          <li><code>-l</code> — wijzig het level-deel (MLS)</li>
+          <li><code>-R</code> — recursief (op een hele directory)</li>
+        </ul>
+      </div>
+      <div class="warn-note">
+        <strong>Waarom dit niet de juiste oplossing is:</strong> <code>chcon</code> verandert enkel het <em>huidige</em> label, niet de <em>regel</em> in de database. Draait er ooit een <code>restorecon</code> (handmatig, via een opstartscript, of na een volledige relabel), dan valt je bestand terug op het databasetype — en als dat niet klopt, is je fix weg. Gebruik <code>chcon</code> dus enkel voor snelle tests; voor de echte oplossing → Taak 07.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Na <code>chcon</code> toont <code>ls -Z</code> weer <code>httpd_sys_content_t</code> en werkt <code>http://localhost</code>. (Maar het is "fragiel" — daarom Taak 07.)
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t7">
+    <div class="task-header" onclick="toggleTask('t7')">
+      <div class="task-check" onclick="toggleCheck(event,'t7')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ctx">Context</span> Taak 07</div>
+        <div class="task-title">Permanente fix met <code>semanage fcontext</code> + <code>restorecon</code></div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>De juiste manier bestaat uit twee stappen: <strong>(1)</strong> een regel toevoegen aan de file-context-database met <code>semanage</code>, en <strong>(2)</strong> die regel toepassen op de bestaande bestanden met <code>restorecon</code>.</p>
+      <div class="cmd"><span class="comment"># het pad /var/www/html heeft al een standaardregel in de database,</span>
+<span class="comment"># dus voor DIT pad volstaat restorecon om het label te herstellen:</span>
+sudo restorecon -Rv /var/www/html/</div>
+      <div class="ctx-block">Relabeled /var/www/html/index.html from unconfined_u:object_r:<span class="bad">user_home_t</span>:s0
+                                       to unconfined_u:object_r:<span class="good">httpd_sys_content_t</span>:s0</div>
+      <p>Voor een <em>eigen</em> pad (dat nog geen regel heeft) voeg je die eerst toe:</p>
+      <div class="cmd"><span class="comment"># 1. regel toevoegen aan de database (de (/.*)? = "map én alles eronder")</span>
+sudo semanage fcontext -a -t httpd_sys_content_t "/web(/.*)?"
+
+<span class="comment"># 2. regel toepassen op de echte bestanden</span>
+sudo restorecon -Rv /web/
+
+<span class="comment"># custom regels bekijken / verwijderen</span>
+sudo semanage fcontext -l -C
+sudo semanage fcontext -d "/web(/.*)?"</div>
+      <div class="concept-box">
+        <strong>semanage schrijft de regel, restorecon past hem toe</strong>
+        Dit is hét punt dat studenten verwarren. <code>semanage fcontext -a</code> voegt enkel een <em>regel</em> toe ("alles onder dit pad hoort type X te zijn") aan de database. De bestanden die er <em>nu al</em> staan veranderen daar niet door. Pas <code>restorecon</code> leest die database en zet het juiste label op de echte bestanden. Vergeet je <code>restorecon</code>, dan lijkt je fix niets te doen.
+      </div>
+      <div class="info-note">
+        <strong>ℹ De database op schijf:</strong> je eigen regels belanden in <code>/etc/selinux/targeted/contexts/files/file_contexts.local</code>. Open je dat bestand, dan zie je je aanpassingen uit de vorige hoofdstukken terug, bijvoorbeeld <code>/srv/shares(/.*)?  ...  samba_share_t:s0</code> en <code>/var/www/html(/.*)?  ...  httpd_sys_content_t:s0</code>.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Na <code>restorecon</code> draagt het bestand weer <code>httpd_sys_content_t</code> en blijft dat zo, óók na een reboot of latere relabel. <code>http://localhost</code> toont "mogelijkheid2".
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 5: BOOLEANS & POORTEN =================== -->
+  <div class="section-title">Deel 5 — Booleans &amp; poorten</div>
+
+  <div class="task-card" id="t8">
+    <div class="task-header" onclick="toggleTask('t8')">
+      <div class="task-check" onclick="toggleCheck(event,'t8')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-bool">Boolean</span> Taak 08</div>
+        <div class="task-title">Booleans: regels aan/uit zetten zonder de policy te herschrijven</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Soms is een type correct, maar verbiedt de policy een hele <em>categorie</em> gedrag — bijvoorbeeld "mag Apache het netwerk op?" of "mag Apache in home-directories lezen?". Daarvoor bestaan <strong>booleans</strong>: kant-en-klare aan/uit-schakelaars die de policy-makers hebben voorzien.</p>
+      <div class="cmd"><span class="comment"># alle booleans (heel veel!) — meestal grep je gericht</span>
+sudo getsebool -a | grep httpd
+
+<span class="comment"># één specifieke checken</span>
+getsebool httpd_can_network_connect</div>
+      <div class="cmd"><span class="comment"># tijdelijk aanzetten (verdwijnt na reboot)</span>
+sudo setsebool httpd_enable_homedirs on
+
+<span class="comment"># PERMANENT aanzetten — let op de -P !</span>
+sudo setsebool -P httpd_enable_homedirs on
+
+<span class="comment"># welke booleans heb ik zelf gewijzigd?</span>
+sudo semanage boolean -l -C</div>
+      <div class="warn-note">
+        <strong>De <code>-P</code> niet vergeten:</strong> zonder <code>-P</code> geldt de boolean enkel tot de volgende reboot. Je dienst werkt dan vandaag, maar na een herstart faalt hij plots — en dat is een vervelende bug om te vinden. <code>-P</code> = <em>persistent</em>.
+      </div>
+      <div class="concept-box">
+        <strong>Veelgebruikte httpd-booleans</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>httpd_can_network_connect</code> — Apache mag uitgaande netwerkverbindingen maken (APIs, …)</li>
+          <li><code>httpd_can_network_connect_db</code> — specifiek naar databases</li>
+          <li><code>httpd_enable_homedirs</code> — lezen in <code>~/public_html</code> (userdir)</li>
+          <li><code>httpd_can_sendmail</code> — mails versturen</li>
+          <li><code>httpd_use_cifs</code> / <code>httpd_use_nfs</code> — content op een netwerkshare serveren</li>
+        </ul>
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>getsebool httpd_enable_homedirs</code> → <code>on</code>. <code>semanage boolean -l -C</code> lijst je gewijzigde booleans op.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t9">
+    <div class="task-header" onclick="toggleTask('t9')">
+      <div class="task-check" onclick="toggleCheck(event,'t9')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-port">Poort</span> Taak 09</div>
+        <div class="task-title">Een dienst op een niet-standaard poort toelaten</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>SELinux labelt ook <em>poorten</em>. Apache mag standaard op 80/443 luisteren omdat die poorten type <code>http_port_t</code> dragen. Wil je Apache op bv. poort <code>8080</code> draaien, dan moet je die poort eerst aan dat type koppelen — anders weigert SELinux de bind.</p>
+      <div class="cmd"><span class="comment"># welke poorten horen al bij http?</span>
+sudo semanage port -l | grep http_port_t
+
+<span class="comment"># voeg 8080 toe aan het http-type</span>
+sudo semanage port -a -t http_port_t -p tcp 8080
+
+<span class="comment"># controle</span>
+sudo semanage port -l | grep 8080</div>
+      <div class="concept-box">
+        <strong>-a / -m / -d</strong>
+        <code>semanage port -a</code> voegt toe, <code>-m</code> wijzigt een bestaande, <code>-d</code> verwijdert. Veelgebruikte poort-types: <code>http_port_t</code> (80, 443, 8008, 8443, …), <code>ssh_port_t</code> (22), <code>dns_port_t</code> (53), <code>mysqld_port_t</code> (3306).
+      </div>
+      <div class="info-note">
+        <strong>ℹ Drie dingen voor een non-standaard poort:</strong> (1) de SELinux-poortlabel (hierboven), (2) <code>Listen 8080</code> in de Apache-config, en (3) de firewall openzetten (<code>firewall-cmd --add-port=8080/tcp</code>). Vergeet je de SELinux-stap, dan start httpd niet en zie je in de log "permission denied" op de poort — heel verwarrend als je niet aan SELinux denkt.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        <code>semanage port -l | grep 8080</code> toont <code>http_port_t  tcp  8080, ...</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 6: TROUBLESHOOTEN =================== -->
+  <div class="section-title">Deel 6 — De stille fout opsporen</div>
+
+  <div class="task-card" id="t10">
+    <div class="task-header" onclick="toggleTask('t10')">
+      <div class="task-check" onclick="toggleCheck(event,'t10')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-debug">Debug</span> Taak 10</div>
+        <div class="task-title">Maak een stille blokkering en vind ze in de logs</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Zet bewust een fout label met <code>chcon</code> om een <em>stille</em> blokkering na te bootsen — dit type fout (<code>var_t</code>) geeft géén "Forbidden" in de browser, hij hangt gewoon.</p>
+      <div class="cmd">sudo chcon -t var_t /var/www/html/index.html
+ls -Z /var/www/html/index.html
+<span class="comment"># → ...:var_t:s0  — Apache mag dit type niet lezen</span></div>
+      <p><strong>Stap 1 — kijk eerst in de service-log van httpd zelf:</strong></p>
+      <div class="cmd">sudo tail /var/log/httpd/error_log</div>
+      <div class="ctx-block">[core:error] (13)Permission denied: AH00132: file permissions deny
+server access: /var/www/html/index.html</div>
+      <p>De httpd-log zegt "permission denied" maar wijst <em>naar de bestandsrechten</em> — dat is een valstrik. Je past de <code>chmod</code> aan en… het werkt nog steeds niet, want het echte probleem is SELinux.</p>
+      <p><strong>Stap 2 — kijk in het SELinux-auditlog</strong> (élke geblokkeerde actie staat hier):</p>
+      <div class="cmd">sudo ausearch -m avc -ts recent</div>
+      <div class="ctx-block">type=AVC  avc: <span class="bad">denied</span>  { getattr } for  pid=3597 comm="httpd"
+  path="/var/www/html/index.html"
+  scontext=system_u:system_r:<span class="type">httpd_t</span>:s0
+  tcontext=unconfined_u:object_r:<span class="bad">var_t</span>:s0  tclass=file permissive=0</div>
+      <div class="concept-box">
+        <strong>Een AVC-denial lezen</strong>
+        <ul style="margin-top:0.3rem">
+          <li><code>denied { getattr }</code> — welke actie geweigerd werd (hier: bestandsattributen opvragen)</li>
+          <li><code>comm="httpd"</code> — welk programma het probeerde</li>
+          <li><code>scontext … httpd_t</code> — de <strong>s</strong>ource: het proces-type</li>
+          <li><code>tcontext … var_t</code> — de <strong>t</strong>arget: het bestands-type (hier het probleem!)</li>
+          <li><code>permissive=0</code> — stond in enforcing, dus écht geblokkeerd</li>
+        </ul>
+        Conclusie in één zin: "<code>httpd_t</code> mocht geen <code>getattr</code> doen op een bestand met type <code>var_t</code>." De fix: het juiste type terugzetten.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je vindt in <code>ausearch -m avc -ts recent</code> een regel met <code>denied</code>, <code>comm="httpd"</code> en <code>tcontext=...var_t</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t11">
+    <div class="task-header" onclick="toggleTask('t11')">
+      <div class="task-check" onclick="toggleCheck(event,'t11')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-debug">Debug</span> Taak 11</div>
+        <div class="task-title"><code>sealert</code>: laat SELinux je de oplossing aanwijzen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>AVC-regels lezen is leerzaam maar traag. De tool <code>sealert</code> (uit <code>setroubleshoot</code>) analyseert de denials en stelt concrete oplossingen voor — vaak letterlijk het commando dat je moet uitvoeren.</p>
+      <div class="cmd"><span class="comment"># installeer de troubleshooter</span>
+sudo dnf install setroubleshoot-server -y
+
+<span class="comment"># analyseer alle denials in het auditlog</span>
+sudo sealert -a /var/log/audit/audit.log</div>
+      <div class="ctx-block">SELinux belet /usr/sbin/httpd getattr toegang op /var/www/html/index.html.
+***** Plugin restorecon (94.8 vertrouwen) suggereert ***************
+Als je het label wilt repareren:
+  Het standaard label moet <span class="good">httpd_sys_content_t</span> zijn.
+  Doe:  # /sbin/restorecon -v /var/www/html/index.html</div>
+      <p>Voer de groene/aanbevolen suggestie uit — hier <code>restorecon</code>:</p>
+      <div class="cmd">sudo restorecon -v /var/www/html/index.html</div>
+      <div class="ctx-block">Relabeled /var/www/html/index.html from ...:<span class="bad">var_t</span>:s0
+                                       to ...:<span class="good">httpd_sys_content_t</span>:s0</div>
+      <div class="concept-box">
+        <strong>GUI of CLI</strong>
+        In GNOME krijg je na het vernieuwen van de pagina ook een grafische SELinux-melding (klik door naar de details). De inhoud is identiek aan <code>sealert</code> op de CLI. <code>sealert</code> geeft meestal meerdere suggesties — de eerste (groen, hoogste "vertrouwen") is bijna altijd de juiste. De andere twee proberen het <em>gedrag</em> aan te passen i.p.v. het label te herstellen; doe dat liever niet.
+      </div>
+      <div class="warn-note">
+        <strong>Wees kritisch met sealert-suggesties:</strong> de tool stelt soms voor om met <code>audit2allow</code> een nieuwe policy-regel te genereren (zie Taak 12). Dat lost het symptoom op maar verzwakt mogelijk je beveiliging. Kies bijna altijd voor <code>restorecon</code> of een boolean boven een eigen policy-module.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Na de suggestie uit te voeren werkt <code>http://localhost</code> weer en draagt het bestand <code>httpd_sys_content_t</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t12">
+    <div class="task-header" onclick="toggleTask('t12')">
+      <div class="task-check" onclick="toggleCheck(event,'t12')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-debug">Debug</span> Taak 12</div>
+        <div class="task-title">De systematische workflow (+ <code>audit2allow</code> als laatste redmiddel)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>De vaste volgorde die je bij élk "werkt niet"-probleem afloopt om te bepalen óf en hoe SELinux betrokken is:</p>
+      <div class="cmd"><span class="comment"># 1. staat SELinux aan?</span>
+getenforce
+
+<span class="comment"># 2. zet tijdelijk permissive en test je dienst opnieuw</span>
+sudo setenforce 0
+<span class="comment">#    → werkt het nu plots? dan WAS SELinux de boosdoener</span>
+
+<span class="comment"># 3. zet meteen terug op enforcing (laat het niet uit staan!)</span>
+sudo setenforce 1
+
+<span class="comment"># 4. bekijk de denials</span>
+sudo ausearch -m avc -ts recent
+
+<span class="comment"># 5. vraag sealert om een suggestie</span>
+sudo sealert -a /var/log/audit/audit.log
+
+<span class="comment"># 6. fix volgens de suggestie: restorecon / setsebool -P / semanage port</span></div>
+      <div class="concept-box">
+        <strong>Beslisboom in woorden</strong>
+        Werkt de dienst niet → permissive zetten en testen. Werkt het dan wel → SELinux was het, ga naar de logs. Werkt het nog steeds niet → het is iets anders (DAC-rechten, firewall, config). Zo sluit je in 30 seconden SELinux in of uit als oorzaak.
+      </div>
+      <p>Als geen enkele bestaande boolean of context past, kan je als <em>laatste</em> redmiddel een eigen policy-module genereren uit de denials met <code>audit2allow</code>:</p>
+      <div class="cmd"><span class="comment"># bekijk welke regel nodig zou zijn</span>
+sudo ausearch -m avc -ts recent | audit2allow
+
+<span class="comment"># genereer een policy-module + installeer ze</span>
+sudo ausearch -m avc -ts recent | audit2allow -M mijnpolicy
+sudo semodule -i mijnpolicy.pp
+
+<span class="comment"># geïnstalleerde modules bekijken</span>
+sudo semodule -l</div>
+      <div class="warn-note">
+        <strong>audit2allow is geen gratis "fix":</strong> het maakt een regel die exact toelaat wat geweigerd werd — ook als die weigering terecht was (bv. een echte inbraakpoging). Gebruik het alleen als je <em>begrijpt</em> waarom de toegang legitiem is, en als context-/boolean-oplossingen écht niet bestaan. In 95% van de gevallen is <code>restorecon</code> of een boolean de juiste weg.
+      </div>
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Je kan de hele keten <code>getenforce → setenforce 0 → test → setenforce 1 → ausearch → sealert → fix</code> uit het hoofd opnoemen. Dat is exact wat op het examen gevraagd wordt.
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== DEEL 7: EXAMENOEFENINGEN =================== -->
+  <div class="section-title">Deel 7 — Examenoefeningen (zelf doen)</div>
+
+  <div class="task-card" id="t13">
+    <div class="task-header" onclick="toggleTask('t13')">
+      <div class="task-check" onclick="toggleCheck(event,'t13')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 13</div>
+        <div class="task-title">Oefeningen 1–3: context lezen, homedirs permanent, mail</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+
+      <p><strong>Oefening 1.</strong> Maak een bestand <code>test.html</code> in je homedirectory. Pas de context van dit bestand aan zodat <code>httpd</code> het kan lezen.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h13a')">💡 Hint Oef 1</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a13a')">👁 Toon aanpak Oef 1</button>
+      </div>
+      <div class="hint-box" id="h13a">
+        Dit vraagt een <em>tijdelijke</em> context-wijziging op één bestand → <code>chcon -t</code>. Welk type heeft webcontent ook alweer? (zie Taak 6). Let op: het bestand moet ook door httpd <em>bereikbaar</em> zijn — een bestand diep in je home is dat door de map-rechten vaak niet, dus test het door het te serveren vanuit een pad dat httpd mag betreden, of focus puur op de context-wijziging zoals de oefening vraagt.
+      </div>
+      <div class="answer-box" id="a13a">
+        <div class="cmd">touch ~/test.html
+ls -Z ~/test.html
+<span class="comment"># → ...:user_home_t:s0  (default voor home)</span>
+
+<span class="comment"># context tijdelijk naar webcontent-type zetten:</span>
+sudo chcon -t httpd_sys_content_t ~/test.html
+ls -Z ~/test.html
+<span class="comment"># → ...:httpd_sys_content_t:s0</span></div>
+        <p>De oefening vraagt expliciet het <em>aanpassen van de context</em> van dat ene bestand — dat is precies wat <code>chcon -t</code> doet. (Wil je het ook echt door Apache laten serveren, dan komt daar het home-directory-vraagstuk bij kijken — dat is net Oefening 2.)</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oefening 2.</strong> Pas SELinux zo aan dat <code>httpd</code> bestanden uit je homedirectory <em>permanent</em> kan lezen.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h13b')">💡 Hint Oef 2</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a13b')">👁 Toon aanpak Oef 2</button>
+      </div>
+      <div class="hint-box" id="h13b">
+        "Permanent" + "homedirectory" + "httpd" → dit is geen context-kwestie maar een <strong>boolean</strong>. Welke boolean ging ook weer over Apache en home-directories? En welke vlag maakt een boolean blijvend?
+      </div>
+      <div class="answer-box" id="a13b">
+        <p>Dit is een <em>boolean</em>, geen context. De boolean <code>httpd_enable_homedirs</code> laat Apache in home-directories lezen; <code>-P</code> maakt het permanent:</p>
+        <div class="cmd">sudo setsebool -P httpd_enable_homedirs on
+
+<span class="comment"># controle</span>
+getsebool httpd_enable_homedirs
+<span class="comment"># → httpd_enable_homedirs --> on</span></div>
+        <p>Het verschil met Oef 1: daar herstelde je het <em>label van één bestand</em>; hier zet je een <em>algemene regel</em> aan die toelaat dat <code>httpd_t</code> de hele categorie home-content benadert. Voor een werkende userdir-opstelling combineer je dit doorgaans met <code>httpd_sys_content_t</code> op <code>~/public_html</code>.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oefening 3.</strong> Zorg ervoor dat <code>httpd</code> mails kan versturen.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h13c')">💡 Hint Oef 3</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a13c')">👁 Toon aanpak Oef 3</button>
+      </div>
+      <div class="hint-box" id="h13c">
+        Opnieuw een boolean. Zoek met <code>getsebool -a | grep httpd | grep mail</code> naar de juiste naam.
+      </div>
+      <div class="answer-box" id="a13c">
+        <div class="cmd"><span class="comment"># de juiste boolean vinden</span>
+getsebool -a | grep httpd_can_sendmail
+
+<span class="comment"># permanent aanzetten</span>
+sudo setsebool -P httpd_can_sendmail on</div>
+        <p>Veel webapplicaties (contactformulieren, wachtwoord-resets) sturen mail. SELinux blokkeert dat standaard omdat een webserver die plots mail verstuurt verdacht is — vandaar een aparte boolean om het bewust toe te laten.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="task-card" id="t14">
+    <div class="task-header" onclick="toggleTask('t14')">
+      <div class="task-check" onclick="toggleCheck(event,'t14')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-exam">Exam</span> Taak 14</div>
+        <div class="task-title">Oefeningen 4–6: rw-content, loggende modus, alles terug enforcing</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+
+      <p><strong>Oefening 4.</strong> Je hebt een website waarbij de directory <code>/var/www/html/platform</code> lees-/schrijfrechten nodig heeft. Hoe wijzig je SELinux zodat die map read-write is?</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h14a')">💡 Hint Oef 4</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a14a')">👁 Toon aanpak Oef 4</button>
+      </div>
+      <div class="hint-box" id="h14a">
+        Normale webcontent is read-only (<code>httpd_sys_content_t</code>). Voor schrijfbare content bestaat een apart type dat eindigt op <code>..._rw_content_t</code>. Permanent instellen = <code>semanage fcontext</code> + <code>restorecon</code>.
+      </div>
+      <div class="answer-box" id="a14a">
+        <p>Schrijfbare webcontent krijgt het type <code>httpd_sys_rw_content_t</code> (i.p.v. het read-only <code>httpd_sys_content_t</code>). Permanent via <code>semanage</code> + <code>restorecon</code>:</p>
+        <div class="cmd"><span class="comment"># 1. regel toevoegen voor de map én alles eronder</span>
+sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/html/platform(/.*)?"
+
+<span class="comment"># 2. toepassen op de bestaande bestanden</span>
+sudo restorecon -Rv /var/www/html/platform/
+
+<span class="comment"># controle</span>
+ls -Zd /var/www/html/platform
+<span class="comment"># → ...:httpd_sys_rw_content_t:s0</span></div>
+        <p>Nu mag het <code>httpd_t</code>-proces in die map zowel lezen als schrijven (uploads, caches, …), terwijl de rest van de site read-only blijft. Dat is precies de bedoeling: enkel waar nodig schrijfrecht, nergens anders.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oefening 5.</strong> Je wil SELinux alleen in <em>loggende</em> modus gebruiken. Hoe stel je dit in?</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h14b')">💡 Hint Oef 5</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a14b')">👁 Toon aanpak Oef 5</button>
+      </div>
+      <div class="hint-box" id="h14b">
+        "Loggen maar niet blokkeren" = <em>permissive</em>. Tijdelijk met <code>setenforce</code>, permanent in het configbestand. De oefening vraagt om <em>alleen</em> loggen, dus denk aan de permanente variant.
+      </div>
+      <div class="answer-box" id="a14b">
+        <p>Loggende modus = <strong>permissive</strong>: overtredingen worden wél gelogd maar niet geblokkeerd.</p>
+        <div class="cmd"><span class="comment"># tijdelijk (tot reboot)</span>
+sudo setenforce 0
+
+<span class="comment"># permanent: in het configbestand</span>
+sudo nano /etc/selinux/config</div>
+        <div class="ctx-block">SELINUX=<span class="type">permissive</span></div>
+        <p>Controleer met <code>getenforce</code> → <code>Permissive</code>. Dit is dé manier om te troubleshooten: je ziet alle zou-geblokkeerde acties in <code>audit.log</code> verschijnen zonder dat je diensten effectief stilvallen. Voor productie zet je daarna terug op <code>enforcing</code>.</p>
+      </div>
+
+      <hr style="border:none;border-top:1px dashed var(--border);margin:1.2rem 0">
+
+      <p><strong>Oefening 6.</strong> Zorg dat in álle oefeningen van de vorige hoofdstukken (waar je SELinux mocht uitschakelen) nu alles werkt mét SELinux <em>aan</em>.</p>
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h14c')">💡 Hint Oef 6</button>
+        <button class="answer-toggle" onclick="toggleAnswer('a14c')">👁 Toon aanpak Oef 6</button>
+      </div>
+      <div class="hint-box" id="h14c">
+        Loop per hoofdstuk de diensten af: Apache (LAMP/CMS in subdirs), Samba (de shares en homes). Voor elk: <code>setenforce 1</code>, dan dienst testen, dan denials in <code>ausearch</code> bekijken en fixen met de juiste context (<code>semanage fcontext</code>+<code>restorecon</code>) of boolean. De Samba-shares hebben type <code>samba_share_t</code> nodig; de homes de boolean <code>samba_enable_home_dirs</code>.
+      </div>
+      <div class="answer-box" id="a14c">
+        <p>Dit is een opruim-oefening over alle vorige hoofdstukken. Zet eerst overal enforcing aan, en fix dan per dienst.</p>
+        <div class="cmd">sudo setenforce 1
+<span class="comment"># en permanent in /etc/selinux/config: SELINUX=enforcing</span></div>
+        <p><strong>LAMP / CMS in subdirectories</strong> (Drupal/Joomla/WordPress, Nextcloud):</p>
+        <div class="cmd"><span class="comment"># webcontent read-only, uploads/data read-write</span>
+sudo semanage fcontext -a -t httpd_sys_content_t "/var/www/html(/.*)?"
+sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/nextcloud/data(/.*)?"
+sudo restorecon -Rv /var/www/
+
+<span class="comment"># Nextcloud praat met de DB en het netwerk:</span>
+sudo setsebool -P httpd_can_network_connect on
+sudo setsebool -P httpd_can_network_connect_db on</div>
+        <p><strong>Samba</strong> (shares uit het vorige hoofdstuk):</p>
+        <div class="cmd"><span class="comment"># het juiste type op de share-mappen</span>
+sudo semanage fcontext -a -t samba_share_t "/srv/shares(/.*)?"
+sudo restorecon -Rv /srv/shares/
+
+<span class="comment"># de [homes]-share werkend krijgen</span>
+sudo setsebool -P samba_enable_home_dirs on</div>
+        <p><strong>Werkwijze per dienst</strong>, als iets blijft falen: <code>setenforce 0</code> → testen → werkt het? → <code>setenforce 1</code> → <code>ausearch -m avc -ts recent</code> → <code>sealert -a /var/log/audit/audit.log</code> → fix volgens suggestie. Herhaal tot elke dienst draait met SELinux enforcing. Dat is meteen ook de samenvatting van dit hele hoofdstuk.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p>PXL Linux Advanced · SELinux Lab</p>
+    <button class="reset-btn" onclick="resetAll()">↺ Reset voortgang</button>
+  </footer>
+
+</div>
+
+<script>
+  const TOTAL = 14;
+
+  function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
+
+  function toggleCheck(e, id) {
+    e.stopPropagation();
+    const card = document.getElementById(id);
+    card.querySelector('.task-check').classList.toggle('checked');
+    card.classList.toggle('done');
+    updateProgress();
+    onTaskToggled(check.classList.contains('checked'));
+    saveState();
+  }
+
+  function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+  function toggleAnswer(id) { document.getElementById(id).classList.toggle('show'); }
+
+  function updateProgress() {
+    const RANKS = [
+      { pct: 100, key: 'challenger', icon: '⚔️', label: 'Challenger' },
+      { pct: 100, key: 'diamond',    icon: '💠', label: 'Diamond'    },
+      { pct:  85, key: 'platinum',   icon: '🪙', label: 'Platinum'   },
+      { pct:  70, key: 'gold',       icon: '🥇', label: 'Gold'       },
+      { pct:  40, key: 'silver',     icon: '🥈', label: 'Silver'     },
+      { pct:   1, key: 'bronze',     icon: '🥉', label: 'Bronze'     },
+    ];
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = done + ' / ' + TOTAL;
+
+    const rankEl = document.getElementById('rank-display');
+    if (rankEl) {
+      const rank = RANKS.find(r => pct >= r.pct);
+      // Diamond for 100% within single lab, Challenger reserved for full suite on index
+      const labRank = rank && rank.key === 'challenger' ? RANKS[1] : rank;
+      if (labRank) {
+        rankEl.textContent = labRank.icon + ' ' + labRank.label;
+        rankEl.className = 'rank-display rank-' + labRank.key;
+      } else {
+        rankEl.textContent = '';
+        rankEl.className = 'rank-display';
+      }
+    }
+
+    // Drive progress sidebar
+    const psCount    = document.getElementById('ps-count');
+    const psTotal    = document.getElementById('ps-total');
+    const psPips     = document.getElementById('ps-pips');
+    const psRankCard = document.getElementById('ps-rank-card');
+    const psRankIcon = document.getElementById('ps-rank-icon');
+    const psRankName = document.getElementById('ps-rank-name');
+    const psRankSub  = document.getElementById('ps-rank-sub');
+    const psNext     = document.getElementById('ps-next');
+
+    if (psCount) psCount.textContent = done;
+    if (psTotal) psTotal.textContent = '/ ' + TOTAL + ' taken';
+
+    // Pips
+    if (psPips) {
+      psPips.innerHTML = '';
+      for (let i = 1; i <= TOTAL; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'ps-pip' + (i <= done ? ' done' : '');
+        psPips.appendChild(pip);
+      }
+    }
+
+    // Rank card
+    const ALL_RANKS = [
+      { pct: 100, key: 'diamond',  icon: '💠', label: 'Diamond',  sub: 'Lab voltooid!' },
+      { pct:  85, key: 'platinum', icon: '🪙', label: 'Platinum', sub: 'Bijna daar...' },
+      { pct:  70, key: 'gold',     icon: '🥇', label: 'Gold',     sub: 'Goed bezig!'  },
+      { pct:  40, key: 'silver',   icon: '🥈', label: 'Silver',   sub: 'Op dreef!'    },
+      { pct:   1, key: 'bronze',   icon: '🥉', label: 'Bronze',   sub: 'Gestart!'     },
+    ];
+    const currentRank = ALL_RANKS.find(r => pct >= r.pct);
+    const nextRank    = currentRank ? ALL_RANKS[ALL_RANKS.indexOf(currentRank) - 1] : ALL_RANKS[ALL_RANKS.length - 1];
+
+    if (psRankCard) {
+      psRankCard.className = 'ps-rank-card' + (currentRank ? ' rank-' + currentRank.key : '');
+      if (psRankIcon) psRankIcon.textContent = currentRank ? currentRank.icon : '—';
+      if (psRankName) psRankName.textContent = currentRank ? currentRank.label : 'Geen rank';
+      if (psRankSub)  psRankSub.textContent  = currentRank ? currentRank.sub  : 'Start met taken';
+    }
+
+    // Next rank preview
+    if (psNext) {
+      if (!currentRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor 🥉 Bronze';
+      } else if (nextRank) {
+        const needed = Math.ceil(nextRank.pct / 100 * TOTAL) - done;
+        if (needed > 0) {
+          psNext.innerHTML = 'Nog <span>' + needed + '</span> taak' + (needed === 1 ? '' : 'en') + ' voor ' + nextRank.icon + ' ' + nextRank.label;
+        } else {
+          psNext.innerHTML = '';
+        }
+      } else {
+        psNext.innerHTML = '';
+      }
+    }
+  }
+
+  function saveState() {
+    const state = {};
+    for (let i = 1; i <= TOTAL; i++) {
+      const card = document.getElementById('t' + i);
+      if (card) state['t' + i] = card.classList.contains('done');
+    }
+    try { localStorage.setItem('lab_selinux_state', JSON.stringify(state)); } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('lab_selinux_state');
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      for (const [id, done] of Object.entries(state)) {
+        if (done) {
+          const card = document.getElementById(id);
+          if (card) {
+            card.classList.add('done');
+            card.querySelector('.task-check').classList.add('checked');
+          }
+        }
+      }
+      updateProgress();
+    } catch(e) {}
+  }
+
+  function resetAll() {
+    if (!confirm('Voortgang resetten?')) return;
+    document.querySelectorAll('.task-check').forEach(c => c.classList.remove('checked'));
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('done'));
+    updateProgress();
+    try { localStorage.removeItem('lab_selinux_state'); } catch(e) {}
+  }
+
+  /* BATCH1-GAMIFICATION */
+  // Rank level derived independently from the checked-task count.
+  // 0 = none, 1 bronze, 2 silver, 3 gold, 4 platinum, 5 diamond.
+  function currentRankLevel() {
+    const done = document.querySelectorAll('.task-check.checked').length;
+    const pct = (done / TOTAL) * 100;
+    if (pct >= 100) return 5;
+    if (pct >= 85)  return 4;
+    if (pct >= 70)  return 3;
+    if (pct >= 40)  return 2;
+    if (pct >= 1)   return 1;
+    return 0;
+  }
+
+  let prevRankLevel = 0;      // seeded on load so we don't animate stale state
+  let rankBaselineSet = false;
+  let sessionStreak = 0;      // in-memory only: resets when the page closes
+
+  function seedRankBaseline() {
+    prevRankLevel = currentRankLevel();
+    rankBaselineSet = true;
+  }
+
+  function checkRankTransition() {
+    const newLevel = currentRankLevel();
+    if (rankBaselineSet && newLevel > prevRankLevel) {
+      flashRankCard();
+      if (newLevel === 5) showCompletionOverlay();
+    }
+    prevRankLevel = newLevel;
+  }
+  function onTaskToggled(nowChecked) {
+    updateStreak(nowChecked);
+    checkRankTransition();
+  }
+
+  function updateStreak(nowChecked) {
+    if (nowChecked) sessionStreak++;
+    else sessionStreak = 0;   // unchecking breaks the streak
+    const el = document.getElementById('ps-streak');
+    if (!el) return;
+    if (sessionStreak >= 2) {
+      el.style.display = 'flex';
+      const num = el.querySelector('.ps-streak-num');
+      if (num) num.textContent = sessionStreak;
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  function flashRankCard() {
+    const card = document.getElementById('ps-rank-card');
+    if (!card) return;
+    card.classList.remove('rank-up');
+    void card.offsetWidth;          // force reflow so the animation can re-trigger
+    card.classList.add('rank-up');
+    setTimeout(() => card.classList.remove('rank-up'), 1000);
+  }
+
+  function showCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.add('show');
+  }
+  function closeCompletionOverlay() {
+    const ov = document.getElementById('lab-complete-overlay');
+    if (ov) ov.classList.remove('show');
+  }
+
+  loadState();
+  seedRankBaseline();
+
+  /* BATCH2-STUDY-QOL */
+  // ---- clipboard with HTTP fallback (VM deploys are not secure contexts) ----
+  function writeClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('execCommand failed'));
+      } catch (err) { reject(err); }
+    });
+  }
+
+  function copyCmd(cmd, btn) {
+    const clone = cmd.cloneNode(true);
+    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
+    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    const text = clone.textContent.trim();
+    writeClipboard(text).then(() => {
+      btn.textContent = '✓ Gekopieerd';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Kopieer'; btn.classList.remove('copied'); }, 1400);
+    }).catch(() => {
+      btn.textContent = 'Mislukt';
+      setTimeout(() => { btn.textContent = 'Kopieer'; }, 1400);
+    });
+  }
+
+  // ---- mark all tasks in a section (toggles: all-done -> clears, else fills) ----
+  function tasksInSection(sectionEl) {
+    const tasks = [];
+    let el = sectionEl.nextElementSibling;
+    while (el && !el.classList.contains('section-title')) {
+      if (el.classList.contains('task-card')) tasks.push(el);
+      el = el.nextElementSibling;
+    }
+    return tasks;
+  }
+
+  function markSection(sectionEl) {
+    const tasks = tasksInSection(sectionEl);
+    if (!tasks.length) return;
+    const allDone = tasks.every(t => t.classList.contains('done'));
+    const target = !allDone;
+    tasks.forEach(t => {
+      const chk = t.querySelector('.task-check');
+      t.classList.toggle('done', target);
+      if (chk) chk.classList.toggle('checked', target);
+    });
+    updateProgress();
+    saveState();
+    checkRankTransition();   // milestone effects, but no streak change for bulk ops
+  }
+
+  // ---- keyboard navigation: J/K move, Space toggles, Esc deselects ----
+  let kbIndex = -1;
+  function kbCards() { return Array.from(document.querySelectorAll('.task-card')); }
+  function highlightKb() {
+    const cards = kbCards();
+    cards.forEach((c, i) => c.classList.toggle('kb-active', i === kbIndex));
+    if (kbIndex >= 0 && cards[kbIndex]) {
+      cards[kbIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  function handleKbNav(e) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'button' || tag === 'a' || e.target.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const cards = kbCards();
+    if (!cards.length) return;
+    const k = e.key.toLowerCase();
+    if (k === 'j') {
+      kbIndex = kbIndex < 0 ? 0 : Math.min(cards.length - 1, kbIndex + 1);
+      highlightKb(); e.preventDefault();
+    } else if (k === 'k') {
+      kbIndex = kbIndex <= 0 ? 0 : kbIndex - 1;
+      highlightKb(); e.preventDefault();
+    } else if (e.key === ' ' || e.code === 'Space') {
+      if (kbIndex >= 0 && cards[kbIndex]) {
+        toggleCheck({ stopPropagation() {} }, cards[kbIndex].id);
+        e.preventDefault();
+      }
+    } else if (e.key === 'Escape') {
+      kbIndex = -1; highlightKb();
+    }
+  }
+
+  function initStudyQol() {
+    document.querySelectorAll('.cmd').forEach(cmd => {
+      if (cmd.querySelector('.copy-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.type = 'button';
+      btn.textContent = 'Kopieer';
+      btn.addEventListener('click', () => copyCmd(cmd, btn));
+      cmd.appendChild(btn);
+    });
+    document.querySelectorAll('.section-title').forEach(sec => {
+      if (sec.querySelector('.section-mark-all')) return;
+      const btn = document.createElement('button');
+      btn.className = 'section-mark-all';
+      btn.type = 'button';
+      btn.textContent = '✓ sectie';
+      btn.title = 'Vink alle taken in deze sectie af (of wis ze)';
+      btn.addEventListener('click', () => markSection(sec));
+      sec.appendChild(btn);
+    });
+    document.addEventListener('keydown', handleKbNav);
+  }
+
+  initStudyQol();
+</script>
+
+<div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeCompletionOverlay()">
+  <div class="lab-complete-card" onclick="event.stopPropagation()">
+    <div class="lc-icon">💠</div>
+    <div class="lc-title">Lab Voltooid!</div>
+    <div class="lc-sub">Alle taken afgevinkt — Diamond rank bereikt. Sterk werk!</div>
+    <button class="lc-close" onclick="closeCompletionOverlay()">Sluiten</button>
+  </div>
+</div>
+</body>
+</html>
