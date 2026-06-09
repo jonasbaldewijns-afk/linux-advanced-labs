@@ -30,7 +30,7 @@
 
   body {
     background: var(--bg);
-    background-image: radial-gradient(circle at 15% 8%, rgba(56,189,248,0.05), transparent 40%), radial-gradient(circle at 85% 92%, rgba(251,146,60,0.05), transparent 40%);
+    background-image: radial-gradient(circle at 15% 10%, rgba(251,191,36,0.07), transparent 42%), radial-gradient(circle at 85% 90%, rgba(251,191,36,0.04), transparent 42%);
     color: var(--text);
     font-family: 'Syne', sans-serif;
     min-height: 100vh;
@@ -59,45 +59,51 @@
   .scenario-box h2 { font-size: 1rem; color: var(--accent2); font-family: 'JetBrains Mono', monospace; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
   .scenario-box p { color: var(--text); line-height: 1.7; font-size: 0.95rem; }
 
-  /* frontend/backend stack */
-  .layers {
+  /* access-model comparison */
+  .models {
     background: var(--code-bg); border: 1px solid var(--border);
     border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
   }
-  .layers h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
-  .layer-stack { display: flex; flex-direction: column; gap: 0.4rem; }
-  .layer-row { display: flex; align-items: center; gap: 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem; }
-  .layer-row .lr-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px; white-space: nowrap; }
-  .layer-row.fe .lr-badge { background: rgba(56,189,248,0.15); color: var(--accent2); }
-  .layer-row.be .lr-badge { background: rgba(251,146,60,0.15); color: var(--orange); }
-  .layer-row.kn .lr-badge { background: rgba(167,139,250,0.15); color: var(--purple); }
-  .layer-row .lr-text { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
-  .layer-row .lr-text b { color: var(--text); font-family: 'JetBrains Mono', monospace; }
-  .layer-arrow { text-align: center; color: var(--muted); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
+  .models h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .models-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.6rem; }
+  .model-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.85rem; border-top: 3px solid var(--border); }
+  .model-card.dac { border-top-color: var(--green); }
+  .model-card.acl { border-top-color: var(--accent2); }
+  .model-card.mac { border-top-color: var(--danger); }
+  .model-card .m-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .model-card .m-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.55; }
+  .model-card .m-cmd { font-size: 0.72rem; color: var(--accent2); background: var(--surface2); padding: 0.25rem 0.4rem; border-radius: 4px; margin-top: 0.4rem; font-family: 'JetBrains Mono', monospace; display: inline-block; }
 
-  /* nftables structure tree */
-  .tree {
+  /* context anatomy */
+  .anatomy {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem 1.25rem 1rem; margin-bottom: 1.5rem;
+  }
+  .anatomy h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .ctx-line { font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; text-align: center; margin-bottom: 1rem; letter-spacing: 0.02em; }
+  .ctx-line .seg { padding: 0.15rem 0.1rem; border-bottom: 3px solid; }
+  .ctx-line .u { color: var(--muted); border-color: var(--muted); }
+  .ctx-line .r { color: var(--muted); border-color: var(--muted); }
+  .ctx-line .t { color: var(--warn); border-color: var(--warn); font-weight: 700; }
+  .ctx-line .l { color: var(--muted); border-color: var(--muted); }
+  .ctx-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.4rem; }
+  .ctx-legend .leg { font-size: 0.74rem; color: var(--muted); line-height: 1.4; }
+  .ctx-legend .leg b { font-family: 'JetBrains Mono', monospace; }
+  .ctx-legend .leg.hot b { color: var(--warn); }
+
+  /* the allow-rule mental model */
+  .allow {
     background: var(--code-bg); border: 1px solid var(--border);
     border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.8;
   }
-  .tree h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; line-height: 1.4; }
-  .tree .t-table { color: var(--accent2); font-weight: 700; }
-  .tree .t-chain { color: var(--orange); font-weight: 700; }
-  .tree .t-rule  { color: var(--green); }
-  .tree .t-note  { color: var(--muted); font-style: italic; font-family: 'Syne', sans-serif; }
-
-  /* proxy comparison */
-  .proxy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
-  .proxy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; border-top: 3px solid var(--border); }
-  .proxy-card.fwd { border-top-color: var(--accent2); }
-  .proxy-card.rev { border-top-color: var(--orange); }
-  .proxy-card .pc-name { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
-  .proxy-card.fwd .pc-name { color: var(--accent2); }
-  .proxy-card.rev .pc-name { color: var(--orange); }
-  .proxy-card .pc-flow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text); background: var(--code-bg); padding: 0.5rem 0.6rem; border-radius: 5px; margin-bottom: 0.5rem; }
-  .proxy-card .pc-meta { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
-  .proxy-card .pc-meta b { color: var(--text); }
+  .allow h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .allow-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+  .allow-box { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem; text-align: center; min-width: 120px; }
+  .allow-box .ab-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem; }
+  .allow-box .ab-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 700; }
+  .allow-box.subject .ab-val { color: var(--accent2); }
+  .allow-box.target .ab-val { color: var(--warn); }
+  .allow-arrow { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-align: center; }
 
   .progress-bar-wrap {
     background: var(--surface); border: 1px solid var(--border);
@@ -116,16 +122,6 @@
     display: flex; align-items: center; gap: 0.75rem;
   }
   .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-  .part-banner {
-    margin-top: 3rem; margin-bottom: 0.5rem; padding: 0.9rem 1.25rem;
-    border-radius: 8px; font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 1rem; letter-spacing: 0.05em;
-    display: flex; align-items: center; gap: 0.75rem;
-  }
-  .part-banner.a { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.3); color: var(--accent2); }
-  .part-banner.b { background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); color: var(--orange); }
-  .part-banner .pb-sub { font-family: 'Syne', sans-serif; font-weight: 400; font-size: 0.82rem; color: var(--muted); }
 
   .task-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -166,35 +162,29 @@
   .cmd {
     background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
     border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6; position: relative;
   }
   .cmd .comment { color: var(--muted); }
   .cmd .out { color: var(--muted); }
 
-  /* nftables / config ruleset block */
-  .nft-block {
-    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--orange);
+  /* SELinux context output block — colour the type field */
+  .ctx-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--warn);
     border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem; color: #ddd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+    font-size: 0.78rem; color: var(--muted); margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
   }
-  .nft-block .kw    { color: var(--accent2); }
-  .nft-block .tbl   { color: var(--accent2); font-weight: 700; }
-  .nft-block .chn   { color: var(--orange); font-weight: 700; }
-  .nft-block .accept{ color: var(--green); font-weight: 700; }
-  .nft-block .drop  { color: var(--danger); font-weight: 700; }
-  .nft-block .comment { color: var(--muted); font-style: italic; }
+  .ctx-block .type { color: var(--warn); font-weight: 700; }
+  .ctx-block .good { color: var(--green); font-weight: 700; }
+  .ctx-block .bad  { color: var(--danger); font-weight: 700; }
+  .ctx-block .path { color: var(--accent2); }
+  .ctx-block .comment { color: var(--muted); font-style: italic; }
 
-  /* squid / nginx config block */
-  .conf-block {
+  /* html sample block */
+  .html-block {
     background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple);
     border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem; color: #ddd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+    font-size: 0.78rem; color: #c4b5fd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
   }
-  .conf-block .directive { color: var(--accent2); }
-  .conf-block .val { color: var(--green); }
-  .conf-block .allow { color: var(--green); font-weight: 700; }
-  .conf-block .deny { color: var(--danger); font-weight: 700; }
-  .conf-block .comment { color: var(--muted); font-style: italic; }
 
   .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
 
@@ -253,13 +243,13 @@
     display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
     padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.4rem;
   }
-  .tag-concept  { background: rgba(167,139,250,0.15); color: var(--purple); }
-  .tag-fwd      { background: rgba(56,189,248,0.15); color: var(--accent2); }
-  .tag-nft      { background: rgba(251,146,60,0.15); color: var(--orange); }
-  .tag-squid    { background: rgba(74,222,128,0.15); color: var(--green); }
-  .tag-nginx    { background: rgba(244,114,182,0.15); color: var(--pink); }
-  .tag-debug    { background: rgba(251,191,36,0.15); color: var(--warn); }
-  .tag-exam     { background: rgba(248,113,113,0.18); color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+  .tag-concept { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-mode    { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-ctx     { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .tag-bool    { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-port    { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-debug   { background: rgba(244,114,182,0.15); color: var(--pink); }
+  .tag-exam    { background: rgba(248,113,113,0.18); color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
 
   footer {
     margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
@@ -272,6 +262,10 @@
     font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
   }
   .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  @media (max-width: 600px) {
+    .ctx-line { font-size: 0.8rem; }
+  }
 
   /* ============ RANK ============ */
   .rank-display {
@@ -506,19 +500,7 @@
   .lab-complete-card .lc-close:hover { background: rgba(125,211,252,0.2); }
 
 
-  /* BATCH2-STUDY-QOL */
-  /* Copy button on command blocks */
-  .copy-btn {
-    position: absolute; top: 6px; right: 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
-    padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--muted);
-    opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-  }
-  .cmd:hover .copy-btn, .copy-btn:focus { opacity: 1; }
-  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
-  .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
+
 
   /* Mark-all-in-section control (pushed to the far right of the section bar) */
   .section-title::after { order: 1; }
@@ -544,6 +526,95 @@
     color: var(--muted); font-family: 'JetBrains Mono', monospace;
   }
   .ps-kbhint b { color: var(--text); font-weight: 600; }
+
+
+  /* ── Firewall-specific info boxes ────────────────────────── */
+
+  /* frontend/backend stack */
+  .layers {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .layers h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .layer-stack { display: flex; flex-direction: column; gap: 0.4rem; }
+  .layer-row { display: flex; align-items: center; gap: 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem; }
+  .layer-row .lr-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px; white-space: nowrap; }
+  .layer-row.fe .lr-badge { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .layer-row.be .lr-badge { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .layer-row.kn .lr-badge { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .layer-row .lr-text { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+  .layer-row .lr-text b { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .layer-arrow { text-align: center; color: var(--muted); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
+
+  /* nftables structure tree */
+  .tree {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.8;
+  }
+  .tree h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 1rem; line-height: 1.4; }
+  .tree .t-table { color: var(--accent2); font-weight: 700; }
+  .tree .t-chain { color: var(--orange); font-weight: 700; }
+  .tree .t-rule  { color: var(--green); }
+  .tree .t-note  { color: var(--muted); font-style: italic; font-family: 'Syne', sans-serif; }
+
+  /* proxy comparison */
+  .proxy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
+  .proxy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; border-top: 3px solid var(--border); }
+  .proxy-card.fwd { border-top-color: var(--accent2); }
+  .proxy-card.rev { border-top-color: var(--orange); }
+  .proxy-card .pc-name { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
+  .proxy-card.fwd .pc-name { color: var(--accent2); }
+  .proxy-card.rev .pc-name { color: var(--orange); }
+  .proxy-card .pc-flow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text); background: var(--code-bg); padding: 0.5rem 0.6rem; border-radius: 5px; margin-bottom: 0.5rem; }
+  .proxy-card .pc-meta { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .proxy-card .pc-meta b { color: var(--text); }
+
+  /* Part banners (Part A / Part B dividers) */
+  .part-banner {
+    margin-top: 3rem; margin-bottom: 0.5rem; padding: 0.9rem 1.25rem;
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 1rem; letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .part-banner.a { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.3); color: var(--accent2); }
+  .part-banner.b { background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); color: var(--orange); }
+  .part-banner .pb-sub { font-family: 'Syne', sans-serif; font-weight: 400; font-size: 0.82rem; color: var(--muted); }
+
+  /* nftables ruleset block */
+  .nft-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--orange);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #ddd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .nft-block .kw    { color: var(--accent2); }
+  .nft-block .tbl   { color: var(--accent2); font-weight: 700; }
+  .nft-block .chn   { color: var(--orange); font-weight: 700; }
+  .nft-block .accept{ color: var(--green); font-weight: 700; }
+  .nft-block .drop  { color: var(--danger); font-weight: 700; }
+  .nft-block .comment { color: var(--muted); font-style: italic; }
+
+  /* Squid / Nginx config block */
+  .conf-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #ddd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.7;
+  }
+  .conf-block .directive { color: var(--accent2); }
+  .conf-block .val { color: var(--green); }
+  .conf-block .allow { color: var(--green); font-weight: 700; }
+  .conf-block .deny { color: var(--danger); font-weight: 700; }
+  .conf-block .comment { color: var(--muted); font-style: italic; }
+
+  /* tag pills inside task-num (firewall uses .tag) */
+  .tag { display: inline-block; font-size: 0.65rem; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 3px; margin-right: 0.3rem;
+    text-transform: uppercase; letter-spacing: 0.05em; }
+  .tag-fwd { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-nft { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .tag-nat { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-squid { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-nginx { background: rgba(45,212,191,0.15); color: var(--accent); }
 
 </style>
 </head>
@@ -616,7 +687,7 @@
     <span>Voortgang</span>
     <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
     <span id="rank-display" class="rank-display"></span>
-    <span class="progress-count" id="progress-count">0 / 18</span>
+    <span class="progress-count" id="progress-count">0 / 20</span>
   </div>
 
   <!-- ===================================================================== -->
@@ -1540,6 +1611,190 @@ for i in {1..20}; do curl -s http://10.10.10.1/api; done</div>
     </div>
   </div>
 
+  <div class="task-card" id="t19">
+    <div class="task-header" onclick="toggleTask('t19')">
+      <div class="task-check" onclick="toggleCheck(event,'t19')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-squid">Squid</span> Taak 19</div>
+        <div class="task-title">Squid: sites blokkeren, downloadlimiet &amp; cache-logs lezen</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>De cursus-oefeningen 2 en 4 gecombineerd: je blokkeert bepaalde sites via een ACL-bestand, stelt een downloadlimiet in, en leert de Squid access-log ontcijferen. Dit is de proxy-configuratie die in een echte schoolomgeving of bedrijfsnetwerk gebruikt wordt.</p>
+
+      <p style="margin:0.75rem 0 0.4rem;font-weight:600;">Stap 1 — Blokkeerlijst als extern bestand</p>
+      <p style="font-size:0.84rem;color:var(--muted);">Waarom een extern bestand? Zodat je de blokkeerlijst kan aanpassen zonder <code>squid.conf</code> aan te raken. In een bedrijf beheert een andere afdeling die lijst.</p>
+      <div class="cmd"><span class="comment"># Maak een blokkeerlijst aan</span>
+sudo nano /etc/squid/badsites.txt
+<span class="comment"># Voeg toe (één domein per lijn, punt vooraan = ook subdomains):</span>
+<span class="comment"># .facebook.com</span>
+<span class="comment"># .tiktok.com</span>
+<span class="comment"># youtube.com</span>
+
+<span class="comment"># Voeg de ACL toe aan squid.conf VÓÓR de allow localnet regel:</span>
+sudo nano /etc/squid/squid.conf</div>
+      <div class="conf-block"><span class="directive">acl</span> badsites dstdomain <span class="val">"/etc/squid/badsites.txt"</span>
+<span class="directive">http_access</span> <span class="deny">deny</span> badsites localnet   <span class="comment"># moet VOOR allow localnet staan!</span>
+<span class="directive">http_access</span> <span class="allow">allow</span> localnet</div>
+      <div class="cmd"><span class="comment"># Herladen zonder restart (actieve verbindingen blijven)</span>
+sudo squid -k reconfigure
+<span class="comment"># Testen vanaf client (moet geblokkeerd zijn):</span>
+curl -x http://10.10.10.1:3128 http://youtube.com
+<span class="comment"># Bevestig in de logs:</span>
+sudo grep TCP_DENIED /var/log/squid/access.log</div>
+
+      <p style="margin:0.75rem 0 0.4rem;font-weight:600;">Stap 2 — Downloadlimiet instellen</p>
+      <p style="font-size:0.84rem;color:var(--muted);">Squid kan downloads beperken via <code>delay_pools</code>. Nuttig om te voorkomen dat één student de hele bandbreedte opslokt.</p>
+      <div class="conf-block"><span class="comment"># Voeg toe aan squid.conf:</span>
+<span class="directive">delay_pools</span> <span class="val">1</span>
+<span class="directive">delay_class</span> <span class="val">1 1</span>
+<span class="directive">delay_parameters</span> <span class="val">1 1048576/1048576</span>  <span class="comment"># max 1 MB/s</span>
+<span class="directive">delay_access</span> <span class="val">1</span> <span class="allow">allow</span> localnet</div>
+      <div class="cmd">sudo squid -k reconfigure
+<span class="comment"># Test: download een bestand en observeer de snelheid</span>
+export http_proxy=http://10.10.10.1:3128
+curl http://ipv4.download.thinkbroadband.com/5MB.zip -o /dev/null</div>
+
+      <p style="margin:0.75rem 0 0.4rem;font-weight:600;">Stap 3 — Access-log lezen</p>
+      <p style="font-size:0.84rem;color:var(--muted);">De Squid access-log heeft een vast formaat. Elk veld heeft een betekenis — dit is de informatie die een netwerkbeheerder dagelijks leest.</p>
+      <div class="cmd">sudo tail -20 /var/log/squid/access.log</div>
+      <p style="font-size:0.84rem;color:var(--text);margin-top:0.5rem;">Een logboek-regel ziet er zo uit:</p>
+      <div class="conf-block" style="font-size:0.78rem;line-height:1.8;"><span class="comment"># tijdstempel  vertraging  client-IP       resultaat/status  bytes  methode  URL    MIME</span>
+1719000000.123     245 10.10.10.10 TCP_MISS/200 12345 GET http://example.com/ text/html</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-top:0.5rem;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="text-align:left;padding:0.3rem 0.5rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">Veld</th>
+          <th style="text-align:left;padding:0.3rem 0.5rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">Betekenis</th>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.25rem 0.5rem;font-family:'JetBrains Mono',monospace;color:var(--accent2);">TCP_MISS/200</td>
+          <td style="padding:0.25rem 0.5rem;color:var(--muted);">Niet in cache, opgehaald van internet — HTTP 200 OK</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.25rem 0.5rem;font-family:'JetBrains Mono',monospace;color:var(--green);">TCP_MEM_HIT/200</td>
+          <td style="padding:0.25rem 0.5rem;color:var(--muted);">Uit de RAM-cache geleverd — geen netwerk gebruikt</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.25rem 0.5rem;font-family:'JetBrains Mono',monospace;color:var(--danger);">TCP_DENIED/403</td>
+          <td style="padding:0.25rem 0.5rem;color:var(--muted);">Geblokkeerd door ACL — toegang geweigerd</td>
+        </tr>
+        <tr>
+          <td style="padding:0.25rem 0.5rem;font-family:'JetBrains Mono',monospace;color:var(--warn);">TCP_REFRESH_MODIFIED</td>
+          <td style="padding:0.25rem 0.5rem;color:var(--muted);">In cache maar verlopen — opnieuw opgehaald en bijgewerkt</td>
+        </tr>
+      </table>
+      <div class="cmd" style="margin-top:0.75rem;"><span class="comment"># Tijdstempel omzetten naar leesbare datum:</span>
+date -d @1719000000
+<span class="comment"># Of filter op specifiek IP:</span>
+sudo grep 10.10.10.10 /var/log/squid/access.log | tail -10</div>
+
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h19')">💡 Hint</button>
+      </div>
+      <div class="hint-box" id="h19">
+        <p><strong>Squid herladen vs herstarten:</strong> <code>squid -k reconfigure</code> herlaadt de configuratie <em>zonder</em> actieve verbindingen te verbreken. <code>systemctl restart squid</code> verbreekt alles. Gebruik reconfigure voor config-wijzigingen in productie.</p>
+        <p style="margin-top:0.5rem;"><strong>ACL-volgorde:</strong> de blokkeerregel <em>moet</em> vóór <code>allow localnet</code> staan. Squid stopt bij de eerste match — staat <code>allow localnet</code> boven de deny, dan komt de deny nooit aan bod.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t20">
+    <div class="task-header" onclick="toggleTask('t20')">
+      <div class="task-check" onclick="toggleCheck(event,'t20')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-nginx">Nginx</span> Taak 20</div>
+        <div class="task-title">Nginx: SSL-terminatie, snelheidsbeperking &amp; failover</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>De cursus-oefeningen 12–14: je voegt HTTPS toe aan de reverse proxy (SSL-terminatie), beperkt het aantal requests per seconde (rate limiting), en test automatische failover als een backend uitvalt. Dit zijn de drie meest gevraagde functies van Nginx in productie.</p>
+
+      <p style="margin:0.75rem 0 0.4rem;font-weight:600;">Stap 1 — Self-signed certificaat + HTTPS</p>
+      <p style="font-size:0.84rem;color:var(--muted);">SSL-terminatie betekent dat Nginx de HTTPS-verbinding afhandelt en intern gewoon HTTP doorstuurt naar de backend. De backend hoeft niets te weten van SSL.</p>
+      <div class="cmd"><span class="comment"># Genereer een self-signed certificaat (geldig 365 dagen)</span>
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout /etc/nginx/ssl/server.key \
+  -out /etc/nginx/ssl/server.crt \
+  -subj "/CN=serverXX.pxl.lan"
+<span class="comment"># (maak de map eerst aan als die niet bestaat)</span>
+sudo mkdir -p /etc/nginx/ssl</div>
+      <div class="conf-block"><span class="comment"># Bewerk /etc/nginx/conf.d/reverse-proxy.conf:</span>
+<span class="directive">server</span> {
+    <span class="directive">listen</span> <span class="val">443 ssl</span>;
+    <span class="directive">server_name</span> <span class="val">serverXX.pxl.lan</span>;
+    <span class="directive">ssl_certificate</span>     <span class="val">/etc/nginx/ssl/server.crt</span>;
+    <span class="directive">ssl_certificate_key</span> <span class="val">/etc/nginx/ssl/server.key</span>;
+    <span class="directive">location</span> / {
+        <span class="directive">proxy_pass</span> <span class="val">http://127.0.0.1:8080/</span>;
+        <span class="directive">proxy_set_header</span> Host <span class="val">$host</span>;
+        <span class="directive">proxy_set_header</span> X-Real-IP <span class="val">$remote_addr</span>;
+    }
+}
+<span class="directive">server</span> {
+    <span class="comment"># HTTP → HTTPS redirect</span>
+    <span class="directive">listen</span> <span class="val">80</span>;
+    <span class="directive">return</span> <span class="val">301 https://$host$request_uri</span>;
+}</div>
+      <div class="cmd">sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+<span class="comment"># Test: -k negeert de self-signed waarschuwing</span>
+curl -k https://10.10.10.1
+<span class="comment"># Controleer de redirect:</span>
+curl -v http://10.10.10.1 2>&amp;1 | grep "Location:"</div>
+
+      <p style="margin:0.75rem 0 0.4rem;font-weight:600;">Stap 2 — Rate limiting</p>
+      <p style="font-size:0.84rem;color:var(--muted);">Rate limiting beschermt je backend tegen request-floods (bv. brute-force op een login-pagina). Nginx telt requests per IP en geeft een <code>429 Too Many Requests</code> terug als het limiet overschreden wordt.</p>
+      <div class="conf-block"><span class="comment"># Voeg toe aan /etc/nginx/nginx.conf, in het http { } blok:</span>
+<span class="directive">limit_req_zone</span> <span class="val">$binary_remote_addr</span> zone=<span class="val">api_limit:10m</span> rate=<span class="val">5r/s</span>;
+
+<span class="comment"># In je server/location blok:</span>
+<span class="directive">location</span> /api {
+    <span class="directive">limit_req</span> zone=<span class="val">api_limit</span> burst=<span class="val">10</span> nodelay;
+    <span class="directive">proxy_pass</span> <span class="val">http://127.0.0.1:8080/</span>;
+}</div>
+      <div class="cmd">sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+<span class="comment"># Test: stuur snel veel requests (verwacht 429 na de burst)</span>
+for i in {1..20}; do curl -s -o /dev/null -w "%{http_code}\n" http://10.10.10.1/api; done</div>
+      <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem;"><strong style="color:var(--text)">Wat betekent <code>burst=10 nodelay</code>?</strong> Burst staat toe dat tot 10 extra requests onmiddellijk verwerkt worden zonder vertraging. Requests bóven de burst krijgen een 429. Zonder <code>nodelay</code> zouden burst-requests vertraagd worden in plaats van geblokkeerd.</p>
+
+      <p style="margin:0.75rem 0 0.4rem;font-weight:600;">Stap 3 — Failover simuleren</p>
+      <p style="font-size:0.84rem;color:var(--muted);">Met een <code>upstream</code>-blok en meerdere backends kan Nginx automatisch overschakelen als een backend uitvalt. Dit heet <em>passive failover</em>.</p>
+      <div class="conf-block"><span class="directive">upstream</span> backend_pool {
+    <span class="directive">server</span> <span class="val">127.0.0.1:8081</span>;
+    <span class="directive">server</span> <span class="val">127.0.0.1:8082</span> backup;  <span class="comment"># enkel als 8081 uitvalt</span>
+}
+<span class="directive">server</span> {
+    <span class="directive">listen</span> <span class="val">80</span>;
+    <span class="directive">location</span> / {
+        <span class="directive">proxy_pass</span> <span class="val">http://backend_pool</span>;
+    }
+}</div>
+      <div class="cmd"><span class="comment"># Start twee eenvoudige backends op verschillende poorten:</span>
+echo "Backend 8081" | sudo tee /tmp/b1/index.html
+(cd /tmp/b1 &amp;&amp; python3 -m http.server 8081 &amp;)
+echo "Backend 8082" | sudo tee /tmp/b2/index.html
+(cd /tmp/b2 &amp;&amp; python3 -m http.server 8082 &amp;)
+
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+
+<span class="comment"># Stuur requests — normaal gaat alles naar 8081:</span>
+curl http://10.10.10.1/
+
+<span class="comment"># Stop backend 8081, test failover naar 8082:</span>
+kill %1
+curl http://10.10.10.1/   <span class="comment"># moet nu "Backend 8082" tonen</span></div>
+
+      <div class="btn-row">
+        <button class="hint-toggle" onclick="toggleHint('h20')">💡 Hint</button>
+      </div>
+      <div class="hint-box" id="h20">
+        <p><strong>SELinux en Nginx SSL:</strong> als Nginx geen bestanden kan lezen in <code>/etc/nginx/ssl/</code>, voer dan uit: <code>sudo restorecon -Rv /etc/nginx/ssl/</code>. Nginx moet ook poort 443 mogen openen: <code>sudo setsebool -P httpd_can_network_connect 1</code>.</p>
+        <p style="margin-top:0.5rem;"><strong>Poort 443 in nftables:</strong> vergeet niet een regel toe te voegen voor HTTPS als je default-drop hebt: <code>tcp dport 443 accept</code>.</p>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p>PXL Linux Advanced · Firewall &amp; Proxy Lab</p>
     <button class="reset-btn" onclick="resetAll()">↺ Reset voortgang</button>
@@ -1548,7 +1803,7 @@ for i in {1..20}; do curl -s http://10.10.10.1/api; done</div>
 </div>
 
 <script>
-  const TOTAL = 18;
+  const TOTAL = 20;
 
   function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
 
@@ -1558,7 +1813,7 @@ for i in {1..20}; do curl -s http://10.10.10.1/api; done</div>
     card.querySelector('.task-check').classList.toggle('checked');
     card.classList.toggle('done');
     updateProgress();
-    onTaskToggled(check.classList.contains('checked'));
+    onTaskToggled(card.querySelector('.task-check').classList.contains('checked'));
     saveState();
   }
 
@@ -1758,42 +2013,6 @@ for i in {1..20}; do curl -s http://10.10.10.1/api; done</div>
   loadState();
   seedRankBaseline();
 
-  /* BATCH2-STUDY-QOL */
-  // ---- clipboard with HTTP fallback (VM deploys are not secure contexts) ----
-  function writeClipboard(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise((resolve, reject) => {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        ok ? resolve() : reject(new Error('execCommand failed'));
-      } catch (err) { reject(err); }
-    });
-  }
-
-  function copyCmd(cmd, btn) {
-    const clone = cmd.cloneNode(true);
-    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
-    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-    const text = clone.textContent.trim();
-    writeClipboard(text).then(() => {
-      btn.textContent = '✓ Gekopieerd';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = 'Kopieer'; btn.classList.remove('copied'); }, 1400);
-    }).catch(() => {
-      btn.textContent = 'Mislukt';
-      setTimeout(() => { btn.textContent = 'Kopieer'; }, 1400);
-    });
-  }
-
   // ---- mark all tasks in a section (toggles: all-done -> clears, else fills) ----
   function tasksInSection(sectionEl) {
     const tasks = [];
@@ -1854,15 +2073,6 @@ for i in {1..20}; do curl -s http://10.10.10.1/api; done</div>
   }
 
   function initStudyQol() {
-    document.querySelectorAll('.cmd').forEach(cmd => {
-      if (cmd.querySelector('.copy-btn')) return;
-      const btn = document.createElement('button');
-      btn.className = 'copy-btn';
-      btn.type = 'button';
-      btn.textContent = 'Kopieer';
-      btn.addEventListener('click', () => copyCmd(cmd, btn));
-      cmd.appendChild(btn);
-    });
     document.querySelectorAll('.section-title').forEach(sec => {
       if (sec.querySelector('.section-mark-all')) return;
       const btn = document.createElement('button');
@@ -1876,7 +2086,7 @@ for i in {1..20}; do curl -s http://10.10.10.1/api; done</div>
     document.addEventListener('keydown', handleKbNav);
   }
 
-  initStudyQol();
+  document.addEventListener('DOMContentLoaded', initStudyQol);
 </script>
 
 <div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeCompletionOverlay()">

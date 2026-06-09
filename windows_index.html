@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows Advanced — Labs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0f14;
+    --surface: #131b24;
+    --surface2: #1b2733;
+    --border: #2a3744;
+    --accent: #60a5fa;
+    --accent2: #93c5fd;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --purple: #a78bfa;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --teal: #2dd4bf;
+    --text: #e2e8f0;
+    --muted: #7d8da0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(96,165,250,0.07), transparent 45%),
+      radial-gradient(circle at 88% 14%, rgba(167,139,250,0.05), transparent 45%),
+      radial-gradient(circle at 50% 95%, rgba(96,165,250,0.05), transparent 50%);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2.5rem 1rem 3rem;
+  }
+
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    color: var(--muted); text-decoration: none;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 1.8rem; transition: color 0.15s;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  header {
+    margin-bottom: 2.5rem;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 2rem; align-items: end;
+  }
+  header .left { border-left: 4px solid var(--accent); padding-left: 1.5rem; }
+  header .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--accent); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.6rem;
+  }
+  header h1 { font-size: 2.6rem; font-weight: 800; line-height: 1.05; margin-bottom: 0.6rem; }
+  header p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; max-width: 56ch; }
+
+  .total-progress {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.1rem 1.4rem; min-width: 220px;
+  }
+  .total-progress .tp-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 0.6rem;
+  }
+  .total-progress .tp-counts { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .total-progress .tp-done {
+    font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; color: var(--accent);
+  }
+  .total-progress .tp-total { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--muted); }
+  .tp-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .tp-bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px; transition: width 0.6s ease; width: 0%;
+  }
+  .tp-rank {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.05em; margin-top: 0.5rem; text-align: center;
+    color: #a78bfa; opacity: 0; transition: opacity 0.4s ease;
+  }
+  .tp-rank.show { opacity: 1; }
+
+  .section-title {
+    font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 1rem; margin-top: 2.2rem;
+    display: flex; align-items: center; gap: 0.85rem;
+  }
+  .section-title::before, .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-title::before { max-width: 1rem; }
+
+  .lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1rem;
+  }
+
+  .lab-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem 1.3rem 1.1rem;
+    text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; gap: 0.7rem;
+    position: relative; transition: all 0.18s ease; border-top-width: 3px;
+  }
+  .lab-card:hover { transform: translateY(-2px); background: var(--surface2); }
+  .lab-card.complete::after {
+    content: '✓'; position: absolute; top: 0.9rem; right: 1rem;
+    width: 22px; height: 22px; background: var(--accent);
+    color: #000; font-weight: 700; font-size: 13px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .lab-card.foundation  { border-top-color: var(--accent); }
+  .lab-card.foundation:hover  { border-color: var(--accent); }
+  .lab-card.ad          { border-top-color: var(--purple); }
+  .lab-card.ad:hover          { border-color: var(--purple); }
+  .lab-card.files       { border-top-color: var(--green); }
+  .lab-card.files:hover       { border-color: var(--green); }
+  .lab-card.gpo         { border-top-color: var(--warn); }
+  .lab-card.gpo:hover         { border-color: var(--warn); }
+  .lab-card.replication { border-top-color: var(--orange); }
+  .lab-card.replication:hover { border-color: var(--orange); }
+  .lab-card.hybrid      { border-top-color: var(--pink); }
+  .lab-card.hybrid:hover      { border-color: var(--pink); }
+  .lab-card.services    { border-top-color: var(--teal); }
+  .lab-card.services:hover    { border-color: var(--teal); }
+  .lab-card.powershell  { border-top-color: var(--orange); }
+  .lab-card.powershell:hover  { border-color: var(--orange); }
+
+  .lab-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .lab-card .number { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.05em; }
+  .lab-card .title { font-size: 1.1rem; font-weight: 700; line-height: 1.25; margin-bottom: 0.1rem; }
+  .lab-card .desc { color: var(--muted); font-size: 0.84rem; line-height: 1.55; flex: 1; }
+  .lab-card .subtopics {
+    display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.1rem;
+  }
+  .lab-card .subtopic {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.67rem;
+    color: var(--muted); padding-left: 0.75rem; position: relative;
+  }
+  .lab-card .subtopic::before {
+    content: '›'; position: absolute; left: 0; color: var(--border);
+  }
+  .lab-card .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.15rem; }
+  .lab-card .tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    padding: 0.18rem 0.5rem; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    background: var(--surface2); color: var(--muted);
+  }
+  .lab-card .progress-line { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.3rem; }
+  .lab-card .lp-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .lab-card .lp-fill { height: 100%; background: var(--muted); border-radius: 2px; width: 0%; transition: width 0.5s ease; }
+  .lab-card.foundation  .lp-fill { background: var(--accent); }
+  .lab-card.ad          .lp-fill { background: var(--purple); }
+  .lab-card.files       .lp-fill { background: var(--green); }
+  .lab-card.gpo         .lp-fill { background: var(--warn); }
+  .lab-card.replication .lp-fill { background: var(--orange); }
+  .lab-card.hybrid      .lp-fill { background: var(--pink); }
+  .lab-card.services    .lp-fill { background: var(--teal); }
+  .lab-card.powershell  .lp-fill { background: var(--orange); }
+  .lab-card .lp-text {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); white-space: nowrap; min-width: 60px; text-align: right;
+  }
+
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center;
+  }
+  footer .left-text { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+  footer .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  footer button {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.45rem 0.95rem; border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    cursor: pointer; transition: all 0.18s;
+  }
+  footer button.expand:hover { border-color: var(--accent); color: var(--accent); }
+  footer button.reset:hover  { border-color: var(--danger); color: var(--danger); }
+
+  /* Challenger overlay */
+  .lab-complete-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    background: radial-gradient(circle at center, rgba(20,30,55,0.85), rgba(8,10,16,0.92));
+    backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.4s ease; overflow: hidden;
+  }
+  .lab-complete-overlay.show { display: flex; opacity: 1; }
+  .lab-complete-card {
+    position: relative; text-align: center; padding: 2.8rem 3rem 2.4rem;
+    border-radius: 18px; border: 1px solid rgba(96,165,250,0.55);
+    background: linear-gradient(160deg, rgba(24,28,46,0.96), rgba(16,16,26,0.96));
+    box-shadow: 0 0 60px rgba(96,165,250,0.4), inset 0 0 30px rgba(96,165,250,0.06);
+    max-width: 420px; z-index: 2;
+    animation: lc-pop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  @keyframes lc-pop { 0% { transform: scale(0.6) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+  .lc-badge-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; }
+  .lc-rays {
+    position: absolute; inset: -40px;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(96,165,250,0.25) 12deg, transparent 24deg, transparent 36deg, rgba(251,191,36,0.22) 48deg, transparent 60deg, transparent 72deg, rgba(96,165,250,0.25) 84deg, transparent 96deg, transparent 108deg, rgba(251,191,36,0.22) 120deg, transparent 132deg, transparent 180deg, rgba(96,165,250,0.25) 192deg, transparent 204deg, transparent 240deg, rgba(251,191,36,0.22) 252deg, transparent 264deg, transparent 300deg, rgba(96,165,250,0.25) 312deg, transparent 324deg);
+    border-radius: 50%; animation: lc-spin 8s linear infinite;
+  }
+  @keyframes lc-spin { to { transform: rotate(360deg); } }
+  .lc-halo { position: absolute; inset: 8px; border-radius: 50%; background: radial-gradient(circle, rgba(96,165,250,0.35), transparent 70%); animation: lc-pulse 2.2s ease-in-out infinite; }
+  @keyframes lc-pulse { 0%,100% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } }
+  .lc-icon { position: relative; font-size: 3.8rem; line-height: 1; z-index: 1; filter: drop-shadow(0 0 12px rgba(96,165,250,0.7)); animation: lc-float 3s ease-in-out infinite; }
+  @keyframes lc-float { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
+  .lc-title {
+    font-size: 1.9rem; font-weight: 800; margin-bottom: 0.5rem;
+    background: linear-gradient(90deg, #60a5fa, #fbbf24, #60a5fa); background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: lc-shimmer 3s linear infinite; letter-spacing: 0.02em;
+  }
+  @keyframes lc-shimmer { to { background-position: 200% center; } }
+  .lc-sub { color: var(--text); font-size: 0.95rem; margin-bottom: 0.3rem; line-height: 1.5; font-weight: 600; }
+  .lc-cheeky { color: #60a5fa; font-size: 0.86rem; font-style: italic; margin-bottom: 1.5rem; line-height: 1.5; opacity: 0; animation: lc-fade-in 0.6s ease forwards 0.7s; }
+  @keyframes lc-fade-in { to { opacity: 1; } }
+  .lc-close {
+    font-family: inherit; cursor: pointer; padding: 0.6rem 1.6rem; border-radius: 8px;
+    border: 1px solid rgba(96,165,250,0.6); background: rgba(96,165,250,0.12); color: #93c5fd;
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.02em;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+  .lc-close:hover { background: rgba(96,165,250,0.25); }
+  .lc-close:active { transform: scale(0.96); }
+  .lc-spark { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; opacity: 0; }
+  .lab-complete-overlay.show .lc-spark { animation: lc-burst 1.1s ease-out forwards; }
+  @keyframes lc-burst { 0% { opacity: 1; transform: translate(0,0) scale(1) rotate(0deg); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(360deg); } }
+
+  @media (max-width: 700px) {
+    header { grid-template-columns: 1fr; }
+    header h1 { font-size: 2rem; }
+    .lab-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <a class="back-link" href="index.html">← Alle cursussen</a>
+
+  <header>
+    <div class="left">
+      <div class="label">PXL Windows Advanced</div>
+      <h1>Trikks' Labs</h1>
+      <p>8 interactieve labs die de volledige cursus Windows Advanced dekken. Vink af terwijl je vordert — je voortgang wordt lokaal opgeslagen in deze browser.</p>
+    </div>
+    <div class="total-progress">
+      <div class="tp-label">Totale voortgang</div>
+      <div class="tp-counts">
+        <span class="tp-done" id="tp-done">0</span>
+        <span class="tp-total" id="tp-total">/ 0 taken</span>
+      </div>
+      <div class="tp-bar"><div class="tp-bar-fill" id="tp-bar"></div></div>
+      <div class="tp-rank" id="tp-rank"></div>
+    </div>
+  </header>
+
+  <div class="section-title">Windows Advanced · 8 labs</div>
+  <div class="lab-grid">
+
+    <a class="lab-card foundation" href="win_lab_windows_server.html" data-key="win_lab01_state" data-total="10">
+      <div class="top"><div class="number">Lab 01 · Windows Server</div></div>
+      <div class="title">Windows Server</div>
+      <div class="subtopics">
+        <span class="subtopic">Theorie</span>
+        <span class="subtopic">Client Access License</span>
+        <span class="subtopic">Installatie Windows Server</span>
+      </div>
+      <div class="tags"><span class="tag">versies</span><span class="tag">CAL</span><span class="tag">installatie</span><span class="tag">VMware</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 10</span>
+      </div>
+    </a>
+
+    <a class="lab-card ad" href="win_lab_active_directory.html" data-key="win_lab02_state" data-total="15">
+      <div class="top"><div class="number">Lab 02 · Domain - Active Directory</div></div>
+      <div class="title">Domain — Active Directory</div>
+      <div class="subtopics">
+        <span class="subtopic">Domain</span>
+        <span class="subtopic">Installatie Active Directory</span>
+        <span class="subtopic">OU - Users - Groups</span>
+        <span class="subtopic">Client joinen</span>
+        <span class="subtopic">AGDLP</span>
+      </div>
+      <div class="tags"><span class="tag">AD DS</span><span class="tag">DC</span><span class="tag">LDAP</span><span class="tag">OU</span><span class="tag">AGDLP</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 15</span>
+      </div>
+    </a>
+
+    <a class="lab-card files" href="win_lab_file_share.html" data-key="win_lab03_state" data-total="12">
+      <div class="top"><div class="number">Lab 03 · File Share</div></div>
+      <div class="title">File Share</div>
+      <div class="subtopics">
+        <span class="subtopic">RAID</span>
+        <span class="subtopic">Permissies</span>
+        <span class="subtopic">Shares</span>
+      </div>
+      <div class="tags"><span class="tag">RAID</span><span class="tag">NTFS</span><span class="tag">ACL</span><span class="tag">SMB</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 12</span>
+      </div>
+    </a>
+
+    <a class="lab-card gpo" href="win_lab_gpo.html" data-key="win_lab04_state" data-total="10">
+      <div class="top"><div class="number">Lab 04 · Domain - GPO</div></div>
+      <div class="title">Domain — GPO</div>
+      <div class="subtopics">
+        <span class="subtopic">Concept</span>
+        <span class="subtopic">GPO instellen</span>
+        <span class="subtopic">GPO Debug</span>
+      </div>
+      <div class="tags"><span class="tag">GPO</span><span class="tag">LSDOU</span><span class="tag">GPMC</span><span class="tag">gpresult</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 10</span>
+      </div>
+    </a>
+
+    <a class="lab-card replication" href="win_lab_replication.html" data-key="win_lab05_state" data-total="10">
+      <div class="top"><div class="number">Lab 05 · Domain - Replication</div></div>
+      <div class="title">Domain — Replication</div>
+      <div class="subtopics">
+        <span class="subtopic">Theorie</span>
+        <span class="subtopic">AD failover configuren</span>
+        <span class="subtopic">AD delegation</span>
+      </div>
+      <div class="tags"><span class="tag">replicatie</span><span class="tag">FSMO</span><span class="tag">Global Catalog</span><span class="tag">delegatie</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 10</span>
+      </div>
+    </a>
+
+    <a class="lab-card hybrid" href="win_lab_hybrid.html" data-key="win_lab06_state" data-total="12">
+      <div class="top"><div class="number">Lab 06 · Hybrid</div></div>
+      <div class="title">Hybrid</div>
+      <div class="subtopics">
+        <span class="subtopic">Theorie</span>
+        <span class="subtopic">Domain Verificatie</span>
+        <span class="subtopic">Entra Connect</span>
+        <span class="subtopic">Synchronisatie</span>
+        <span class="subtopic">GPO &amp; Intune</span>
+      </div>
+      <div class="tags"><span class="tag">Entra ID</span><span class="tag">Intune</span><span class="tag">sync</span><span class="tag">MDM</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 12</span>
+      </div>
+    </a>
+
+    <a class="lab-card services" href="win_lab_services.html" data-key="win_lab07_state" data-total="10">
+      <div class="top"><div class="number">Lab 07 · Services</div></div>
+      <div class="title">Services</div>
+      <div class="subtopics">
+        <span class="subtopic">DNS</span>
+        <span class="subtopic">DHCP</span>
+      </div>
+      <div class="tags"><span class="tag">DNS</span><span class="tag">DHCP</span><span class="tag">zones</span><span class="tag">scopes</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 10</span>
+      </div>
+    </a>
+
+    <a class="lab-card powershell" href="win_lab_powershell.html" data-key="win_lab08_state" data-total="12">
+      <div class="top"><div class="number">Lab 08 · PowerShell</div></div>
+      <div class="title">PowerShell</div>
+      <div class="subtopics">
+        <span class="subtopic">Basics</span>
+        <span class="subtopic">Filteren en selecteren</span>
+        <span class="subtopic">PowerShell voor AD</span>
+        <span class="subtopic">Scripts</span>
+      </div>
+      <div class="tags"><span class="tag">cmdlets</span><span class="tag">pipeline</span><span class="tag">AD module</span><span class="tag">scripts</span></div>
+      <div class="progress-line">
+        <div class="lp-bar"><div class="lp-fill"></div></div>
+        <span class="lp-text">0 / 12</span>
+      </div>
+    </a>
+
+  </div>
+
+  <footer>
+    <span class="left-text">PXL Windows Advanced · 8 labs · voortgang lokaal opgeslagen per browser</span>
+    <div class="actions">
+      <button class="expand" onclick="refreshAll()">↻ Voortgang verversen</button>
+      <button class="reset" onclick="resetEverything()">↺ Reset alles</button>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  function getDoneCount(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return 0;
+      return Object.values(JSON.parse(raw)).filter(v => v === true).length;
+    } catch(e) { return 0; }
+  }
+
+  function updateAllProgress() {
+    let grandDone = 0, grandTotal = 0;
+    document.querySelectorAll('.lab-card').forEach(card => {
+      const key = card.dataset.key;
+      const total = parseInt(card.dataset.total, 10);
+      const done = getDoneCount(key);
+      grandDone += done; grandTotal += total;
+      const pct = total > 0 ? (done / total) * 100 : 0;
+      const fill = card.querySelector('.lp-fill');
+      const text = card.querySelector('.lp-text');
+      if (fill) fill.style.width = pct + '%';
+      if (text) text.textContent = done + ' / ' + total;
+      if (done === total && total > 0) card.classList.add('complete');
+      else card.classList.remove('complete');
+    });
+    const totalPct = grandTotal > 0 ? (grandDone / grandTotal) * 100 : 0;
+    document.getElementById('tp-done').textContent = grandDone;
+    document.getElementById('tp-total').textContent = '/ ' + grandTotal + ' taken';
+    document.getElementById('tp-bar').style.width = totalPct + '%';
+    const rankEl = document.getElementById('tp-rank');
+    if (rankEl) {
+      if      (totalPct >= 100) { rankEl.textContent = '⚔️ Challenger'; rankEl.classList.add('show'); }
+      else if (totalPct >= 85)  { rankEl.textContent = '💠 Diamond';    rankEl.classList.add('show'); }
+      else if (totalPct >= 70)  { rankEl.textContent = '🪙 Platinum';   rankEl.classList.add('show'); }
+      else if (totalPct >= 40)  { rankEl.textContent = '🥇 Gold';       rankEl.classList.add('show'); }
+      else if (totalPct >= 1)   { rankEl.textContent = '🥈 Silver';     rankEl.classList.add('show'); }
+      else { rankEl.textContent = ''; rankEl.classList.remove('show'); }
+    }
+    if (totalPct >= 100 && grandTotal > 0) {
+      const ov = document.getElementById('lab-complete-overlay');
+      if (ov && !ov.dataset.shown) {
+        ov.dataset.shown = '1';
+        setTimeout(() => { ov.classList.add('show'); spawnSparkles(); }, 400);
+      }
+    }
+  }
+
+  function refreshAll() { updateAllProgress(); }
+
+  function resetEverything() {
+    if (!confirm('Voortgang van alle 8 labs wissen? Dit kan niet ongedaan gemaakt worden.')) return;
+    document.querySelectorAll('.lab-card').forEach(card => {
+      try { localStorage.removeItem(card.dataset.key); } catch(e) {}
+    });
+    updateAllProgress();
+  }
+
+  updateAllProgress();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateAllProgress(); });
+</script>
+
+<div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeOverlay()">
+  <div class="lab-complete-card" onclick="event.stopPropagation()">
+    <div class="lc-badge-wrap">
+      <div class="lc-rays"></div>
+      <div class="lc-halo"></div>
+      <div class="lc-icon">🪟</div>
+    </div>
+    <div class="lc-title">CHALLENGER</div>
+    <div class="lc-sub">Alle 8 labs voltooid — klaar voor het Windows-examen.</div>
+    <div class="lc-cheeky">"Je bent nu officieel een Windows-wizard."</div>
+    <button class="lc-close" onclick="closeOverlay()">Sluiten</button>
+  </div>
+</div>
+
+<script>
+  function closeOverlay() { document.getElementById('lab-complete-overlay').classList.remove('show'); }
+  function spawnSparkles() {
+    const card = document.querySelector('.lab-complete-card');
+    if (!card || card.querySelector('.lc-spark')) return;
+    const colors = ['#60a5fa','#fbbf24','#93c5fd','#a78bfa','#fde68a'];
+    for (let i = 0; i < 28; i++) {
+      const s = document.createElement('div');
+      s.className = 'lc-spark';
+      const angle = (Math.PI * 2 * i) / 28 + (Math.random() - 0.5);
+      const dist = 80 + Math.random() * 120;
+      s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      s.style.background = colors[i % colors.length];
+      s.style.animationDelay = (Math.random() * 0.15) + 's';
+      card.appendChild(s);
+    }
+  }
+</script>
+</body>
+</html>

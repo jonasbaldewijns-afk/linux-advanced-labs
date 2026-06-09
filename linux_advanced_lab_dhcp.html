@@ -28,7 +28,7 @@
 
   body {
     background: var(--bg);
-    background-image: radial-gradient(circle at 15% 10%, rgba(45,212,191,0.05), transparent 40%), radial-gradient(circle at 85% 90%, rgba(56,189,248,0.05), transparent 40%);
+    background-image: radial-gradient(circle at 15% 10%, rgba(56,189,248,0.07), transparent 42%), radial-gradient(circle at 85% 90%, rgba(56,189,248,0.04), transparent 42%);
     color: var(--text);
     font-family: 'Syne', sans-serif;
     min-height: 100vh;
@@ -602,6 +602,70 @@
     <span class="progress-count" id="progress-count">0 / 10</span>
   </div>
 
+  <!-- DEEL 0: VMWARE TOPOLOGIE -->
+  <div class="section-title">Deel 0 — VMware Netwerktopologie Controleren</div>
+
+  <div class="task-card" id="t0">
+    <div class="task-header" onclick="toggleTask('t0')">
+      <div class="task-check" onclick="toggleCheck(event,'t0')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-install">Vereiste</span> Taak 00</div>
+        <div class="task-title">Controleer en corrigeer de VMware netwerktopologie</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Dit is de meest voorkomende struikelblok van het hele DHCP-labo. Als de VMware-adapters niet correct geconfigureerd zijn, kan Kea nog zo perfect ingesteld zijn — de client krijgt nooit een IP van jouw server. Doe dit <strong>vóór</strong> alles.</p>
+
+      <p><strong>Vereiste topologie (uit de cursus):</strong></p>
+      <div class="json-block">Machine   Interface   VMware-type        IP-adres
+──────────────────────────────────────────────────────
+Server    ens160      NAT                192.168.112.100/24  (internet)
+Server    ens224      Custom (vmnet10)   10.10.10.1/24       (intern)
+Server    ens256      Host-only          (SSH beheer)
+
+Client    ens160      Custom (vmnet10)   → via DHCP van Kea
+Client    ens224      Host-only          (SSH beheer)</div>
+
+      <div class="warn-note">
+        <strong>⚠ Kritiek: ens224 van de server is GEEN gewone NAT-adapter!</strong><br>
+        De interne interface moet een <strong>geïsoleerd, custom VMnet</strong> zijn (vmnet10 of vergelijkbaar) — <em>niet</em> de standaard NAT. Op een gewone NAT-adapter heeft VMware zijn eigen DHCP-server draaien, die jouw Kea-server overstemt. Bovendien zitten server en client dan niet op hetzelfde logische netwerk voor DHCP-broadcasts.
+      </div>
+
+      <p><strong>Stap 1 — Maak vmnet10 aan in VMware:</strong></p>
+      <p>Ga naar <strong>Edit → Virtual Network Editor</strong> (vereist admin/root in VMware). Klik <strong>Add Network</strong>, kies <code>vmnet10</code>. Stel het type in op <strong>Host-only</strong> en schakel <strong>VMware DHCP uit</strong> (vink "Use local DHCP service" uit). Subnet: <code>10.10.10.0</code>, mask: <code>255.255.255.0</code>.</p>
+
+      <div class="concept-box">
+        <strong>💡 Waarom Host-only en niet Internal?</strong>
+        VMware "Host-only" maakt een geïsoleerd netwerk tussen VM's onderling én de host. "Internal" (in VirtualBox-terminologie) is puur VM-naar-VM. In VMware gebruik je Host-only met uitgeschakelde VMware-DHCP om hetzelfde effect te bereiken als een intern netwerk — volledig geïsoleerd van het internet, maar bereikbaar via de host voor SSH.
+      </div>
+
+      <p><strong>Stap 2 — Pas de server-VM aan:</strong></p>
+      <p>Ga naar de <strong>instellingen van de server-VM → Network Adapter 2</strong> (dit is <code>ens224</code>). Verander het type van NAT naar <strong>Custom: vmnet10</strong>.</p>
+
+      <p><strong>Stap 3 — Pas de client-VM aan:</strong></p>
+      <p>Ga naar de <strong>instellingen van de client-VM → Network Adapter 1</strong> (dit is <code>ens160</code>). Verander het type naar <strong>Custom: vmnet10</strong>.</p>
+
+      <p><strong>Stap 4 — Herstart de netwerkinterfaces na de VMware-wijziging:</strong></p>
+      <div class="cmd"><span class="comment"># Op de SERVER — herstart de Internal connection</span>
+sudo nmcli connection down Internal
+sudo nmcli connection up Internal
+ip addr show ens224
+<span class="comment"># Verwacht: 10.10.10.1/24</span>
+
+<span class="comment"># Op de CLIENT — herstart de Connection</span>
+sudo nmcli connection down Connection
+sudo nmcli connection up Connection
+ip addr show ens160
+<span class="comment"># Verwacht: nog geen IP (DHCP nog niet actief) of 10.10.10.x na labo</span></div>
+
+      <div class="verify-block">
+        <strong>✔ Verificatie</strong>
+        Server <code>ens224</code> toont <code>10.10.10.1/24</code>. Ping vanuit de server naar het broadcast-adres slaagt niet (normaal), maar ping tussen server en client (nadat de client een IP heeft) moet werken. Controleer ook: <code>sudo ss -ulnp | grep :67</code> na het starten van Kea moet tonen dat Kea luistert op <code>10.10.10.1:67</code>, niet op een <code>192.168.x.x</code>-adres.
+      </div>
+    </div>
+  </div>
+
   <!-- DEEL 1: INSTALLATIE -->
   <div class="section-title">Deel 1 — Installatie & Voorbereiding</div>
 
@@ -648,9 +712,13 @@ nmcli connection show --active</div>
         <strong>💡 Gouden regel</strong>
         Een DHCP-<em>server</em> heeft altijd een <strong>statisch</strong> IP-adres. Logisch: als hij zijn eigen adres via DHCP zou krijgen, heeft hij bij het opstarten nog geen netwerk — en dan kan hij ook geen DHCP aanbieden. Kip-en-ei probleem.
       </div>
+      <div class="warn-note">
+        <strong>⚠ Toont ens224 een 192.168.x.x adres in plaats van 10.10.10.1?</strong><br>
+        Dan is de VMware-adapter nog niet correct ingesteld op vmnet10. Het statische IP <code>10.10.10.1</code> heeft geen effect als de onderliggende VMware-adapter op de verkeerde virtuele switch zit. Ga terug naar <strong>Taak 00</strong> en corrigeer de VMware-netwerktopologie eerst.
+      </div>
       <div class="verify-block">
         <strong>✔ Verificatie</strong>
-        <code>ens224</code> heeft het adres <code>10.10.10.1/24</code>. Is dit niet zo? Herhaal dan taak 14 van het Netwerkbeheer-labo (de Internal-connection configureren).
+        <code>ens224</code> heeft het adres <code>10.10.10.1/24</code> én de VMware-adapter is ingesteld op vmnet10 (Custom Host-only, VMware DHCP uitgeschakeld). Is dit niet zo? Herhaal taak 00 en taak 14 van het Netwerkbeheer-labo.
       </div>
     </div>
   </div>
@@ -924,6 +992,15 @@ sudo systemctl restart kea-dhcp4</div>
       <div class="verify-block">
         <strong>✔ Verificatie</strong>
         Op de client: herstart de interface (<code>nmcli con down Connection &amp;&amp; nmcli con up Connection</code>). Het IP moet nu <code>10.10.10.50</code> zijn in plaats van een willekeurig adres uit 150–200.
+      </div>
+      <div class="warn-note">
+        <strong>⚠ Veelvoorkomend probleem: oude lease overschrijft de reservatie</strong><br>
+        Als de client eerder al een adres uit de pool gekregen heeft (bv. <code>10.10.10.150</code>), staat dat nog in de lease-database. Kea respecteert die bestaande lease en geeft de reservatie pas na de vervaltijd (1 uur). Oplossing: wis de lease-database op de server en herstart Kea:<br><br>
+        <code>sudo systemctl stop kea-dhcp4</code><br>
+        <code>sudo bash -c 'head -1 /var/lib/kea/kea-leases4.csv &gt; /tmp/l.tmp &amp;&amp; mv /tmp/l.tmp /var/lib/kea/kea-leases4.csv'</code><br>
+        <code>sudo chown kea:kea /var/lib/kea/kea-leases4.csv</code><br>
+        <code>sudo systemctl start kea-dhcp4</code><br><br>
+        De <code>chown</code> is cruciaal: Kea draait als gebruiker <code>kea</code> en mag het bestand niet openen als het door root aangemaakt is zonder de juiste eigenaar.
       </div>
       <div class="btn-row">
         <button class="hint-toggle" onclick="toggleHint('h8')">💡 Hint</button>

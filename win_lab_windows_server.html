@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows Advanced — Windows Server</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+  :root {
+    --bg:#0a0f14;--surface:#131b24;--surface2:#1b2733;--border:#2a3744;
+    --accent:#60a5fa;--accent2:#93c5fd;--theme:#60a5fa;
+    --warn:#fbbf24;--danger:#f87171;--purple:#a78bfa;--green:#4ade80;--orange:#fb923c;
+    --text:#e2e8f0;--muted:#7d8da0;--code-bg:#0a0f14;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);background-image:radial-gradient(circle at 15% 10%,rgba(96,165,250,0.07),transparent 42%),radial-gradient(circle at 85% 90%,rgba(96,165,250,0.04),transparent 42%);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem}
+  .container{max-width:1300px;margin:0 auto}
+  header{border-left:4px solid var(--theme);padding-left:1.5rem;margin-bottom:2rem}
+  header .label{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--theme);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.5rem}
+  header h1{font-size:2.2rem;font-weight:800;line-height:1.1}
+  header p{color:var(--muted);margin-top:0.75rem;font-size:0.95rem;line-height:1.6}
+  .progress-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.5rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:1rem}
+  .progress-bar-wrap span{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);white-space:nowrap}
+  .bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--theme),var(--accent2));border-radius:3px;transition:width 0.4s ease;width:0%}
+  .progress-count{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--theme)}
+  .section-title{font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.75rem;margin-top:2.5rem;display:flex;align-items:center;gap:0.75rem}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+  .task-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;overflow:hidden;transition:border-color 0.2s}
+  .task-card.done{border-color:var(--accent)}
+  .task-card.done .task-header{background:rgba(96,165,250,0.05)}
+  .task-header{padding:1rem 1.25rem;cursor:pointer;display:flex;align-items:flex-start;gap:1rem;user-select:none;transition:background 0.15s}
+  .task-header:hover{background:var(--surface2)}
+  .task-check{width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;margin-top:1px}
+  .task-check.checked{background:var(--accent);border-color:var(--accent)}
+  .task-check.checked::after{content:'✓';color:#000;font-size:13px;font-weight:700}
+  .task-meta{flex:1}
+  .task-num{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-bottom:0.25rem}
+  .task-title{font-weight:600;font-size:0.95rem;line-height:1.4}
+  .task-card.done .task-title{color:var(--muted);text-decoration:line-through}
+  .expand-icon{color:var(--muted);font-size:0.8rem;font-family:'JetBrains Mono',monospace;transition:transform 0.2s;flex-shrink:0;margin-top:3px}
+  .task-card.open .expand-icon{transform:rotate(90deg)}
+  .task-body{display:none;padding:0 1.25rem 1.25rem 1.25rem;border-top:1px solid var(--border)}
+  .task-card.open .task-body{display:block}
+  .task-body p{color:var(--text);line-height:1.7;font-size:0.9rem;margin-top:1rem;margin-bottom:0.75rem}
+  .task-body ul,.task-body ol{color:var(--text);line-height:1.8;font-size:0.9rem;margin-top:0.5rem;margin-bottom:0.75rem;padding-left:1.5rem}
+  .task-body li{margin-bottom:0.25rem}
+  .task-body code{background:var(--surface2);padding:0.1rem 0.35rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent2)}
+  .task-body table{width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:0.85rem}
+  .task-body th{background:var(--surface2);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;padding:0.5rem 0.75rem;border:1px solid var(--border);text-align:left}
+  .task-body td{padding:0.45rem 0.75rem;border:1px solid var(--border);color:var(--text);line-height:1.5}
+  .task-body tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+  .cmd{position:relative;background:var(--code-bg);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:5px;padding:0.75rem 2.5rem 0.75rem 1rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#7dd3fc;margin:0.5rem 0;white-space:pre-wrap;overflow-x:auto;line-height:1.6}
+  .cmd .comment{color:var(--muted)}
+  .cmd .kw{color:var(--accent)}
+  .cmd .path{color:var(--warn)}
+  .concept-box{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);border-radius:6px;font-size:0.85rem;line-height:1.65}
+  .concept-box strong{font-family:'JetBrains Mono',monospace;color:var(--purple);display:block;margin-bottom:0.4rem;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:6px;font-size:0.82rem;line-height:1.6}
+  .verify-block strong{font-family:'JetBrains Mono',monospace;color:var(--accent2);display:block;margin-bottom:0.4rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block code{color:var(--accent2);background:rgba(56,189,248,0.08)}
+  .warn-note{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#d4a853}
+  .warn-note strong{color:var(--warn)}
+  .info-note{background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.25);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#93c5fd}
+  .info-note strong{color:var(--accent)}
+  .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.4rem}
+  .tag-i{background:rgba(96,165,250,0.12);color:var(--accent)}
+  .tag-c{background:rgba(167,139,250,0.15);color:var(--purple)}
+  .tag-s{background:rgba(56,189,248,0.15);color:#7dd3fc}
+  .tag-t{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-a{background:rgba(251,191,36,0.15);color:var(--warn)}
+  .tag-d{background:rgba(248,113,113,0.15);color:var(--danger)}
+  .copy-btn{position:absolute;top:6px;right:6px;font-family:'JetBrains Mono',monospace;font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);opacity:0.55;transition:opacity 0.15s,color 0.15s,border-color 0.15s}
+  .cmd:hover .copy-btn,.copy-btn:focus{opacity:1}
+  .copy-btn:hover{color:var(--accent2);border-color:var(--accent2)}
+  /* nav */
+  .lab-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;gap:0.75rem;position:fixed;left:max(0.5rem,calc(50% - 650px - 148px));top:50vh;transform:translateY(-50%);flex-direction:column;align-items:stretch;width:130px;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem}
+  .lab-nav a{font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-decoration:none;padding:0.45rem 0.9rem;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--surface);transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:0.4rem}
+  .lab-nav a:hover{border-color:var(--accent);color:var(--accent);background:var(--surface2)}
+  .lab-nav .home-btn{border-color:var(--accent);color:var(--accent)}
+  .lab-nav .home-btn:hover{background:var(--accent);color:#000}
+  .lab-nav .disabled{opacity:0.25;pointer-events:none}
+  /* sidebar */
+  .progress-sidebar{position:fixed;right:max(0.5rem,calc(50% - 650px - 210px));top:50vh;transform:translateY(-50%);width:190px;z-index:100;display:flex;flex-direction:column;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+  .ps-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em}
+  .ps-count-row{display:flex;align-items:baseline;gap:0.35rem}
+  .ps-count{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+  .ps-total{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted)}
+  .ps-pips{display:flex;flex-wrap:wrap;gap:3px}
+  .ps-pip{width:10px;height:10px;border-radius:2px;background:var(--border);transition:background 0.3s,box-shadow 0.3s;flex-shrink:0}
+  .ps-pip.done{background:var(--accent);box-shadow:0 0 4px rgba(96,165,250,0.5)}
+  .ps-rank-card{border-radius:8px;padding:0.7rem 0.75rem;border:1px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;gap:0.3rem;transition:all 0.4s}
+  .ps-rank-icon{font-size:1.4rem;line-height:1}
+  .ps-rank-name{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em}
+  .ps-rank-sub{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted)}
+  .ps-rank-card.rank-silver{border-color:rgba(168,184,200,0.4);background:rgba(168,184,200,0.07)}.ps-rank-card.rank-silver .ps-rank-name{color:#a8b8c8}
+  .ps-rank-card.rank-gold{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.07);box-shadow:0 0 12px rgba(251,191,36,0.1)}.ps-rank-card.rank-gold .ps-rank-name{color:#fbbf24}
+  .ps-rank-card.rank-platinum{border-color:rgba(148,163,184,0.5);background:rgba(148,163,184,0.09)}.ps-rank-card.rank-platinum .ps-rank-name{color:#e2e8f0}
+  .ps-rank-card.rank-diamond{border-color:rgba(125,211,252,0.5);background:rgba(125,211,252,0.08);box-shadow:0 0 16px rgba(125,211,252,0.2)}.ps-rank-card.rank-diamond .ps-rank-name{color:#7dd3fc}
+  .ps-rank-card.rank-challenger{border-color:rgba(167,139,250,0.5);background:rgba(167,139,250,0.1);box-shadow:0 0 18px rgba(167,139,250,0.3)}.ps-rank-card.rank-challenger .ps-rank-name{color:#a78bfa}
+  .ps-next{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:0.6rem}
+  .ps-next span{color:var(--warn);font-weight:700}
+  footer{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  footer p{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted)}
+  .reset-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:0.4rem 0.9rem;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s}
+  .reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+  @media(min-width:1200px){.progress-bar-wrap{display:none}}
+  @media(max-width:1199px){.lab-nav{position:static;transform:none;flex-direction:row;width:auto;margin-bottom:1.75rem}.progress-sidebar{display:none}.progress-bar-wrap{display:flex}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav class="lab-nav">
+  <a class="home-btn" href="windows_index.html">⌂ Index</a>
+  <span class="nav-side disabled">←</span>
+  <a class="nav-side right" href="win_lab_active_directory.html">Domain - AD →</a>
+</nav>
+
+<div class="progress-sidebar">
+  <div class="ps-label">Voortgang</div>
+  <div class="ps-count-row">
+    <span class="ps-count" id="ps-count">0</span>
+    <span class="ps-total">/ 6</span>
+  </div>
+  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div></div>
+  <div class="ps-rank-card" id="ps-rank-card">
+    <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
+    <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
+    <span class="ps-rank-sub" id="ps-rank-sub">Voltooi je eerste taak</span>
+  </div>
+  <div class="ps-next" id="ps-next"></div>
+</div>
+
+<header>
+  <div class="label">Lab 01 · Windows Advanced</div>
+  <h1>Windows Server</h1>
+  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+</header>
+
+<div class="progress-bar-wrap">
+  <span>Voortgang</span>
+  <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+  <span class="progress-count" id="bar-count">0 / 6</span>
+</div>
+
+<div class="section-title">Theorie · Windows Server</div>
+    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+      <div class="task-header">
+        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+        <div class="task-meta">
+          <div class="task-num">Theorie 01</div>
+          <div class="task-title">Workgroup vs. Domein — de kernverschillen begrijpen</div>
+          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
+        </div>
+        <div class="expand-icon">›</div>
+      </div>
+      <div class="task-body">
+<p>Een computer behoort ofwel tot een <strong>workgroup</strong> ofwel tot een <strong>domain</strong>. Begrijp het verschil voordat je verder gaat.</p><table><thead><tr><th>Aspect</th><th>Workgroup</th><th>Domein</th></tr></thead><tbody><tr><td>Beheer</td><td>Lokaal per toestel</td><td>Centraal via DC</td></tr><tr><td>Gebruikers</td><td>Lokale accounts</td><td>Domeinaccounts (AD)</td></tr><tr><td>Policies</td><td>Manueel per machine</td><td>GPO vanuit DC</td></tr><tr><td>Schaalbaarheid</td><td>Klein netwerk</td><td>Groot netwerk</td></tr><tr><td>Beheerder</td><td>Lokale admin</td><td>Domain Admin</td></tr></tbody></table><div class="concept-box"><strong>Domein Controller (DC)</strong>Een server die het domein beheert. Slaat alle gebruikers, policies en configuraties op in <code>NTDS.dit</code> via Active Directory.</div>
+      </div>
+    </div>
+    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+      <div class="task-header">
+        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+        <div class="task-meta">
+          <div class="task-num">Theorie 02</div>
+          <div class="task-title">Windows Server versies en edities kennen</div>
+          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
+        </div>
+        <div class="expand-icon">›</div>
+      </div>
+      <div class="task-body">
+<p>Windows Server bestaat in meerdere edities met elk hun doel:</p><table><thead><tr><th>Editie</th><th>Doel</th><th>Virtualisatie</th></tr></thead><tbody><tr><td>Standard</td><td>Algemeen gebruik</td><td>2 VM's</td></tr><tr><td>Datacenter</td><td>Hoge workloads</td><td>Onbeperkt</td></tr><tr><td>Essentials</td><td>KMO (max 25 users)</td><td>Geen Hyper-V</td></tr></tbody></table><p><strong>Server Core</strong>: GUI-loze versie — minder aanvalsoppervlak, meer resources voor services. Beheer via PowerShell of remote tools.</p><p><strong>Nano Server</strong>: Ultraminimale versie voor containers en cloud workloads.</p><div class="verify-block"><strong>✔ Verificatie</strong>Welke editie gebruik jij in het lab? Controleer via <code>winver</code> of Server Manager.</div>
+      </div>
+    </div><div class="section-title">Client Access Licenses</div>
+    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+      <div class="task-header">
+        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+        <div class="task-meta">
+          <div class="task-num">Theorie 03</div>
+          <div class="task-title">CAL-types identificeren en toepassen</div>
+          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
+        </div>
+        <div class="expand-icon">›</div>
+      </div>
+      <div class="task-body">
+<p>Een <strong>Client Access License (CAL)</strong> is vereist voor elke gebruiker of apparaat dat verbinding maakt met Windows Server.</p><table><thead><tr><th>CAL-type</th><th>Gebonden aan</th><th>Wanneer gebruiken</th></tr></thead><tbody><tr><td>User CAL</td><td>Gebruiker</td><td>Gebruiker werkt op meerdere toestellen</td></tr><tr><td>Device CAL</td><td>Apparaat</td><td>Meerdere users op 1 toestel (callcenter)</td></tr><tr><td>RDS CAL</td><td>Sessie</td><td>Remote Desktop Services</td></tr><tr><td>External Connector</td><td>Extern</td><td>Klanten/partners zonder eigen CAL</td></tr></tbody></table><div class="warn-note"><strong>⚠ Let op</strong> — CAL's zijn geen software die je installeert — het is een juridisch toegangsrecht. Je moet ze kunnen aantonen bij een audit.</div><div class="info-note"><strong>ℹ Info</strong> — Windows Server controleert CAL's <strong>niet</strong> technisch af. De verantwoordelijkheid ligt bij de organisatie.</div>
+      </div>
+    </div><div class="section-title">Installatie Windows Server 2025</div>
+    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+      <div class="task-header">
+        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+        <div class="task-meta">
+          <div class="task-num">Taak 04</div>
+          <div class="task-title">VM aanmaken in VMware voor Windows Server 2025</div>
+          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
+        </div>
+        <div class="expand-icon">›</div>
+      </div>
+      <div class="task-body">
+<p>Maak een nieuwe VM aan in VMware Workstation met de juiste instellingen:</p><ul><li>File → New Virtual Machine → Custom (Advanced)</li><li>Hardware compatibility: VMware Workstation 17.5 or later</li><li>I will install the operating system later</li><li>Guest OS: Windows Server 2022 (of 2025 indien beschikbaar)</li><li>Firmware: <strong>UEFI</strong></li><li>Memory: <strong>4096 MB</strong></li><li>Network: <strong>Host Only</strong></li><li>SCSI: LSI Logic SAS</li><li>Disk: 60 GB, single file</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — Gebruik UEFI, niet Legacy BIOS — Windows Server 2025 vereist dit.</div>
+      </div>
+    </div>
+    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+      <div class="task-header">
+        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+        <div class="task-meta">
+          <div class="task-num">Taak 05</div>
+          <div class="task-title">Windows Server 2025 installeren</div>
+          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
+        </div>
+        <div class="expand-icon">›</div>
+      </div>
+      <div class="task-body">
+<p>Download de ISO via Azure for Education en voer de installatie uit:</p><ul><li>Surf naar <code>azureforeducation.microsoft.com/devtools</code></li><li>Meld aan met je PXL-studentaccount</li><li>Zoek naar "Windows Server 2025 Datacenter" en download</li><li>Koppel ISO aan VM en start op</li><li>Kies: <strong>Windows Server 2025 Datacenter Evaluation (Desktop Experience)</strong></li><li>Installatietype: <strong>Custom</strong></li><li>Selecteer de virtuele schijf en installeer</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Na herstart: stel Administrator-wachtwoord in. Je ziet Server Manager opstarten.</div>
+      </div>
+    </div>
+    <div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+      <div class="task-header">
+        <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+        <div class="task-meta">
+          <div class="task-num">Taak 06</div>
+          <div class="task-title">VMware Tools installeren</div>
+          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
+        </div>
+        <div class="expand-icon">›</div>
+      </div>
+      <div class="task-body">
+<p>VMware Tools verbetert de integratie tussen host en VM (clipbord, schermresolutie, muis).</p><ul><li>In VMware: VM → Install VMware Tools</li><li>In de VM: open de D:-schijf die verschijnt</li><li>Voer <code>setup64.exe</code> uit</li><li>Kies: Typical install → Next → Install → Finish → Reboot</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Na herstart: schermresolutie past zich automatisch aan, clipboard werkt tussen host en VM.</div>
+      </div>
+    </div>
+
+<footer>
+  <p>Windows Advanced · Lab 01 · Windows Server · 6 taken</p>
+  <button class="reset-btn" onclick="resetLab()">↺ Reset lab</button>
+</footer>
+
+</div>
+<script>
+const STORAGE_KEY = 'win_lab01_state';
+const TOTAL = 6;
+const RANKS = [
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
+  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
+  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+];
+
+function loadState(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
+}
+function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
+
+function checkTask(id,e){
+  e.stopPropagation();
+  const s=loadState();
+  s[id]=!s[id];
+  saveState(s);
+  render();
+}
+function toggleTask(id,e){
+  if(e.target.closest('.task-check')) return;
+  const card=document.getElementById('tc-'+id);
+  card.classList.toggle('open');
+}
+
+function render(){
+  const s=loadState();
+  let done=0;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const id=card.id.replace('tc-','');
+    const checked=!!s[id];
+    if(checked) done++;
+    card.classList.toggle('done',checked);
+    const chk=document.getElementById('chk-'+id);
+    if(chk) chk.classList.toggle('checked',checked);
+  });
+  // pips
+  let pipIdx=1;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const id=card.id.replace('tc-','');
+    const pip=document.getElementById('pip-'+pipIdx);
+    if(pip) pip.classList.toggle('done',!!s[id]);
+    pipIdx++;
+  });
+  const pct=TOTAL>0?(done/TOTAL)*100:0;
+  const bf=document.getElementById('bar-fill');
+  if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count');
+  if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count');
+  if(pc) pc.textContent=done;
+  // rank
+  let ri=0;
+  for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
+  const r=RANKS[ri];
+  const rc=document.getElementById('ps-rank-card');
+  const ri2=document.getElementById('ps-rank-icon');
+  const rn=document.getElementById('ps-rank-name');
+  const rs=document.getElementById('ps-rank-sub');
+  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(ri2) ri2.textContent=r.icon;
+  if(rn) rn.textContent=r.name;
+  if(rs) rs.textContent=r.sub;
+  // next rank
+  const nxt=document.getElementById('ps-next');
+  if(nxt){
+    if(ri<RANKS.length-1){
+      const nr=RANKS[ri+1];
+      const need=nr.min-done;
+      nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
+    } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
+  }
+}
+function resetLab(){
+  if(!confirm('Voortgang van dit lab wissen?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+}
+// copy buttons — capture the clean command text BEFORE adding the button,
+// so the button label can never leak into the clipboard.
+document.querySelectorAll('.cmd').forEach(block=>{
+  const original=block.innerText.trim();
+  const btn=document.createElement('button');
+  btn.className='copy-btn'; btn.textContent='kopieer';
+  btn.onclick=e=>{
+    e.stopPropagation();
+    navigator.clipboard.writeText(original).then(()=>{
+      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
+    });
+  };
+  block.appendChild(btn);
+});
+render();
+</script>
+</body>
+</html>

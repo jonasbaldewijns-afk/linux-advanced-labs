@@ -19,8 +19,6 @@
     --danger: #f87171;
     --purple: #a78bfa;
     --green: #4ade80;
-    --orange: #fb923c;
-    --pink: #f472b6;
     --text: #e2e8f0;
     --muted: #7d8da0;
     --code-bg: #0a0f14;
@@ -30,7 +28,7 @@
 
   body {
     background: var(--bg);
-    background-image: radial-gradient(circle at 15% 10%, rgba(45,212,191,0.05), transparent 40%), radial-gradient(circle at 85% 90%, rgba(56,189,248,0.05), transparent 40%);
+    background-image: radial-gradient(circle at 15% 10%, rgba(56,189,248,0.07), transparent 42%), radial-gradient(circle at 85% 90%, rgba(56,189,248,0.04), transparent 42%);
     color: var(--text);
     font-family: 'Syne', sans-serif;
     min-height: 100vh;
@@ -42,7 +40,7 @@
   header {
     border-left: 4px solid var(--theme);
     padding-left: 1.5rem;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
   header .label {
     font-family: 'JetBrains Mono', monospace;
@@ -52,17 +50,8 @@
     letter-spacing: 0.2em;
     margin-bottom: 0.5rem;
   }
-  header h1 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    line-height: 1.1;
-  }
-  header p {
-    color: var(--muted);
-    margin-top: 0.75rem;
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
+  header h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
+  header p { color: var(--muted); margin-top: 0.75rem; font-size: 0.95rem; line-height: 1.6; }
 
   .scenario-box {
     background: var(--surface);
@@ -70,298 +59,197 @@
     border-top: 3px solid var(--accent2);
     border-radius: 8px;
     padding: 1.5rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
   }
   .scenario-box h2 {
-    font-size: 1rem;
-    color: var(--accent2);
+    font-size: 1rem; color: var(--accent2);
     font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
   }
   .scenario-box p { color: var(--text); line-height: 1.7; font-size: 0.95rem; }
 
-  .progress-bar-wrap {
-    background: var(--surface);
+  /* DORA diagram */
+  .dora {
+    background: var(--code-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .dora h3 {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+  }
+  .dora-steps { display: flex; gap: 0; align-items: stretch; flex-wrap: wrap; }
+  .dora-step {
+    flex: 1; min-width: 130px;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.85rem; background: var(--surface); text-align: center;
+    margin: 0 0.25rem;
+  }
+  .dora-step .letter {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700;
+    font-size: 1.4rem; display: block; margin-bottom: 0.3rem;
+  }
+  .dora-step:nth-child(1) .letter { color: var(--accent); }
+  .dora-step:nth-child(2) .letter { color: var(--accent2); }
+  .dora-step:nth-child(3) .letter { color: var(--warn); }
+  .dora-step:nth-child(4) .letter { color: var(--green); }
+  .dora-step .word {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--text); display: block; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .dora-step .desc { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+
+  .progress-bar-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2.5rem;
+    display: flex; align-items: center; gap: 1rem;
   }
   .progress-bar-wrap span {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--muted);
-    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+    color: var(--muted); white-space: nowrap;
   }
-  .bar-track {
-    flex: 1;
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-  }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
   .bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--theme), color-mix(in oklab, var(--theme), white 35%));
-    border-radius: 3px;
-    transition: width 0.4s ease;
-    width: 0%;
+    height: 100%; background: linear-gradient(90deg, var(--theme), color-mix(in oklab, var(--theme), white 35%));
+    border-radius: 3px; transition: width 0.4s ease; width: 0%;
   }
-  .progress-count {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--theme);
-  }
+  .progress-count { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--theme); }
 
   .section-title {
-    font-size: 0.7rem;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    margin-bottom: 0.75rem;
-    margin-top: 2.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.2em;
+    margin-bottom: 0.75rem; margin-top: 2.5rem;
+    display: flex; align-items: center; gap: 0.75rem;
   }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
   .task-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    overflow: hidden;
-    transition: border-color 0.2s;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 1rem; overflow: hidden; transition: border-color 0.2s;
   }
   .task-card.done { border-color: var(--accent); }
-  .task-card.done .task-header { background: rgba(0,255,136,0.05); }
+  .task-card.done .task-header { background: rgba(45,212,191,0.05); }
 
   .task-header {
-    padding: 1rem 1.25rem;
-    cursor: pointer;
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    user-select: none;
-    transition: background 0.15s;
+    padding: 1rem 1.25rem; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 1rem; user-select: none; transition: background 0.15s;
   }
   .task-header:hover { background: var(--surface2); }
 
   .task-check {
-    width: 22px;
-    height: 22px;
-    border: 2px solid var(--border);
-    border-radius: 5px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    cursor: pointer;
-    margin-top: 1px;
+    width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 5px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; cursor: pointer; margin-top: 1px;
   }
-  .task-check.checked {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-  .task-check.checked::after {
-    content: '✓';
-    color: #000;
-    font-size: 13px;
-    font-weight: 700;
-  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after { content: '✓'; color: #000; font-size: 13px; font-weight: 700; }
 
   .task-meta { flex: 1; }
-  .task-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--muted);
-    margin-bottom: 0.25rem;
-  }
-  .task-title {
-    font-weight: 600;
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
+  .task-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .task-title { font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
   .task-card.done .task-title { color: var(--muted); text-decoration: line-through; }
 
   .expand-icon {
-    color: var(--muted);
-    font-size: 0.8rem;
-    font-family: 'JetBrains Mono', monospace;
-    transition: transform 0.2s;
-    flex-shrink: 0;
-    margin-top: 3px;
+    color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace;
+    transition: transform 0.2s; flex-shrink: 0; margin-top: 3px;
   }
   .task-card.open .expand-icon { transform: rotate(90deg); }
 
-  .task-body {
-    display: none;
-    padding: 0 1.25rem 1.25rem 1.25rem;
-    border-top: 1px solid var(--border);
-  }
+  .task-body { display: none; padding: 0 1.25rem 1.25rem 1.25rem; border-top: 1px solid var(--border); }
   .task-card.open .task-body { display: block; }
-
-  .task-body p {
-    color: var(--text);
-    line-height: 1.7;
-    font-size: 0.9rem;
-    margin-top: 1rem;
-    margin-bottom: 0.75rem;
-  }
+  .task-body p { color: var(--text); line-height: 1.7; font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.75rem; }
+  .task-body code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent2); }
 
   .cmd {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent2);
-    border-radius: 5px;
-    padding: 0.75rem 1rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    color: #79c0ff;
-    margin: 0.5rem 0;
-    white-space: pre-wrap;
-    position: relative;
-    overflow-x: auto;
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--accent2);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; color: #7dd3fc; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6; position: relative;
   }
   .cmd .comment { color: var(--muted); }
   .cmd .kw { color: var(--accent); }
   .cmd .path { color: var(--warn); }
 
-  .hint-toggle {
-    display: none;
-    background: none;
-    border: 1px dashed var(--border);
-    color: var(--muted);
-    border-radius: 5px;
-    padding: 0.4rem 0.9rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    cursor: pointer;
-    margin-top: 0.75rem;
-    transition: all 0.2s;
+  .hint-toggle { display: none; }
+  .answer-toggle {
+    background: none; border: 1px dashed var(--border); color: var(--muted);
+    border-radius: 5px; padding: 0.4rem 0.9rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; margin-top: 0.5rem; transition: all 0.2s;
   }
+  .answer-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
   .hint-box {
-    display: block;
-    background: rgba(255,179,71,0.06);
-    border: 1px solid rgba(255,179,71,0.3);
-    border-radius: 6px;
-    padding: 0.9rem 1rem;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: #d4a853;
+    display: block; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: #d4a853;
   }
   .hint-box.show { display: block; }
   .hint-box strong { color: var(--warn); }
 
-  .answer-toggle {
-    background: none;
-    border: 1px dashed var(--border);
-    color: var(--muted);
-    border-radius: 5px;
-    padding: 0.4rem 0.9rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    cursor: pointer;
-    margin-top: 0.5rem;
-    margin-left: 0.5rem;
-    transition: all 0.2s;
-  }
-  .answer-toggle:hover { border-color: var(--accent); color: var(--accent); }
-
   .answer-box {
-    display: none;
-    background: rgba(0,255,136,0.04);
-    border: 1px solid rgba(0,255,136,0.2);
-    border-radius: 6px;
-    padding: 0.9rem 1rem;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: var(--text);
+    display: none; background: rgba(45,212,191,0.04); border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 6px; padding: 0.9rem 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.6; color: var(--text);
   }
   .answer-box.show { display: block; }
   .answer-box .cmd { border-left-color: var(--accent); }
 
   .verify-block {
-    margin-top: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: rgba(0,191,255,0.05);
-    border: 1px solid rgba(0,191,255,0.2);
-    border-radius: 6px;
-    font-size: 0.82rem;
-    line-height: 1.6;
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(56,189,248,0.05);
+    border: 1px solid rgba(56,189,248,0.2); border-radius: 6px; font-size: 0.82rem; line-height: 1.6;
   }
   .verify-block strong {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--accent2);
-    display: block;
-    margin-bottom: 0.4rem;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-family: 'JetBrains Mono', monospace; color: var(--accent2);
+    display: block; margin-bottom: 0.4rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
   }
+  .verify-block code { color: var(--accent2); background: rgba(56,189,248,0.08); }
+
+  .concept-box {
+    margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 6px; font-size: 0.85rem; line-height: 1.65;
+  }
+  .concept-box strong {
+    font-family: 'JetBrains Mono', monospace; color: var(--purple);
+    display: block; margin-bottom: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+
+  .json-block {
+    background: var(--code-bg); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+    border-radius: 5px; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #c4b5fd; margin: 0.5rem 0; white-space: pre-wrap; overflow-x: auto; line-height: 1.6;
+  }
+  .json-block .key { color: #93c5fd; }
+  .json-block .val { color: #86efac; }
+  .json-block .comment { color: var(--muted); }
 
   .tag {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-right: 0.4rem;
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+    padding: 0.15rem 0.5rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.4rem;
   }
-  .tag-ssh { background: rgba(0,191,255,0.15); color: var(--accent2); }
-  .tag-systemd { background: rgba(0,255,136,0.12); color: var(--accent); }
-  .tag-files { background: rgba(255,179,71,0.15); color: var(--warn); }
-  .tag-security { background: rgba(255,85,85,0.15); color: var(--danger); }
-  .tag-explore { background: rgba(180,100,255,0.15); color: #b47fff; }
+  .tag-install { background: rgba(45,212,191,0.12); color: var(--accent); }
+  .tag-config  { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-service { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tag-test    { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-adv     { background: rgba(251,191,36,0.15); color: var(--warn); }
+  .tag-debug   { background: rgba(248,113,113,0.15); color: var(--danger); }
 
-  .btn-row {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 0.75rem;
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  .warn-note {
+    background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.6; color: #d4a853;
   }
+  .warn-note strong { color: var(--warn); }
 
   footer {
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
   }
-  footer p {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
+  footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
   .reset-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 0.4rem 0.9rem;
-    border-radius: 5px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
   }
   .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
 
@@ -598,19 +486,7 @@
   .lab-complete-card .lc-close:hover { background: rgba(125,211,252,0.2); }
 
 
-  /* BATCH2-STUDY-QOL */
-  /* Copy button on command blocks */
-  .copy-btn {
-    position: absolute; top: 6px; right: 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
-    padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--muted);
-    opacity: 0.55; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-  }
-  .cmd:hover .copy-btn, .copy-btn:focus { opacity: 1; }
-  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
-  .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
+
 
   /* Mark-all-in-section control (pushed to the far right of the section bar) */
   .section-title::after { order: 1; }
@@ -638,12 +514,13 @@
   .ps-kbhint b { color: var(--text); font-weight: 600; }
 
 </style>
+
 </head>
 <body>
 <div class="container">
 
   <nav class="lab-nav">
-    <a class="nav-side disabled">← Vorige</a>
+    <a class="nav-side disabled">←</a>
     <a class="home-btn" href="index.html">⌂ Home</a>
     <a class="nav-side right" href="linux_advanced_lab_netwerkbeheer.html">Netwerkbeheer →</a>
   </nav>
@@ -677,14 +554,159 @@
 
   <div class="scenario-box">
     <h2>📋 Scenario</h2>
-    <p>Je bent systeembeheerder van een kleine organisatie. Je hebt twee Linux VMs: een <strong>client</strong> (jouw werkplek) en een <strong>server</strong>. Je moet de server beveiligde SSH-toegang geven, bestanden kunnen overzetten, en services via systemd correct beheren. Alles wat je doet volgt de 5-stappen aanpak uit de cursus: <em>installeer → configureer → start → beveilig → monitor</em>.</p>
+    <p>Je bent systeembeheerder van een kleine organisatie. Je hebt twee Linux VMs: een <strong>client</strong> (jouw werkplek) en een <strong>server</strong>. Voordat je SSH en services aanpakt, zorg je eerst dat beide machines een correcte basisopzet hebben — de juiste hostnaam, up-to-date repos en een werkende netwerkconfiguratie. Alles wat je daarna doet volgt de 5-stappen aanpak uit de cursus: <em>installeer → configureer → start → beveilig → monitor</em>.</p>
+    <p style="margin-top:0.75rem;padding:0.6rem 0.85rem;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:6px;font-size:0.84rem;color:var(--muted);">
+      <strong style="color:var(--warn);">Vereiste:</strong> je hebt twee RHEL VM's met elk een <strong style="color:var(--text)">clean-install snapshot</strong>. Heb je die nog niet, zie cursushoofdstuk 1 (Installatie &amp; Virtualisatie) en keer terug als beide machines starten.
+    </p>
   </div>
+
+  <!-- ESSENTIALS → ADVANCED ORIËNTATIE -->
+  <details style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:8px;padding:0 1.1rem;margin-bottom:1.5rem;">
+    <summary style="cursor:pointer;padding:0.85rem 0;font-weight:700;font-size:0.95rem;list-style:none;display:flex;align-items:center;gap:0.6rem;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--purple);text-transform:uppercase;letter-spacing:0.1em;">🗺 Oriëntatie</span>
+      Essentials → Advanced: wat verandert er?
+      <span style="margin-left:auto;font-size:0.75rem;color:var(--muted);font-weight:400;">klik om uit te vouwen</span>
+    </summary>
+    <div style="padding-bottom:1rem;">
+      <p style="color:var(--muted);font-size:0.87rem;line-height:1.65;margin-bottom:1rem;">Je komt van Linux Essentials op Ubuntu. Linux Advanced gebruikt <strong style="color:var(--text)">Red Hat Enterprise Linux (RHEL)</strong> — de industriestandaard op bedrijfsservers. De concepten zijn identiek, alleen de tools verschillen. Hieronder de vier grootste wijzigingen die je <em>nu meteen</em> moet kennen.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.6rem;margin-bottom:1rem;">
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-top:2px solid var(--accent2);border-radius:6px;padding:0.85rem;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">1 · Package manager</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;font-size:0.78rem;">
+            <div style="color:var(--muted);">Ubuntu</div><div style="color:var(--muted);">RHEL</div>
+            <code style="color:var(--warn);">apt update</code><code style="color:var(--green);">dnf check-update</code>
+            <code style="color:var(--warn);">apt install PKG</code><code style="color:var(--green);">dnf install PKG</code>
+            <code style="color:var(--warn);">apt upgrade</code><code style="color:var(--green);">dnf update</code>
+            <code style="color:var(--warn);">apt remove PKG</code><code style="color:var(--green);">dnf remove PKG</code>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">Concept identiek — alleen de naam verschilt. <code>dnf</code> staat voor Dandified YUM.</p>
+        </div>
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-top:2px solid var(--green);border-radius:6px;padding:0.85rem;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">2 · Netwerkconfiguratie</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;font-size:0.78rem;">
+            <div style="color:var(--muted);">Ubuntu</div><div style="color:var(--muted);">RHEL</div>
+            <code style="color:var(--warn);">ifconfig</code><code style="color:var(--green);">ip addr show</code>
+            <code style="color:var(--warn);">netplan</code><code style="color:var(--green);">nmcli</code>
+            <code style="color:var(--warn);">/etc/network/interfaces</code><code style="color:var(--green);">/etc/NetworkManager/</code>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;"><code>nmcli</code> is de cli voor NetworkManager — alles wat je in Lab 02 nodig hebt.</p>
+        </div>
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-top:2px solid var(--orange);border-radius:6px;padding:0.85rem;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--orange);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">3 · Services (systemd)</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;">Goed nieuws: systemd is <strong style="color:var(--text)">identiek</strong> op Ubuntu en RHEL. <code>systemctl start/stop/enable/status</code> werkt exact hetzelfde. Wat nieuw is: je leert de internals beter kennen — targets, wants, unit-bestanden schrijven.</p>
+        </div>
+
+        <div style="background:var(--surface2);border:1px solid var(--border);border-top:2px solid var(--danger);border-radius:6px;padding:0.85rem;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--danger);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">4 · Beveiliging: nieuw in Advanced</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;"><strong style="color:var(--text)">SELinux</strong> — Mandatory Access Control, standaard aan op RHEL. Als iets niet werkt, is 80% van de tijd SELinux de oorzaak. <strong style="color:var(--text)">nftables</strong> — vervangt iptables als low-level firewall. Kom je dit pas tegen in Lab 08 &amp; 09.</p>
+        </div>
+
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);border-top:1px solid var(--border);padding-top:0.75rem;">💡 <strong style="color:var(--text)">Onthoud:</strong> de concepten (package manager, service manager, netwerkconfiguratie) zijn hetzelfde. Enkel de commando's en tools zijn enterprise-grade varianten. Na een week voel je het verschil niet meer.</p>
+    </div>
+  </details>
 
   <div class="progress-bar-wrap">
     <span>Voortgang</span>
     <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
     <span id="rank-display" class="rank-display"></span>
-    <span class="progress-count" id="progress-count">0 / 15</span>
+    <span class="progress-count" id="progress-count">0 / 18</span>
+  </div>
+
+  <!-- DEEL 1: SSH -->
+  <!-- DEEL 0: STARTKLAAR MAKEN -->
+  <div class="section-title">Deel 0 — Startklaar maken</div>
+
+  <div class="task-card" id="t0a">
+    <div class="task-header" onclick="toggleTask('t0a')">
+      <div class="task-check" onclick="toggleCheck(event,'t0a')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ssh">Setup</span> Taak 00a</div>
+        <div class="task-title">Verifieer je startpositie: snapshot &amp; netwerk OK</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Voordat je iets configureert, check je of beide VM's in de juiste begintoestand staan. Start vanuit je clean-install snapshot zodat je altijd kan terugkeren als iets misloopt.</p>
+      <p style="margin:0.6rem 0;font-size:0.84rem;color:var(--muted);">Waarom snapshots? Een snapshot is een "foto" van de VM op dat moment. Gaat er iets mis verderop in het lab, dan kan je gewoon terugkeren naar dit punt zonder alles opnieuw te installeren. Je lector heeft al gevraagd dat je die klaar hebt — dit is waarom.</p>
+      <div class="cmd"><span class="comment"># Op BEIDE machines: controleer of je netwerk werkt</span>
+ip addr show
+<span class="comment"># Je moet minstens een lo (loopback) en een ens/eth interface zien met een IP</span>
+
+<span class="comment"># Ping naar buiten om te controleren of je internetverbinding werkt</span>
+ping -c 3 8.8.8.8
+
+<span class="comment"># Als dit mislukt: check je VM-netwerkinstellingen (NAT aan?)</span></div>
+      <button class="hint-toggle" onclick="toggleHint('h0a')">💡 Hint</button>
+      <div class="hint-box" id="h0a">
+        <p>Geen IP op je interface? Probeer <code>nmcli device status</code> — staat de interface op "disconnected"? Dan <code>nmcli device connect &lt;interfacenaam&gt;</code>. In VMWare moet de VM op NAT of Bridged staan voor internettoegang.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t0b">
+    <div class="task-header" onclick="toggleTask('t0b')">
+      <div class="task-check" onclick="toggleCheck(event,'t0b')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ssh">Setup</span> Taak 00b</div>
+        <div class="task-title">Stel de hostnamen in: <code>serverXX</code> en <code>clientXX</code></div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een hostnaam is de naam van je machine op het netwerk. Zonder correcte hostnamen weet je later niet meer welke terminal bij welke machine hoort — zeker als je meerdere SSH-sessies open hebt.</p>
+      <p style="margin:0.6rem 0;font-size:0.84rem;color:var(--muted);">Vervang <code>XX</code> door je eigen servernummer (vraag het aan je lector als je het niet weet).</p>
+      <div class="cmd"><span class="comment"># Op de SERVER (vervang XX door jouw nummer, bijv. 01):</span>
+sudo hostnamectl hostname serverXX
+<span class="comment"># Verifieer:</span>
+hostnamectl status
+
+<span class="comment"># Op de CLIENT:</span>
+sudo hostnamectl hostname clientXX
+hostnamectl status
+
+<span class="comment"># De nieuwe hostnaam is zichtbaar na een nieuwe login of:</span>
+exec bash</div>
+      <p style="margin-top:0.75rem;font-size:0.84rem;color:var(--muted);"><strong style="color:var(--text)">Wat doet hostnamectl?</strong> Het commando past drie dingen tegelijk aan: de kernel-hostnaam (tijdelijk), de "pretty" naam (leesbaar) en de statische naam in <code>/etc/hostname</code> (blijft na reboot). Vroeger moest je dat bestand manueel aanpassen — <code>hostnamectl</code> is de moderne manier.</p>
+      <button class="hint-toggle" onclick="toggleHint('h0b')">💡 Hint</button>
+      <div class="hint-box" id="h0b">
+        <p>Zie je de nieuwe hostnaam nog niet in je prompt? Dat is normaal — de shell toont de hostnaam van het moment dat je inlogde. Log opnieuw in of gebruik <code>exec bash</code> om de shell te herladen.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" id="t0c">
+    <div class="task-header" onclick="toggleTask('t0c')">
+      <div class="task-check" onclick="toggleCheck(event,'t0c')"></div>
+      <div class="task-meta">
+        <div class="task-num"><span class="tag tag-ssh">Setup</span> Taak 00c</div>
+        <div class="task-title">Update de packages op de server (<code>dnf update</code>)</div>
+      </div>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="task-body">
+      <p>Een verse installatie heeft bijna altijd verouderde packages. Updaten zorgt dat je de nieuwste versies en beveiligingspatches hebt — en dat je repos bereikbaar zijn. Dit is altijd de <strong>eerste actie</strong> na een clean install.</p>
+      <p style="margin:0.6rem 0;font-size:0.84rem;color:var(--muted);">Kom je van Ubuntu/Debian? In RHEL gebruik je <code>dnf</code> in plaats van <code>apt</code>. Het concept is identiek: een package manager die software installeert vanuit online repositories. Alleen de commando's verschillen (zie ook de oriëntatiekaart hierboven).</p>
+      <div class="cmd"><span class="comment"># Op de SERVER: controleer eerst welke updates beschikbaar zijn</span>
+sudo dnf check-update
+
+<span class="comment"># Installeer alle updates (-y bevestigt automatisch)</span>
+sudo dnf update -y
+
+<span class="comment"># Controleer of alles in orde is — geen errors?</span>
+sudo dnf check
+
+<span class="comment"># Facultatief: herstart als er een kernel-update was</span>
+<span class="comment"># sudo reboot now</span></div>
+      <button class="hint-toggle" onclick="toggleHint('h0c')">💡 Hint</button>
+      <div class="hint-box" id="h0c">
+        <p>Krijg je een fout zoals <em>"No repositories configured"</em> of <em>"Cannot download repomd.xml"</em>? Dan heeft de VM geen verbinding met het internet. Ga terug naar taak 00a en fix het netwerk eerst. De repos van RHEL vereisen ook dat je VM gekoppeld is aan je Red Hat-account (werd ingesteld tijdens installatie).</p>
+      </div>
+    </div>
   </div>
 
   <!-- DEEL 1: SSH -->
@@ -1132,36 +1154,26 @@ sudo systemctl isolate graphical.target</div>
 </div>
 
 <script>
-  const TOTAL = 15;
+  const TOTAL = 18;
 
-  function toggleTask(id) {
-    const card = document.getElementById(id);
-    card.classList.toggle('open');
-  }
+  function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
 
   function toggleCheck(e, id) {
     e.stopPropagation();
     const card = document.getElementById(id);
-    const check = card.querySelector('.task-check');
-    check.classList.toggle('checked');
+    card.querySelector('.task-check').classList.toggle('checked');
     card.classList.toggle('done');
     updateProgress();
-    onTaskToggled(check.classList.contains('checked'));
+    onTaskToggled(card.querySelector('.task-check').classList.contains('checked'));
     saveState();
   }
 
   function toggleHint(id) {
-    const box = document.getElementById(id);
-    const btn = box.previousElementSibling;
-    box.classList.toggle('show');
-    btn.textContent = box.classList.contains('show') ? '💡 Verberg hint' : '💡 Hint';
+    document.getElementById(id).classList.toggle('show');
   }
 
   function toggleAnswer(id) {
-    const box = document.getElementById(id);
-    const btn = box.previousElementSibling;
-    box.classList.toggle('show');
-    btn.textContent = box.classList.contains('show') ? '👁 Verberg oplossing' : '👁 Toon oplossing';
+    document.getElementById(id).classList.toggle('show');
   }
 
   function updateProgress() {
@@ -1253,7 +1265,11 @@ sudo systemctl isolate graphical.target</div>
 
   function saveState() {
     const state = {};
-    for (let i = 1; i <= TOTAL; i++) {
+    ['t0a','t0b','t0c'].forEach(id => {
+      const card = document.getElementById(id);
+      if (card) state[id] = card.classList.contains('done');
+    });
+    for (let i = 1; i <= 15; i++) {
       const card = document.getElementById('t' + i);
       if (card) state['t' + i] = card.classList.contains('done');
     }
@@ -1357,42 +1373,6 @@ sudo systemctl isolate graphical.target</div>
   loadState();
   seedRankBaseline();
 
-  /* BATCH2-STUDY-QOL */
-  // ---- clipboard with HTTP fallback (VM deploys are not secure contexts) ----
-  function writeClipboard(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise((resolve, reject) => {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        ok ? resolve() : reject(new Error('execCommand failed'));
-      } catch (err) { reject(err); }
-    });
-  }
-
-  function copyCmd(cmd, btn) {
-    const clone = cmd.cloneNode(true);
-    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
-    clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-    const text = clone.textContent.trim();
-    writeClipboard(text).then(() => {
-      btn.textContent = '✓ Gekopieerd';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = 'Kopieer'; btn.classList.remove('copied'); }, 1400);
-    }).catch(() => {
-      btn.textContent = 'Mislukt';
-      setTimeout(() => { btn.textContent = 'Kopieer'; }, 1400);
-    });
-  }
-
   // ---- mark all tasks in a section (toggles: all-done -> clears, else fills) ----
   function tasksInSection(sectionEl) {
     const tasks = [];
@@ -1453,15 +1433,6 @@ sudo systemctl isolate graphical.target</div>
   }
 
   function initStudyQol() {
-    document.querySelectorAll('.cmd').forEach(cmd => {
-      if (cmd.querySelector('.copy-btn')) return;
-      const btn = document.createElement('button');
-      btn.className = 'copy-btn';
-      btn.type = 'button';
-      btn.textContent = 'Kopieer';
-      btn.addEventListener('click', () => copyCmd(cmd, btn));
-      cmd.appendChild(btn);
-    });
     document.querySelectorAll('.section-title').forEach(sec => {
       if (sec.querySelector('.section-mark-all')) return;
       const btn = document.createElement('button');
@@ -1475,7 +1446,7 @@ sudo systemctl isolate graphical.target</div>
     document.addEventListener('keydown', handleKbNav);
   }
 
-  initStudyQol();
+  document.addEventListener('DOMContentLoaded', initStudyQol);
 </script>
 
 <div class="lab-complete-overlay" id="lab-complete-overlay" onclick="closeCompletionOverlay()">
