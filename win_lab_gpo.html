@@ -110,7 +110,6 @@
 </head>
 <body>
 <div class="container">
-
 <nav class="lab-nav">
   <a class="home-btn" href="windows_index.html">⌂ Index</a>
   <a class="nav-side" href="win_lab_file_share.html">← Vorige</a>
@@ -121,9 +120,13 @@
   <div class="ps-label">Voortgang</div>
   <div class="ps-count-row">
     <span class="ps-count" id="ps-count">0</span>
-    <span class="ps-total">/ 5</span>
+    <span class="ps-total">/ 6</span>
   </div>
-  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div></div>
+  <div class="ps-pips" id="ps-pips">
+    <div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div>
+    <div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div>
+    <div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div>
+  </div>
   <div class="ps-rank-card" id="ps-rank-card">
     <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
     <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
@@ -135,151 +138,327 @@
 <header>
   <div class="label">Lab 04 · Windows Advanced</div>
   <h1>Domain — GPO</h1>
-  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+  <p>Configureer Group Policy Objects voor drive mapping, restricties per klas, security policies en firewall-regels via Active Directory.</p>
 </header>
 
 <div class="progress-bar-wrap">
   <span>Voortgang</span>
   <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
-  <span class="progress-count" id="bar-count">0 / 5</span>
+  <span class="progress-count" id="bar-count">0 / 6</span>
 </div>
 
-<div class="section-title">Concept Group Policy</div>
-    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 01</div>
-          <div class="task-title">GPO-concept en LSDOU-volgorde begrijpen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Group Policy Objects (GPOs) zijn containers voor beleidsinstellingen die automatisch worden toegepast op gebruikers en computers in Active Directory.</p><div class="concept-box"><strong>LSDOU</strong>De volgorde waarin GPOs worden verwerkt: <strong>L</strong>ocal → <strong>S</strong>ite → <strong>D</strong>omein → <strong>OU</strong>. Later toegepaste GPOs overschrijven eerdere (OU wint van domein).</div><table><thead><tr><th>Niveau</th><th>Beschrijving</th><th>Voorbeeld</th></tr></thead><tbody><tr><td>Local</td><td>Op de computer zelf</td><td>Lokale Group Policy Editor</td></tr><tr><td>Site</td><td>AD-site (geografisch)</td><td>Beleid per locatie/campus</td></tr><tr><td>Domain</td><td>Heel het domein</td><td>Wachtwoordbeleid</td></tr><tr><td>OU</td><td>Specifieke container</td><td>Bureaubladachtergrond voor klas X</td></tr></tbody></table><p>Veel gebruikte GPO-instellingen:</p><ul><li>Bureaubladachtergrond instellen</li><li>Configuratiescherm blokkeren</li><li>USB-poorten uitschakelen</li><li>Startpagina in browser instellen</li><li>Software distribueren</li></ul>
-      </div>
-    </div><div class="section-title">GPO instellen</div>
-    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 02</div>
-          <div class="task-title">GPO aanmaken in Group Policy Management</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Open de <strong>Group Policy Management Console (GPMC)</strong> via Server Manager of zoek "Group Policy Management".</p><ul><li>Rechtsklik op "Group Policy Objects" → New</li><li>Naam: <code>GPO_VerbergBureau</code> (gebruik altijd een duidelijke naam)</li><li>Klik OK</li></ul><p><strong>GPO bewerken:</strong></p><ul><li>Rechtsklik op de nieuwe GPO → Edit</li><li>Navigeer naar: User Configuration → Policies → Administrative Templates → Desktop</li><li>Dubbelklik op "Hide and disable all items on the desktop"</li><li>Stel in op: <strong>Enabled</strong> → OK</li></ul><div class="info-note"><strong>ℹ Info</strong> — Er bestaan ~4000 configureerbare GPO-instellingen. Gebruik de zoekfunctie (filter) om snel de juiste te vinden.</div>
-      </div>
+<div class="section-title">Theorie · Group Policy</div>
+
+<div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 01</div>
+      <div class="task-title">GPO-concept, LSDOU en troubleshooting</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 03</div>
-          <div class="task-title">GPO koppelen aan een OU</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Een GPO heeft pas effect als hij gekoppeld (gelinkt) is aan een AD-container.</p><ul><li>In GPMC: rechtsklik op de OU <code>Studenten</code> → "Link an Existing GPO"</li><li>Selecteer <code>GPO_VerbergBureau</code> → OK</li></ul><p>Controleer of de link zichtbaar is onder de OU in GPMC.</p><div class="info-note"><strong>ℹ Info</strong> — GPOs kunnen ook op domein- of siteniveau worden gelinkt. Hoe specifieker de OU, hoe doelgerichter de policy.</div><div class="cmd">gpupdate /force</div><p>Voer dit uit op de client om de GPO direct toe te passen (normaal duurt dit max. 90 minuten).</p>
-      </div>
-    </div><div class="section-title">GPO Debug</div>
-    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 04</div>
-          <div class="task-title">GPResult gebruiken voor troubleshooting</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-d">debug</span><span class="tag tag-t">test</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p><code>gpresult</code> toont welke GPOs zijn toegepast op een gebruiker/computer (RSOP = Resultant Set of Policy).</p><div class="cmd">gpresult /R</div><p>Toont GPO-informatie voor de huidige gebruiker (User scope) en computer (Computer scope — vereist admin).</p><div class="cmd">gpresult /R /User sofie.maes</div><p>Toont RSOP voor een specifieke gebruiker op deze computer.</p><div class="cmd">gpresult /H C:\rapport.html
-gpresult /H C:\rapport.html /F</div><p>Exporteert een HTML-rapport met alle GPO-details. Open in browser voor overzicht.</p><table><thead><tr><th>Parameter</th><th>Functie</th></tr></thead><tbody><tr><td>/R</td><td>Tekstuele samenvatting in console</td></tr><tr><td>/H bestand.html</td><td>HTML-rapport genereren</td></tr><tr><td>/USER naam</td><td>RSOP voor specifieke gebruiker</td></tr><tr><td>/SCOPE USER</td><td>Enkel User scope tonen</td></tr><tr><td>/SCOPE COMPUTER</td><td>Enkel Computer scope tonen</td></tr></tbody></table>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Group Policy Objects (GPOs) zijn containers voor beleidsinstellingen die automatisch worden toegepast op gebruikers en computers in Active Directory.</p>
+    <div class="concept-box"><strong>LSDOU — verwerkingsvolgorde</strong>GPOs worden verwerkt in deze volgorde: <strong>L</strong>ocal → <strong>S</strong>ite → <strong>D</strong>omein → <strong>OU</strong>. Later toegepaste GPOs overschrijven eerdere — een OU-policy wint dus altijd van een domein-policy.</div>
+    <table><thead><tr><th>Niveau</th><th>Beschrijving</th><th>Voorbeeld</th></tr></thead><tbody>
+      <tr><td>Local</td><td>Op de computer zelf</td><td>Lokale Group Policy Editor</td></tr>
+      <tr><td>Site</td><td>AD-site (geografisch)</td><td>Beleid per campus</td></tr>
+      <tr><td>Domain</td><td>Heel het domein</td><td>Wachtwoordbeleid, lockout</td></tr>
+      <tr><td>OU</td><td>Specifieke container</td><td>Restricties per klas</td></tr>
+    </tbody></table>
+    <p><strong>GPO aanmaken — basisstappen:</strong></p>
+    <ul>
+      <li>Open <strong>Group Policy Management Console (GPMC)</strong> via Server Manager of zoek "Group Policy Management"</li>
+      <li>Rechtsklik op "Group Policy Objects" → New → geef een duidelijke naam</li>
+      <li>Rechtsklik op de GPO → Edit → navigeer naar de gewenste instelling</li>
+      <li>Rechtsklik op de juiste <strong>OU</strong> → "Link an Existing GPO" → selecteer de GPO</li>
+    </ul>
+    <p><strong>Troubleshooting:</strong></p>
+    <div class="cmd">gpupdate /force</div>
+    <p>Forceert onmiddellijke verwerking op de client (normaal duurt dit max. 90 min). Voer dit uit als domeingebruiker op de client.</p>
+    <div class="cmd">gpresult /R</div>
+    <p>Toont welke GPOs effectief zijn toegepast op de huidige gebruiker en computer (RSOP = Resultant Set of Policy). Handig bij conflicten tussen GPOs.</p>
+    <div class="cmd">gpresult /H C:\rapport.html</div>
+    <p>Genereert een volledig HTML-rapport van alle toegepaste GPOs. Open in de browser voor een overzicht.</p>
+  </div>
+</div>
+
+<div class="section-title">Drive Mapping</div>
+
+<div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 02</div>
+      <div class="task-title">FileShare automatisch mappen voor alle domeingebruikers</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 05</div>
-          <div class="task-title">GPUpdate gebruiken</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-d">debug</span><span class="tag tag-t">test</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p><code>gpupdate</code> forceert onmiddellijke verwerking van GPOs zonder te wachten op het standaard interval (90 min).</p><div class="cmd">gpupdate /force</div><p>Verwerkt zowel User als Computer policies opnieuw.</p><div class="cmd">gpupdate /force /logoff</div><p>Logt de gebruiker af na update (nodig voor bepaalde User policies).</p><div class="cmd">gpupdate /force /boot</div><p>Herstart de computer na update (nodig voor bepaalde Computer policies).</p><div class="verify-block"><strong>✔ Verificatie</strong>Na gpupdate /force: log opnieuw in op de client en controleer of de policy actief is (bureaubladpictogrammen verdwenen?).</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Zorg dat de FileShare-netwerkmap automatisch wordt gekoppeld op stationsletter <code>X:</code> voor alle gebruikers van het domein via GPO Drive Maps.</p>
+    <p><strong>GPO aanmaken en configureren:</strong></p>
+    <ul>
+      <li>Maak een nieuwe GPO aan: <code>GPO_DriveMap_FileShare</code></li>
+      <li>Edit → User Configuration → Preferences → Windows Settings → Drive Maps</li>
+      <li>Rechtsklik → New → Mapped Drive</li>
+      <li>Action: <strong>Create</strong></li>
+      <li>Location: <code>\\WINADV-DC1XX\FileShare</code></li>
+      <li>Label as: <code>FileShare</code></li>
+      <li>Drive Letter: <code>X</code></li>
+      <li>Vink aan: <strong>Reconnect</strong></li>
+    </ul>
+    <p><strong>GPO koppelen:</strong></p>
+    <ul>
+      <li>    <p><strong>Via PowerShell — GPO aanmaken en linken:</strong></p>
+    <div class="cmd">New-GPO -Name "GPO_DriveMap_FileShare"
+New-GPLink -Name "GPO_DriveMap_FileShare" -Target "DC=pxldigital,DC=local"</div>
+    <p>De Drive Maps-instelling zelf is een Preference en wordt het makkelijkst via de GUI geconfigureerd. PowerShell kan GPO-instellingen inspecteren via:</p>
+    <div class="cmd">Get-GPOReport -Name "GPO_DriveMap_FileShare" -ReportType Html -Path "C:\gpo-report.html"</div>
+    Link de GPO aan het domein (<code>pxldigital.local</code>) zodat alle domeingebruikers hem ontvangen</li>
+    </ul>
+    <p><strong>User profiel aanpassen:</strong></p>
+    <ul>
+      <li>In ADUC: open de properties van een gebruiker → tabblad <strong>Profile</strong></li>
+      <li>Verwijder eventuele bestaande "Connect to"-instellingen zodat de GPO niet conflicteert</li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Log in op de client als domeingebruiker en voer <code>gpupdate /force</code> uit. Schijf X: verschijnt in Verkenner.</div>
+  </div>
+</div>
+
+<div class="section-title">Administrative Templates — Restricties</div>
+
+<div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 03</div>
+      <div class="task-title">Restricties instellen per klas via Administrative Templates</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak voor elke klas een aparte GPO aan en koppel die aan de juiste sub-OU van <code>OU=Studenten</code>. Alle instellingen zitten onder <strong>User Configuration → Policies → Administrative Templates</strong>.</p>
+
+    <p><strong>1. Control Panel blokkeren — 1SNEe</strong></p>
+    <ul>
+      <li>GPO: <code>GPO_1SNEe_NoControlPanel</code> → koppel aan <code>OU=1SNEe</code></li>
+      <li>Pad: Administrative Templates → <strong>Control Panel</strong></li>
+      <li>Instelling: <strong>Prohibit access to Control Panel and PC settings</strong> → Enabled</li>
+    </ul>
+
+    <p><strong>2. Task Manager blokkeren — 1SNEa</strong></p>
+    <ul>
+      <li>GPO: <code>GPO_1SNEa_NoTaskManager</code> → koppel aan <code>OU=1SNEa</code></li>
+      <li>Pad: Administrative Templates → System → <strong>Ctrl+Alt+Del Options</strong></li>
+      <li>Instelling: <strong>Remove Task Manager</strong> → Enabled</li>
+    </ul>
+
+    <p><strong>3. C-schijf blokkeren en verbergen — 1SNEb</strong></p>
+    <ul>
+      <li>GPO: <code>GPO_1SNEb_NoC_Drive</code> → koppel aan <code>OU=1SNEb</code></li>
+      <li>Pad: Administrative Templates → Windows Components → <strong>File Explorer</strong></li>
+      <li>Instelling: <strong>Prevent access to drives from My Computer</strong> → Enabled</li>
+      <li>Selecteer in de dropdown: <strong>Restrict C drive only</strong></li>
+      <li>Alle andere gebruikers (andere klassen) krijgen deze policy niet — enkel 1SNEb</li>
+    </ul>
+
+    <p><strong>4. CMD en PowerShell blokkeren — alle studenten</strong></p>
+    <ul>
+      <li>GPO: <code>GPO_Studenten_NoShell</code> → koppel aan <code>OU=Studenten</code> (geldt voor alle sub-OUs)</li>
+      <li>Pad 1: Administrative Templates → System → <strong>Prevent access to the command prompt</strong> → Enabled</li>
+      <li>Pad 2: Administrative Templates → System → <strong>Don't run specified Windows applications</strong> → Enabled</li>
+      <li>Voeg toe aan de lijst: <code>powershell.exe</code> en <code>powershell_ise.exe</code></li>
+      <li>Lectoren vallen niet onder <code>OU=Studenten</code> en worden dus niet geraakt</li>
+    </ul>
+    <p><strong>Via PowerShell — GPOs aanmaken en linken:</strong></p>
+    <div class="cmd">New-GPO -Name "GPO_1SNEe_NoControlPanel"
+New-GPLink -Name "GPO_1SNEe_NoControlPanel" -Target "OU=1SNEe,OU=Studenten,DC=pxldigital,DC=local"
+
+New-GPO -Name "GPO_1SNEa_NoTaskManager"
+New-GPLink -Name "GPO_1SNEa_NoTaskManager" -Target "OU=1SNEa,OU=Studenten,DC=pxldigital,DC=local"
+
+New-GPO -Name "GPO_1SNEb_NoC_Drive"
+New-GPLink -Name "GPO_1SNEb_NoC_Drive" -Target "OU=1SNEb,OU=Studenten,DC=pxldigital,DC=local"
+
+New-GPO -Name "GPO_Studenten_NoShell"
+New-GPLink -Name "GPO_Studenten_NoShell" -Target "OU=Studenten,DC=pxldigital,DC=local"</div>
+    <div class="warn-note"><strong>⚠ Let op</strong> — Koppel OU-specifieke GPOs altijd aan de juiste sub-OU, niet aan het volledige domein. Gebruik de Scope-tab in GPMC om te verifiëren welke OUs en gebruikers geraakt worden.</div>
+  </div>
+</div>
+
+<div class="section-title">Security Settings</div>
+
+<div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 04</div>
+      <div class="task-title">Guest account, Account Lockout en Password Policy</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-a">security</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>De volgende drie instellingen gelden voor het <strong>hele domein</strong> en worden geconfigureerd in de <strong>Default Domain Policy</strong>. Bewerk die GPO rechtstreeks — maak geen nieuwe aan.</p>
+    <p>Open GPMC → <code>pxldigital.local</code> → <strong>Default Domain Policy</strong> → rechtsklik → Edit.</p>
+
+    <p><strong>1. Guest account uitschakelen op alle clients</strong></p>
+    <ul>
+      <li>Pad: Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → <strong>Security Options</strong></li>
+      <li>Instelling: <strong>Accounts: Guest account status</strong> → Disabled</li>
+    </ul>
+
+    <p><strong>2. Account Lockout Policy</strong></p>
+    <ul>
+      <li>Pad: Computer Configuration → Policies → Windows Settings → Security Settings → <strong>Account Policies → Account Lockout Policy</strong></li>
+    </ul>
+    <table><thead><tr><th>Instelling</th><th>Waarde</th><th>Waarom</th></tr></thead><tbody>
+      <tr><td>Account lockout threshold</td><td><strong>3</strong> pogingen</td><td>Account wordt geblokkeerd na 3 mislukte aanmeldingen</td></tr>
+      <tr><td>Account lockout duration</td><td><strong>15</strong> minuten</td><td>Hoe lang het account geblokkeerd blijft</td></tr>
+      <tr><td>Reset account lockout counter after</td><td><strong>15</strong> minuten</td><td>Teller wordt gereset als er 15 min geen mislukte pogingen zijn</td></tr>
+    </tbody></table>
+
+    <p><strong>3. Password Policy</strong></p>
+    <ul>
+      <li>Pad: Computer Configuration → Policies → Windows Settings → Security Settings → <strong>Account Policies → Password Policy</strong></li>
+    </ul>
+    <table><thead><tr><th>Instelling</th><th>Waarde</th><th>Waarom</th></tr></thead><tbody>
+      <tr><td>Enforce password history</td><td><strong>3</strong> wachtwoorden</td><td>Hergebruik van de laatste 3 wachtwoorden verboden</td></tr>
+      <tr><td>Maximum password age</td><td><strong>30</strong> dagen</td><td>Wachtwoord moet elke 30 dagen worden gewijzigd</td></tr>
+      <tr><td>Minimum password age</td><td><strong>1</strong> dag</td><td>Voorkomt dat gebruikers direct terugschakelen naar oud wachtwoord</td></tr>
+      <tr><td>Minimum password length</td><td><strong>10</strong> tekens</td><td>Kortere wachtwoorden zijn makkelijker te raden</td></tr>
+      <tr><td>Password must meet complexity requirements</td><td><strong>Enabled</strong></td><td>Vereist hoofdletters, kleine letters, cijfers en speciale tekens</td></tr>
+      <tr><td>Store passwords using reversible encryption</td><td><strong>Disabled</strong></td><td>Reversible encryption is een veiligheidsrisico — altijd uitgeschakeld laten</td></tr>
+    </tbody></table>
+    <div class="info-note"><strong>ℹ Info</strong> — Password en Lockout policies kunnen enkel op domeinniveau worden ingesteld via de Default Domain Policy. OU-level policies voor wachtwoorden vereisen Fine-Grained Password Policies (FGPP), wat een advanced topic is.</div>
+  </div>
+</div>
+
+<div class="section-title">Zelf Uitzoeken</div>
+
+<div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 05</div>
+      <div class="task-title">Registry blokkeren en bureaublad achtergrond instellen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Deze twee instellingen zoek je zelf op in de GPO-editor. Dit hoort bij het leren navigeren in de ~4000 beschikbare GPO-instellingen.</p>
+
+    <p><strong>1. Registry editing tools blokkeren voor alle studenten</strong></p>
+    <ul>
+      <li>GPO koppelen aan <code>OU=Studenten</code></li>
+      <li>Zoek in User Configuration → Policies → Administrative Templates naar een instelling die <code>regedit.exe</code> blokkeert</li>
+      <li>Tip: zoek op "registry" in de zoekbalk van de GPO-editor</li>
+      <li>Schakel de instelling in → test door als student te proberen <code>regedit</code> te openen</li>
+    </ul>
+
+    <p><strong>2. Bureaublad achtergrond instellen voor studenten én lectoren</strong></p>
+    <ul>
+      <li>GPO koppelen aan het domein of aan beide OUs afzonderlijk</li>
+      <li>Zoek in User Configuration → Policies → Administrative Templates naar de instelling voor bureaubladachtergrond (wallpaper)</li>
+      <li>Stel een afbeeldingspad in dat bereikbaar is via het netwerk (bijv. op de FileShare) of lokaal op de client</li>
+      <li>Tip: zoek op "wallpaper" of "desktop background" in de GPO-editor</li>
+    </ul>
+    <div class="concept-box"><strong>Waarom zelf opzoeken?</strong>In de praktijk zoek je GPO-instellingen op via de zoekfunctie of via de Microsoft documentatie. Uit het hoofd kennen is niet realistisch — weten <em>hoe</em> je het vindt wel.</div>
+  </div>
+</div>
+
+<div class="section-title">Firewall via GPO</div>
+
+<div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 06</div>
+      <div class="task-title">Firewall rule uitrollen via GPO (SMB-IN poort 445)</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-a">security</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Administrators hebben toegang nodig tot de verborgen C$-share van clientcomputers. Hiervoor moet poort 445 (SMB) open staan in de Windows Firewall op de clients. Dit rule rol je uit via GPO zodat het automatisch geldt op alle endpoints.</p>
+    <p><strong>GPO aanmaken:</strong></p>
+    <ul>
+      <li>Maak een nieuwe GPO aan: <code>GPO_FW_SMB_IN</code></li>
+      <li>    <p><strong>Via PowerShell — GPO aanmaken en linken:</strong></p>
+    <div class="cmd">New-GPO -Name "GPO_FW_SMB_IN"
+New-GPLink -Name "GPO_FW_SMB_IN" -Target "DC=pxldigital,DC=local"</div>
+    <p>De firewall-regel zelf configureer je via de GUI in de GPO-editor. Je kunt bestaande regels op een client wel inspecteren via:</p>
+    <div class="cmd">Get-NetFirewallRule -DisplayName "*SMB*" | Select-Object DisplayName, Enabled, Direction, Action</div>
+    Koppel aan het domein (<code>pxldigital.local</code>) zodat alle computers de regel ontvangen</li>
+      <li>Edit → Computer Configuration → Policies → Windows Settings → Security Settings → <strong>Windows Defender Firewall with Advanced Security</strong></li>
+      <li>Rechtsklik op <strong>Inbound Rules</strong> → New Rule</li>
+    </ul>
+    <p><strong>Rule configureren:</strong></p>
+    <ul>
+      <li>Rule type: <strong>Port</strong></li>
+      <li>Protocol: <strong>TCP</strong></li>
+      <li>Specific local ports: <strong>445</strong></li>
+      <li>Action: <strong>Allow the connection</strong></li>
+      <li>Profile: <strong>Domain only</strong> — enkel actief in het domeinnetwerk</li>
+      <li>Name: <code>SMB-IN-445-Domain</code></li>
+    </ul>
+    <div class="warn-note"><strong>⚠ Let op</strong> — Beperk deze rule tot het <strong>Domain</strong>-profiel. Poort 445 open laten op Public of Private profielen is een beveiligingsrisico.</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Na <code>gpupdate /force</code> op de client: open Windows Defender Firewall op de client en controleer of de inbound rule zichtbaar is.</div>
+  </div>
+</div>
 
 <footer>
-  <p>Windows Advanced · Lab 04 · Domain — GPO · 5 taken</p>
+  <p>Windows Advanced · Lab 04 · Domain — GPO · 6 taken</p>
   <button class="reset-btn" onclick="resetLab()">↺ Reset lab</button>
 </footer>
 
 </div>
 <script>
 const STORAGE_KEY = 'win_lab04_state';
-const TOTAL = 5;
+const TOTAL = 6;
 const RANKS = [
-  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',              sub:'Voltooi je eerste taak'},
   {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
-  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'🥇', cls:'rank-gold',     sub:'Goed bezig!'},
   {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
-  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
-  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'💠', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'⚔️',cls:'rank-challenger',sub:'Lab voltooid!'},
 ];
-
-function loadState(){
-  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
-}
-function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
 function checkTask(id,e){
   e.stopPropagation();
-  const s=loadState();
-  s[id]=!s[id];
-  saveState(s);
-  render();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
 }
 function toggleTask(id,e){
   if(e.target.closest('.task-check')) return;
-  const card=document.getElementById('tc-'+id);
-  card.classList.toggle('open');
+  document.getElementById('tc-'+id).classList.toggle('open');
 }
-
 function render(){
-  const s=loadState();
-  let done=0;
+  const s=loadState(); let done=0;
   document.querySelectorAll('.task-card').forEach(card=>{
     const id=card.id.replace('tc-','');
-    const checked=!!s[id];
-    if(checked) done++;
+    const checked=!!s[id]; if(checked) done++;
     card.classList.toggle('done',checked);
     const chk=document.getElementById('chk-'+id);
     if(chk) chk.classList.toggle('checked',checked);
   });
-  // pips
   let pipIdx=1;
   document.querySelectorAll('.task-card').forEach(card=>{
-    const id=card.id.replace('tc-','');
     const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
     if(pip) pip.classList.toggle('done',!!s[id]);
     pipIdx++;
   });
   const pct=TOTAL>0?(done/TOTAL)*100:0;
-  const bf=document.getElementById('bar-fill');
-  if(bf) bf.style.width=pct+'%';
-  const bc=document.getElementById('bar-count');
-  if(bc) bc.textContent=done+' / '+TOTAL;
-  const pc=document.getElementById('ps-count');
-  if(pc) pc.textContent=done;
-  // rank
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
   let ri=0;
   for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
   const r=RANKS[ri];
@@ -287,40 +466,40 @@ function render(){
   const ri2=document.getElementById('ps-rank-icon');
   const rn=document.getElementById('ps-rank-name');
   const rs=document.getElementById('ps-rank-sub');
-  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
   if(ri2) ri2.textContent=r.icon;
   if(rn) rn.textContent=r.name;
   if(rs) rs.textContent=r.sub;
-  // next rank
   const nxt=document.getElementById('ps-next');
   if(nxt){
     if(ri<RANKS.length-1){
-      const nr=RANKS[ri+1];
-      const need=nr.min-done;
+      const nr=RANKS[ri+1]; const need=nr.min-done;
       nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
     } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
   }
 }
 function resetLab(){
   if(!confirm('Voortgang van dit lab wissen?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+  localStorage.removeItem(STORAGE_KEY); render();
 }
-// copy buttons — capture the clean command text BEFORE adding the button,
-// so the button label can never leak into the clipboard.
-document.querySelectorAll('.cmd').forEach(block=>{
-  const original=block.innerText.trim();
-  const btn=document.createElement('button');
-  btn.className='copy-btn'; btn.textContent='kopieer';
-  btn.onclick=e=>{
-    e.stopPropagation();
-    navigator.clipboard.writeText(original).then(()=>{
-      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
-    });
-  };
-  block.appendChild(btn);
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='✓ Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
 });
-render();
 </script>
 </body>
 </html>

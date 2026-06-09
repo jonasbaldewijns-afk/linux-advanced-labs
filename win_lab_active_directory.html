@@ -110,7 +110,6 @@
 </head>
 <body>
 <div class="container">
-
 <nav class="lab-nav">
   <a class="home-btn" href="windows_index.html">⌂ Index</a>
   <a class="nav-side" href="win_lab_windows_server.html">← Vorige</a>
@@ -123,7 +122,13 @@
     <span class="ps-count" id="ps-count">0</span>
     <span class="ps-total">/ 10</span>
   </div>
-  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div><div class="ps-pip" id="pip-9"></div><div class="ps-pip" id="pip-10"></div></div>
+  <div class="ps-pips" id="ps-pips">
+    <div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div>
+    <div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div>
+    <div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div>
+    <div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div>
+    <div class="ps-pip" id="pip-9"></div><div class="ps-pip" id="pip-10"></div>
+  </div>
   <div class="ps-rank-card" id="ps-rank-card">
     <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
     <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
@@ -135,7 +140,7 @@
 <header>
   <div class="label">Lab 02 · Windows Advanced</div>
   <h1>Domain — Active Directory</h1>
-  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+  <p>Installeer en configureer Active Directory op je Windows Server. Maak de domeinstructuur, gebruikers, groepen en AGDLP-model aan zoals vereist in de cursus.</p>
 </header>
 
 <div class="progress-bar-wrap">
@@ -144,153 +149,378 @@
   <span class="progress-count" id="bar-count">0 / 10</span>
 </div>
 
-<div class="section-title">Domein, AD en LDAP</div>
-    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 01</div>
-          <div class="task-title">Active Directory en LDAP begrijpen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Active Directory (AD) is het centrale beheersysteem van Microsoft voor een domein. Het slaat alle gebruikers, computers, policies en configuraties op in de database <code>NTDS.dit</code>.</p><div class="concept-box"><strong>LDAP</strong>Lightweight Directory Access Protocol — het protocol waarmee clients en diensten gegevens uit AD opvragen. LDAP gebruikt een hiërarchische boomstructuur (Distinguished Names).</div><p>Voorbeelden van LDAP-gebruik:</p><ul><li>NAS-opslag die AD-gebruikers authenticateert</li><li>Wi-Fi accesspoints die via LDAP koppelen aan AD</li><li>Applicaties die AD-groepen gebruiken voor rechtenbeheer</li></ul><table><thead><tr><th>Term</th><th>Betekenis</th></tr></thead><tbody><tr><td>NTDS.dit</td><td>De AD-database — bevat alle domeinobjecten</td></tr><tr><td>DC</td><td>Domain Controller — server die AD host</td></tr><tr><td>DN</td><td>Distinguished Name — volledig pad van een AD-object</td></tr><tr><td>OU</td><td>Organizational Unit — container voor objecten in AD</td></tr></tbody></table>
-      </div>
+<div class="section-title">Theorie · Active Directory</div>
+
+<div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 01</div>
+      <div class="task-title">Active Directory en LDAP begrijpen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 02</div>
-          <div class="task-title">Domeinstructuur plannen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Plan de AD-structuur voor het lab. We gebruiken <code>pxldigital.local</code> als domeinnaam.</p><div class="cmd">pxldigital.local
-├── OU=pxldigital
-│   ├── OU=Users
-│   │   ├── OU=Lectoren
-│   │   └── OU=Studenten
-│   ├── OU=Groups
-│   └── OU=Computers</div><div class="info-note"><strong>ℹ Info</strong> — Een <code>.local</code>-domein is intern — niet routeerbaar op het internet. Dit is gangbaar voor on-premises labs.</div><div class="warn-note"><strong>⚠ Let op</strong> — Kies de domeinnaam zorgvuldig. Na promotie is deze moeilijk te wijzigen.</div>
-      </div>
-    </div><div class="section-title">Installatie Active Directory</div>
-    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 03</div>
-          <div class="task-title">Servernaam instellen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Geef de server de correcte naam vóór je AD installeert.</p><ul><li>Open Settings → System → About</li><li>Klik op "Rename this PC"</li><li>Naam: <code>WINADV-DC1</code></li><li>Klik Next → Restart Now</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — Bij Windows Server moet je altijd een reden opgeven voor herstart. Kies de meest toepasselijke reden — deze wordt gelogd.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Active Directory (AD) is het centrale beheersysteem van Microsoft voor een domein. Het slaat alle gebruikers, computers, policies en configuraties op in de database <code>NTDS.dit</code>.</p>
+    <div class="concept-box"><strong>LDAP</strong>Lightweight Directory Access Protocol — het protocol waarmee clients en diensten gegevens uit AD opvragen. LDAP gebruikt een hiërarchische boomstructuur (Distinguished Names).</div>
+    <table><thead><tr><th>Term</th><th>Betekenis</th></tr></thead><tbody>
+      <tr><td>NTDS.dit</td><td>De AD-database — bevat alle domeinobjecten</td></tr>
+      <tr><td>DC</td><td>Domain Controller — server die AD host</td></tr>
+      <tr><td>DN</td><td>Distinguished Name — volledig pad van een AD-object</td></tr>
+      <tr><td>OU</td><td>Organizational Unit — container voor objecten in AD</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 02</div>
+      <div class="task-title">Domeinstructuur plannen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 04</div>
-          <div class="task-title">AD DS-rol installeren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Installeer de Active Directory Domain Services-rol via Server Manager.</p><ul><li>Open Server Manager</li><li>Manage → Add Roles and Features</li><li>Role-based installation → Next</li><li>Selecteer je server → Next</li><li>Vink aan: <strong>Active Directory Domain Services</strong></li><li>Voeg de bijhorende features toe (DNS Server wordt automatisch voorgesteld)</li><li>Next → Next → Install</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Na installatie zie je een gele waarschuwing in Server Manager: "Promote this server to a domain controller".</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Onze AD-structuur voor dit lab. Zorg dat je dit schema begrijpt vóór je begint — alles wat je aanmaakt valt eronder.</p>
+    <div class="cmd">pxldigital.local
+├── OU=Lectoren
+├── OU=Studenten
+│   ├── OU=1SNEa
+│   ├── OU=1SNEb
+│   ├── OU=1SNEc
+│   ├── OU=1SNEd
+│   └── OU=1SNEe
+├── OU=Groups
+├── OU=Laptops
+└── OU=Computers</div>
+    <div class="info-note"><strong>ℹ Info</strong> — Een <code>.local</code>-domein is intern en niet routeerbaar op het internet. Gangbaar voor on-premises labs.</div>
+    <div class="warn-note"><strong>⚠ Let op</strong> — Kies de domeinnaam zorgvuldig. Na promotie is deze moeilijk te wijzigen.</div>
+  </div>
+</div>
+
+<div class="section-title">Installatie Active Directory</div>
+
+<div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 03</div>
+      <div class="task-title">AD DS-rol en DNS-rol installeren</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
     </div>
-    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 05</div>
-          <div class="task-title">Server promoveren tot Domain Controller</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Klik op de promotieboodschap in Server Manager om de wizard te starten.</p><ul><li>Kies: <strong>Add a new forest</strong></li><li>Root domain name: <code>pxldigital.local</code></li><li>Forest/Domain functional level: <strong>Windows Server 2016</strong> of hoger</li><li>Vink aan: DNS Server, Global Catalog</li><li>Stel een <strong>DSRM-wachtwoord</strong> in (Recovery Mode — bewaar dit goed!)</li><li>NetBIOS-naam wordt automatisch ingevuld: <code>PXLDIGITAL</code></li><li>Paths: laat standaard → Next → Install</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — De server herstart automatisch na promotie. Na herstart log je in met <code>PXLDIGITAL\Administrator</code>.</div><div class="verify-block"><strong>✔ Verificatie</strong>Open Active Directory Users and Computers — je ziet de domeinstructuur.</div>
-      </div>
-    </div><div class="section-title">OU, Users en Groups</div>
-    <div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 06</div>
-          <div class="task-title">Organizational Units aanmaken</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>OUs structureren je AD-omgeving. Maak de basisstructuur aan:</p><ul><li>Open <strong>Active Directory Users and Computers</strong> (ADUC)</li><li>Rechtsklik op <code>pxldigital.local</code> → New → Organizational Unit</li><li>Maak aan: <code>pxldigital</code></li><li>Binnen pxldigital maak je: <code>Users</code>, <code>Groups</code>, <code>Computers</code></li><li>Binnen Users maak je: <code>Lectoren</code>, <code>Studenten</code></li></ul><div class="concept-box"><strong>Waarom OUs?</strong>OUs laten toe om GPOs toe te wijzen aan specifieke groepen gebruikers of computers. Elke OU kan zijn eigen policy krijgen.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Installeer de Active Directory Domain Services-rol op je <code>WINADV-DC1XX</code> server. DNS wordt automatisch meegeïnstalleerd — dit is vereist.</p>
+    <ul>
+      <li>Open <strong>Server Manager</strong></li>
+      <li>Manage → Add Roles and Features</li>
+      <li>Role-based installation → Next</li>
+      <li>Selecteer je server → Next</li>
+      <li>Vink aan: <strong>Active Directory Domain Services</strong></li>
+      <li>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Install-WindowsFeature AD-Domain-Services -IncludeManagementTools</div>
+    In het pop-up: "Add Features" (dit voegt ook DNS Server toe)</li>
+      <li>Next → Next → Install → wacht tot installatie klaar is</li>
+    </ul>
+  </div>
+</div>
+
+<div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 04</div>
+      <div class="task-title">Server promoveren tot Domain Controller</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 07</div>
-          <div class="task-title">Gebruikers en groepen aanmaken</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Maak testgebruikers en security groups aan.</p><p><strong>Gebruikers aanmaken:</strong></p><ul><li>Rechtsklik op de OU Lectoren → New → User</li><li>Vul in: First name, Last name, User logon name (formaat: <code>voornaam.achternaam</code>)</li><li>Wachtwoord instellen → vink "Password never expires" aan voor het lab</li><li>Herhaal voor een student in de OU Studenten</li></ul><p><strong>Security groups aanmaken:</strong></p><ul><li>Rechtsklik op de OU Groups → New → Group</li><li>Group name: <code>GL_Lectoren</code>, Scope: <strong>Global</strong>, Type: <strong>Security</strong></li><li>Maak ook: <code>DL_FileShare_Lezen</code>, Scope: <strong>Domain Local</strong></li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Controleer in ADUC dat de gebruikers en groepen zichtbaar zijn in de juiste OUs.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Na de installatie zie je een gele waarschuwing in Server Manager. Klik erop om de promotie-wizard te starten.</p>
+    <ul>
+      <li>Kies: <strong>Add a new forest</strong></li>
+      <li>Root domain name: <code>pxldigital.local</code></li>
+      <li>Forest/Domain functional level: <strong>Windows Server 2016</strong> of hoger</li>
+      <li>Vink aan: DNS Server, Global Catalog</li>
+      <li>Stel een <strong>DSRM-wachtwoord</strong> in (Directory Services Restore Mode — bewaar dit!)</li>
+      <li>NetBIOS-naam wordt automatisch: <code>PXLDIGITAL</code></li>
+      <li>Paths: laat standaard → Next → Install</li>
+    </ul>
+    <div class="warn-note"><strong>⚠ Let op</strong> — De server herstart automatisch.     <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Install-ADDSForest `
+  -DomainName "pxldigital.local" `
+  -DomainNetbiosName "PXLDIGITAL" `
+  -InstallDns `
+  -SafeModeAdministratorPassword (ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force) `
+  -Force</div>
+    Na herstart log je in met <code>PXLDIGITAL\Administrator</code>.</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Open Active Directory Users and Computers (ADUC) — je ziet de domeinstructuur verschijnen.</div>
+  </div>
+</div>
+
+<div class="section-title">OU-structuur</div>
+
+<div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 05</div>
+      <div class="task-title">Organizational Units aanmaken</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-08" onclick="toggleTask('08',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 08</div>
-          <div class="task-title">Groepen populeren (leden toevoegen)</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Voeg gebruikers toe aan de juiste groepen.</p><ul><li>Open de groep <code>GL_Lectoren</code> → tabblad Members → Add</li><li>Zoek de lector-gebruiker op en voeg toe</li><li>Open de groep <code>DL_FileShare_Lezen</code> → Members → Add</li><li>Voeg <code>GL_Lectoren</code> toe (niet de individuele gebruiker!)</li></ul><div class="concept-box"><strong>Nesting van groepen</strong>Een Global Group mag andere Global Groups bevatten. Een Domain Local Group kan Global Groups bevatten. Dit is de basis van AGDLP.</div>
-      </div>
-    </div><div class="section-title">Client joinen</div>
-    <div class="task-card" id="tc-09" onclick="toggleTask('09',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-09" onclick="checkTask('09',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 09</div>
-          <div class="task-title">Client voorbereiden en joinen aan het domein</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-t">test</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p><strong>Vereisten op de server:</strong></p><ul><li>Statisch IP-adres ingesteld</li><li>DNS verwijst naar zichzelf (localhost / 127.0.0.1)</li></ul><p><strong>Vereisten op de client (WINADV-PC1):</strong></p><ul><li>Naam gewijzigd naar <code>WINADV-PC1</code></li><li>Statisch IP in hetzelfde subnet als de DC</li><li>DNS-server ingesteld op IP van de DC</li></ul><p><strong>Joinen:</strong></p><ul><li>Settings → System → About → "Domain or workgroup"</li><li>Klik "Change" → selecteer Domain → vul in: <code>pxldigital.local</code></li><li>Gebruik de Administrator-credentials van het domein</li><li>Je krijgt "Welkom bij het domein pxldigital.local" → OK → Restart</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Log in op de client met een domeingebruiker: <code>PXLDIGITAL\voornaam.achternaam</code></div>
-      </div>
-    </div><div class="section-title">AGDLP</div>
-    <div class="task-card" id="tc-10" onclick="toggleTask('10',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-10" onclick="checkTask('10',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 10</div>
-          <div class="task-title">AGDLP-model begrijpen en toepassen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p><strong>AGDLP</strong> staat voor: <strong>A</strong>ccounts → <strong>G</strong>lobal groups → <strong>D</strong>omain <strong>L</strong>ocal groups → <strong>P</strong>ermissions</p><div class="concept-box"><strong>Waarom AGDLP?</strong>Dit is de Microsoft best-practice voor rechtenbeheer. Door accounts in global groups te steken en die aan domain local groups te koppelen, kun je rechten centraal beheren zonder individuele gebruikers te moeten wijzigen.</div><p>Voorbeeld voor klaslokalen:</p><div class="cmd">Accounts (studenten) → GL_1SNEA (global) → DL_1SNEA (domain local) → Permissie op map</div><table><thead><tr><th>Stap</th><th>Actie</th><th>Voorbeeld</th></tr></thead><tbody><tr><td>A</td><td>Gebruikersaccounts aanmaken</td><td>student1, student2</td></tr><tr><td>G</td><td>Global Group aanmaken en vullen</td><td>GL_1SNEA (bevat student1, student2)</td></tr><tr><td>DL</td><td>Domain Local Group aanmaken</td><td>DL_1SNEA (bevat GL_1SNEA)</td></tr><tr><td>P</td><td>Permissie toewijzen op resource</td><td>Map "Klassen" → DL_1SNEA: Read</td></tr></tbody></table><div class="info-note"><strong>ℹ Info</strong> — Door nesting kun je meerdere Global Groups aan één Domain Local Group koppelen. Ideaal voor afdelingen met subgroepen.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">$base = "DC=pxldigital,DC=local"
+New-ADOrganizationalUnit -Name "Lectoren"  -Path $base
+New-ADOrganizationalUnit -Name "Studenten" -Path $base
+New-ADOrganizationalUnit -Name "Groups"    -Path $base
+New-ADOrganizationalUnit -Name "Laptops"   -Path $base
+$stud = "OU=Studenten,$base"
+foreach ($klas in "1SNEa","1SNEb","1SNEc","1SNEd","1SNEe") {
+    New-ADOrganizationalUnit -Name $klas -Path $stud
+}</div>
+    Maak de volledige OU-structuur aan in ADUC. Rechtsklik op <code>pxldigital.local</code> → New → Organizational Unit.</p>
+    <table><thead><tr><th>OU</th><th>Doel</th></tr></thead><tbody>
+      <tr><td><code>OU=Lectoren</code></td><td>Gebruikersaccounts van lectoren</td></tr>
+      <tr><td><code>OU=Studenten</code></td><td>Bovenliggende OU voor alle klassen</td></tr>
+      <tr><td><code>OU=Studenten\1SNEa</code></td><td>Studenten klas 1SNEa</td></tr>
+      <tr><td><code>OU=Studenten\1SNEb</code></td><td>Studenten klas 1SNEb</td></tr>
+      <tr><td><code>OU=Studenten\1SNEc</code></td><td>Studenten klas 1SNEc</td></tr>
+      <tr><td><code>OU=Studenten\1SNEd</code></td><td>Studenten klas 1SNEd</td></tr>
+      <tr><td><code>OU=Studenten\1SNEe</code></td><td>Studenten klas 1SNEe</td></tr>
+      <tr><td><code>OU=Groups</code></td><td>Alle security groups</td></tr>
+      <tr><td><code>OU=Laptops</code></td><td>Clientcomputers</td></tr>
+    </tbody></table>
+    <div class="concept-box"><strong>Waarom OUs?</strong>OUs laten toe om GPOs toe te wijzen aan specifieke groepen. Elke OU kan een eigen policy krijgen, onafhankelijk van andere OUs.</div>
+  </div>
+</div>
+
+<div class="section-title">Users</div>
+
+<div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 06</div>
+      <div class="task-title">Gebruikersaccounts aanmaken</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak alle gebruikers aan in de juiste OU. Rechtsklik op de OU → New → User.     <p><strong>Via PowerShell — lectoren:</strong></p>
+    <div class="cmd">$pw = ConvertTo-SecureString "TestTest2025" -AsPlainText -Force
+$lect = "OU=Lectoren,DC=pxldigital,DC=local"
+@(
+  @{Name="Annelies Verbruggen"; Sam="annelies.verbruggen"},
+  @{Name="Tom De Wilde";        Sam="tom.de.wilde"},
+  @{Name="Sofie Maes";          Sam="sofie.maes"},
+  @{Name="Bram Van Acker";      Sam="bram.van.acker"},
+  @{Name="Liesbeth Peeters";    Sam="liesbeth.peeters"}
+) | ForEach-Object {
+  New-ADUser -Name $_.Name -SamAccountName $_.Sam -UserPrincipalName "$($_.Sam)@pxldigital.local" `
+    -Path $lect -AccountPassword $pw -Enabled $true
+}</div>
+    <p><strong>Via PowerShell — studenten (voorbeeld voor 1SNEa):</strong></p>
+    <div class="cmd">$pw = ConvertTo-SecureString "TestTest2025" -AsPlainText -Force
+@(
+  @{Name="Alex Janssens"; Sam="a.janssens"; OU="1SNEa"},
+  @{Name="Noor De Smet";  Sam="n.de.smet";  OU="1SNEa"}
+) | ForEach-Object {
+  New-ADUser -Name $_.Name -SamAccountName $_.Sam `
+    -Path "OU=$($_.OU),OU=Studenten,DC=pxldigital,DC=local" `
+    -AccountPassword $pw -Enabled $true
+}</div>
+    Standaard wachtwoord voor iedereen: <code>TestTest2025</code></p>
+    <p><strong>Logon name syntax:</strong></p>
+    <ul>
+      <li>Lectoren: <code>voornaam.naam</code> (vb. Annelies Verbruggen → <code>annelies.verbruggen</code>)</li>
+      <li>Studenten: <code>x.naam</code> waarbij x = eerste letter van de voornaam (vb. Alex Janssens → <code>a.janssens</code>)</li>
+      <li>Bij namen uit meerdere woorden worden de woorden gescheiden door een punt (vb. Noor De Smet → <code>n.de.smet</code>)</li>
+    </ul>
+    <p><strong>Lectoren</strong> — aanmaken in <code>OU=Lectoren</code>:</p>
+    <table><thead><tr><th>Naam</th><th>Logon name</th></tr></thead><tbody>
+      <tr><td>Annelies Verbruggen</td><td><code>annelies.verbruggen</code></td></tr>
+      <tr><td>Tom De Wilde</td><td><code>tom.de.wilde</code></td></tr>
+      <tr><td>Sofie Maes</td><td><code>sofie.maes</code></td></tr>
+      <tr><td>Bram Van Acker</td><td><code>bram.van.acker</code></td></tr>
+      <tr><td>Liesbeth Peeters</td><td><code>liesbeth.peeters</code></td></tr>
+    </tbody></table>
+    <p><strong>Studenten</strong> — aanmaken in de juiste sub-OU van <code>OU=Studenten</code>:</p>
+    <table><thead><tr><th>OU</th><th>Naam</th><th>Logon name</th></tr></thead><tbody>
+      <tr><td>1SNEa</td><td>Alex Janssens</td><td><code>a.janssens</code></td></tr>
+      <tr><td>1SNEa</td><td>Noor De Smet</td><td><code>n.de.smet</code></td></tr>
+      <tr><td>1SNEb</td><td>Milan Vercauteren</td><td><code>m.vercauteren</code></td></tr>
+      <tr><td>1SNEb</td><td>Emma Claes</td><td><code>e.claes</code></td></tr>
+      <tr><td>1SNEc</td><td>Lucas Van den Broeck</td><td><code>l.van.den.broeck</code></td></tr>
+      <tr><td>1SNEc</td><td>Yara Goossens</td><td><code>y.goossens</code></td></tr>
+      <tr><td>1SNEd</td><td>Finn Peeters</td><td><code>f.peeters</code></td></tr>
+      <tr><td>1SNEd</td><td>Sarah Willems</td><td><code>s.willems</code></td></tr>
+      <tr><td>1SNEe</td><td>Ruben Hendrix</td><td><code>r.hendrix</code></td></tr>
+      <tr><td>1SNEe</td><td>Lina Verhoeven</td><td><code>l.verhoeven</code></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="section-title">Groups</div>
+
+<div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 07</div>
+      <div class="task-title">Global Groups aanmaken in OU=Groups</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak alle Global Groups aan in <code>OU=Groups</code>. Rechtsklik op de OU → New → Group.</p>
+    <p>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">$grp = "OU=Groups,DC=pxldigital,DC=local"
+foreach ($naam in "GL_All_Lectors","GL_All_Students","GL_1SNEa","GL_1SNEb","GL_1SNEc","GL_1SNEd","GL_1SNEe") {
+    New-ADGroup -Name $naam -GroupScope Global -GroupCategory Security -Path $grp
+}</div>
+    Instellingen voor elke groep: Group scope = <strong>Global</strong>, Group type = <strong>Security</strong></p>
+    <table><thead><tr><th>Group name</th><th>Doel</th></tr></thead><tbody>
+      <tr><td><code>GL_All_Lectors</code></td><td>Alle lectoren</td></tr>
+      <tr><td><code>GL_All_Students</code></td><td>Alle studenten</td></tr>
+      <tr><td><code>GL_1SNEa</code></td><td>Studenten klas 1SNEa</td></tr>
+      <tr><td><code>GL_1SNEb</code></td><td>Studenten klas 1SNEb</td></tr>
+      <tr><td><code>GL_1SNEc</code></td><td>Studenten klas 1SNEc</td></tr>
+      <tr><td><code>GL_1SNEd</code></td><td>Studenten klas 1SNEd</td></tr>
+      <tr><td><code>GL_1SNEe</code></td><td>Studenten klas 1SNEe</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="task-card" id="tc-08" onclick="toggleTask('08',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 08</div>
+      <div class="task-title">Leden toevoegen aan de Global Groups</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-ADGroupMember -Identity "GL_All_Lectors" -Members "annelies.verbruggen","tom.de.wilde","sofie.maes","bram.van.acker","liesbeth.peeters"
+Add-ADGroupMember -Identity "GL_1SNEa" -Members "a.janssens","n.de.smet"
+Add-ADGroupMember -Identity "GL_1SNEb" -Members "m.vercauteren","e.claes"
+Add-ADGroupMember -Identity "GL_1SNEc" -Members "l.van.den.broeck","y.goossens"
+Add-ADGroupMember -Identity "GL_1SNEd" -Members "f.peeters","s.willems"
+Add-ADGroupMember -Identity "GL_1SNEe" -Members "r.hendrix","l.verhoeven"
+# GL_All_Students: voeg alle studentaccounts toe
+Get-ADUser -SearchBase "OU=Studenten,DC=pxldigital,DC=local" -Filter * | ForEach-Object {
+    Add-ADGroupMember -Identity "GL_All_Students" -Members $_
+}</div>
+    Open elke group → tabblad <strong>Members</strong> → Add. Voeg de juiste gebruikers toe.</p>
+    <table><thead><tr><th>Group</th><th>Members</th></tr></thead><tbody>
+      <tr><td><code>GL_All_Lectors</code></td><td>Alle 5 lectoren (Verbruggen, De Wilde, Maes, Van Acker, Peeters)</td></tr>
+      <tr><td><code>GL_All_Students</code></td><td>Alle 10 studenten</td></tr>
+      <tr><td><code>GL_1SNEa</code></td><td>Alex Janssens, Noor De Smet</td></tr>
+      <tr><td><code>GL_1SNEb</code></td><td>Milan Vercauteren, Emma Claes</td></tr>
+      <tr><td><code>GL_1SNEc</code></td><td>Lucas Van den Broeck, Yara Goossens</td></tr>
+      <tr><td><code>GL_1SNEd</code></td><td>Finn Peeters, Sarah Willems</td></tr>
+      <tr><td><code>GL_1SNEe</code></td><td>Ruben Hendrix, Lina Verhoeven</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="section-title">Client joinen aan domein</div>
+
+<div class="task-card" id="tc-09" onclick="toggleTask('09',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-09" onclick="checkTask('09',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 09</div>
+      <div class="task-title">Windows 11 client joinen aan het domein</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>Vereisten op de server:</strong></p>
+    <ul>
+      <li>Statisch IP-adres ingesteld op de DC</li>
+      <li>DNS verwijst naar zichzelf (<code>127.0.0.1</code> of eigen IP)</li>
+    </ul>
+    <p><strong>Vereisten op de client (<code>WINADV-PC1XX</code>):</strong></p>
+    <ul>
+      <li>Statisch IP in hetzelfde subnet als de DC</li>
+      <li>DNS-server ingesteld op het IP-adres van de DC</li>
+    </ul>
+    <p><strong>Joinen aan het domein:</strong></p>
+    <ul>
+      <li>Settings → System → About → "Domain or workgroup"</li>
+      <li>Klik "Change" → selecteer <strong>Domain</strong> → vul in: <code>pxldigital.local</code></li>
+      <li>    <p><strong>Via PowerShell (op de client):</strong></p>
+    <div class="cmd">Add-Computer -DomainName "pxldigital.local" -Credential (Get-Credential) -Restart</div>
+    Gebruik de domain Administrator-credentials</li>
+      <li>Je krijgt "Welkom bij het domein pxldigital.local" → OK → Restart</li>
+    </ul>
+    <p><strong>Computer verplaatsen naar OU=Laptops:</strong></p>
+    <ul>
+      <li>Na het joinen staat de computer standaard in de container <code>Computers</code></li>
+      <li>Open ADUC → zoek je computer in <code>Computers</code></li>
+      <li>Rechtsklik → Move → selecteer <code>OU=Laptops</code></li>
+    <p><strong>Via PowerShell (op de DC):</strong></p>
+    <div class="cmd">$pc = Get-ADComputer "WINADV-PC1XX"
+Move-ADObject -Identity $pc -TargetPath "OU=Laptops,DC=pxldigital,DC=local"</div>
+    </ul>
+  </div>
+</div>
+
+<div class="section-title">AGDLP</div>
+
+<div class="task-card" id="tc-10" onclick="toggleTask('10',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-10" onclick="checkTask('10',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 10</div>
+      <div class="task-title">AGDLP — Domain Local Groups aanmaken en koppelen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-t">theorie</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>AGDLP</strong> = <strong>A</strong>ccounts → <strong>G</strong>lobal groups → <strong>D</strong>omain <strong>L</strong>ocal groups → <strong>P</strong>ermissions. Dit is de Microsoft best-practice voor rechtenbeheer.</p>
+    <div class="concept-box"><strong>Waarom AGDLP?</strong>Door accounts in Global Groups te steken en die aan Domain Local Groups te koppelen, beheer je rechten centraal. Je past nooit individuele gebruikers aan — alleen de groepskoppeling.</div>
+    <p><strong>Stap 1 — Domain Local Groups aanmaken</strong></p>
+    <p>Voor elke bestaande GL group maak je een DL group aan met <strong>dezelfde naam maar met prefix <code>DL_</code></strong> in plaats van <code>GL_</code>. Group scope = <strong>Domain Local</strong>, type = <strong>Security</strong>.</p>
+    <table><thead><tr><th>Domain Local Group</th><th>Bijhorende Global Group</th></tr></thead><tbody>
+      <tr><td><code>DL_All_Lectors</code></td><td><code>GL_All_Lectors</code></td></tr>
+      <tr><td><code>DL_All_Students</code></td><td><code>GL_All_Students</code></td></tr>
+      <tr><td><code>DL_1SNEa</code></td><td><code>GL_1SNEa</code></td></tr>
+      <tr><td><code>DL_1SNEb</code></td><td><code>GL_1SNEb</code></td></tr>
+      <tr><td><code>DL_1SNEc</code></td><td><code>GL_1SNEc</code></td></tr>
+      <tr><td><code>DL_1SNEd</code></td><td><code>GL_1SNEd</code></td></tr>
+      <tr><td><code>DL_1SNEe</code></td><td><code>GL_1SNEe</code></td></tr>
+    </tbody></table>
+    <p><strong>Via PowerShell — DL groups aanmaken en koppelen:</strong></p>
+    <div class="cmd">$grp = "OU=Groups,DC=pxldigital,DC=local"
+foreach ($naam in "DL_All_Lectors","DL_All_Students","DL_1SNEa","DL_1SNEb","DL_1SNEc","DL_1SNEd","DL_1SNEe") {
+    New-ADGroup -Name $naam -GroupScope DomainLocal -GroupCategory Security -Path $grp
+}
+$klassen = "All_Lectors","All_Students","1SNEa","1SNEb","1SNEc","1SNEd","1SNEe"
+foreach ($k in $klassen) {
+    Add-ADGroupMember -Identity "DL_$k" -Members "GL_$k"
+}</div>
+    <p><strong>Stap 2 — GL groups toevoegen als member van de DL group</strong></p>
+    <ul>
+      <li>Open de DL group → Members → Add → voeg de bijhorende GL group toe</li>
+      <li>Doe dit voor alle 7 koppels</li>
+    </ul>
+  </div>
+</div>
 
 <footer>
   <p>Windows Advanced · Lab 02 · Domain — Active Directory · 10 taken</p>
@@ -302,59 +532,43 @@
 const STORAGE_KEY = 'win_lab02_state';
 const TOTAL = 10;
 const RANKS = [
-  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',              sub:'Voltooi je eerste taak'},
   {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
-  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'🥇', cls:'rank-gold',     sub:'Goed bezig!'},
   {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
-  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
-  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'💠', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'⚔️',cls:'rank-challenger',sub:'Lab voltooid!'},
 ];
-
-function loadState(){
-  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
-}
-function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
 function checkTask(id,e){
   e.stopPropagation();
-  const s=loadState();
-  s[id]=!s[id];
-  saveState(s);
-  render();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
 }
 function toggleTask(id,e){
   if(e.target.closest('.task-check')) return;
-  const card=document.getElementById('tc-'+id);
-  card.classList.toggle('open');
+  document.getElementById('tc-'+id).classList.toggle('open');
 }
-
 function render(){
-  const s=loadState();
-  let done=0;
+  const s=loadState(); let done=0;
   document.querySelectorAll('.task-card').forEach(card=>{
     const id=card.id.replace('tc-','');
-    const checked=!!s[id];
-    if(checked) done++;
+    const checked=!!s[id]; if(checked) done++;
     card.classList.toggle('done',checked);
     const chk=document.getElementById('chk-'+id);
     if(chk) chk.classList.toggle('checked',checked);
   });
-  // pips
   let pipIdx=1;
   document.querySelectorAll('.task-card').forEach(card=>{
-    const id=card.id.replace('tc-','');
     const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
     if(pip) pip.classList.toggle('done',!!s[id]);
     pipIdx++;
   });
   const pct=TOTAL>0?(done/TOTAL)*100:0;
-  const bf=document.getElementById('bar-fill');
-  if(bf) bf.style.width=pct+'%';
-  const bc=document.getElementById('bar-count');
-  if(bc) bc.textContent=done+' / '+TOTAL;
-  const pc=document.getElementById('ps-count');
-  if(pc) pc.textContent=done;
-  // rank
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
   let ri=0;
   for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
   const r=RANKS[ri];
@@ -362,40 +576,40 @@ function render(){
   const ri2=document.getElementById('ps-rank-icon');
   const rn=document.getElementById('ps-rank-name');
   const rs=document.getElementById('ps-rank-sub');
-  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
   if(ri2) ri2.textContent=r.icon;
   if(rn) rn.textContent=r.name;
   if(rs) rs.textContent=r.sub;
-  // next rank
   const nxt=document.getElementById('ps-next');
   if(nxt){
     if(ri<RANKS.length-1){
-      const nr=RANKS[ri+1];
-      const need=nr.min-done;
+      const nr=RANKS[ri+1]; const need=nr.min-done;
       nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
     } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
   }
 }
 function resetLab(){
   if(!confirm('Voortgang van dit lab wissen?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+  localStorage.removeItem(STORAGE_KEY); render();
 }
-// copy buttons — capture the clean command text BEFORE adding the button,
-// so the button label can never leak into the clipboard.
-document.querySelectorAll('.cmd').forEach(block=>{
-  const original=block.innerText.trim();
-  const btn=document.createElement('button');
-  btn.className='copy-btn'; btn.textContent='kopieer';
-  btn.onclick=e=>{
-    e.stopPropagation();
-    navigator.clipboard.writeText(original).then(()=>{
-      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
-    });
-  };
-  block.appendChild(btn);
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='✓ Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
 });
-render();
 </script>
 </body>
 </html>

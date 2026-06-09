@@ -110,20 +110,26 @@
 </head>
 <body>
 <div class="container">
-
 <nav class="lab-nav">
   <a class="home-btn" href="windows_index.html">⌂ Index</a>
   <a class="nav-side" href="win_lab_services.html">← Vorige</a>
-  <span class="nav-side right disabled">→</span>
+  <a class="nav-side right disabled">Volgende →</a>
 </nav>
 
 <div class="progress-sidebar">
   <div class="ps-label">Voortgang</div>
   <div class="ps-count-row">
     <span class="ps-count" id="ps-count">0</span>
-    <span class="ps-total">/ 8</span>
+    <span class="ps-total">/ 12</span>
   </div>
-  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div></div>
+  <div class="ps-pips" id="ps-pips">
+    <div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div>
+    <div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div>
+    <div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div>
+    <div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div>
+    <div class="ps-pip" id="pip-9"></div><div class="ps-pip" id="pip-10"></div>
+    <div class="ps-pip" id="pip-11"></div><div class="ps-pip" id="pip-12"></div>
+  </div>
   <div class="ps-rank-card" id="ps-rank-card">
     <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
     <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
@@ -135,242 +141,349 @@
 <header>
   <div class="label">Lab 08 · Windows Advanced</div>
   <h1>PowerShell</h1>
-  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+  <p>Leer PowerShell-pipelines schrijven voor processen, services, gebruikers en bestanden. Elke oefening is een exacte examenvraag met uitleg per onderdeel.</p>
 </header>
 
 <div class="progress-bar-wrap">
   <span>Voortgang</span>
   <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
-  <span class="progress-count" id="bar-count">0 / 8</span>
+  <span class="progress-count" id="bar-count">0 / 12</span>
 </div>
 
-<div class="section-title">Basics</div>
-    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 01</div>
-          <div class="task-title">Cmdlets, werkwoorden en parameters begrijpen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Elke actie in PowerShell gebeurt via een <strong>cmdlet</strong>. De naamgeving is altijd: <code>Werkwoord-Zelfstandignaamwoord</code></p><table><thead><tr><th>Werkwoord</th><th>Doel</th><th>Voorbeeld</th></tr></thead><tbody><tr><td>Get</td><td>Info opvragen</td><td>Get-Process</td></tr><tr><td>Set</td><td>Instelling wijzigen</td><td>Set-Service</td></tr><tr><td>New</td><td>Object aanmaken</td><td>New-ADUser</td></tr><tr><td>Remove</td><td>Object verwijderen</td><td>Remove-ADUser</td></tr><tr><td>Start</td><td>Starten</td><td>Start-Service</td></tr><tr><td>Stop</td><td>Stoppen</td><td>Stop-Process</td></tr></tbody></table><p><strong>Parameters</strong> verfijnen een cmdlet:</p><div class="cmd">Get-Process -Name chrome
-Get-ChildItem -Path C:\ -Recurse -File</div><p>Gebruik <code>Get-Help</code> om documentatie te lezen:</p><div class="cmd">Get-Help Get-Process
-Get-Help Get-Process -Examples
-Get-Help Get-Process -Full</div><div class="info-note"><strong>ℹ Info</strong> — Update de helpbestanden eerst: <code>Update-Help</code> (vereist internetverbinding en admin)</div>
-      </div>
+<div class="section-title">Theorie · PowerShell</div>
+
+<div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 01</div>
+      <div class="task-title">Cmdlet-syntaxis en de pipeline begrijpen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 02</div>
-          <div class="task-title">Tab-completion en aliassen gebruiken</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>PowerShell heeft ingebouwde aliassen voor sneller typen:</p><table><thead><tr><th>Alias</th><th>Cmdlet</th></tr></thead><tbody><tr><td>ls / dir</td><td>Get-ChildItem</td></tr><tr><td>cd</td><td>Set-Location</td></tr><tr><td>cls</td><td>Clear-Host</td></tr><tr><td>cat</td><td>Get-Content</td></tr><tr><td>echo</td><td>Write-Output</td></tr></tbody></table><div class="cmd">Get-Alias</div><p>Toont alle gedefinieerde aliassen. Gebruik tab-completion door de eerste letters te typen en op Tab te drukken.</p>
-      </div>
-    </div><div class="section-title">Filteren en selecteren</div>
-    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 03</div>
-          <div class="task-title">Pipeline gebruiken om data door te sturen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>De <strong>pipeline</strong> (<code>|</code>) stuurt de output van een cmdlet als input naar het volgende. PowerShell werkt met objecten, niet met tekst.</p><div class="cmd">Get-Process | Stop-Process -Name chrome</div><p>Alle chrome-processen ophalen en stoppen.</p><div class="cmd">Get-Process | Select-Object Name, CPU, WorkingSet | Sort-Object CPU -Descending</div><p>Processen ophalen, specifieke properties selecteren, sorteren op CPU-gebruik.</p><div class="cmd">Get-Process | Where-Object WorkingSet -gt 100MB</div><p>Enkel processen tonen die meer dan 100 MB RAM gebruiken.</p><div class="concept-box"><strong>Objecten in de pipeline</strong>Elk cmdlet retourneert objecten met properties. Select-Object kiest welke properties je ziet. Where-Object filtert op property-waarden. Sort-Object sorteert.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Elke PowerShell-opdracht volgt het patroon <strong>Werkwoord-Zelfstandignaamwoord</strong>. Parameters worden altijd voorafgegaan door een <code>-</code>.</p>
+    <div class="concept-box"><strong>De pipeline (<code>|</code>)</strong>De output van het linkse commando wordt doorgegeven als input aan het rechtse. Dit laat toe om complexe bewerkingen te ketenen zonder tussentijdse variabelen.</div>
+    <table><thead><tr><th>Cmdlet</th><th>Functie</th></tr></thead><tbody>
+      <tr><td><code>Select-Object</code></td><td>Kies welke eigenschappen (kolommen) je wil zien</td></tr>
+      <tr><td><code>Where-Object</code></td><td>Filter objecten op een voorwaarde</td></tr>
+      <tr><td><code>Sort-Object</code></td><td>Sorteer objecten op een eigenschap</td></tr>
+      <tr><td><code>Measure-Object</code></td><td>Tel, som of gemiddelde van objecten berekenen</td></tr>
+      <tr><td><code>Out-File</code></td><td>Output wegschrijven naar een bestand</td></tr>
+      <tr><td><code>ForEach-Object</code></td><td>Voer een actie uit voor elk object in de pipeline</td></tr>
+    </tbody></table>
+    <div class="warn-note"><strong>⚠ Pure PS — geen aliassen</strong> — Op het examen worden aliassen (<code>ls</code>, <code>dir</code>, <code>?</code>, <code>%</code>, <code>sort</code>, <code>select</code>) niet aanvaard. Schrijf altijd de volledige cmdlet-naam (<code>Get-ChildItem</code>, <code>Where-Object</code>, …) met volledige parameternamen (<code>-Property</code>, <code>-Filter</code>, …).</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 02</div>
+      <div class="task-title">Veelgebruikte cmdlets in dit lab</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 04</div>
-          <div class="task-title">Exporteren en importeren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Output exporteren naar bestanden:</p><div class="cmd">Get-Process | Export-Csv C:\processen.csv -NoTypeInformation
-Get-Process | Out-File C:\processen.txt
-Get-ADUser -Filter * | Export-Csv C:\users.csv -NoTypeInformation</div><p>Importeren:</p><div class="cmd">Import-Csv C:\users.csv | ForEach-Object { Write-Host $_.Name }</div><div class="verify-block"><strong>✔ Verificatie</strong>Open <code>processen.csv</code> in Excel. Je ziet de processgegevens per kolom.</div>
-      </div>
-    </div><div class="section-title">PowerShell voor AD</div>
-    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 05</div>
-          <div class="task-title">AD-gebruikers beheren via PowerShell</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Importeer de AD-module en beheer gebruikers:</p><div class="cmd">Import-Module ActiveDirectory
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <table><thead><tr><th>Cmdlet</th><th>Wat geeft het terug?</th><th>Sleuteleigenschappen</th></tr></thead><tbody>
+      <tr><td><code>Get-Process</code></td><td>Actieve processen</td><td>Id, Name, CPU, WorkingSet</td></tr>
+      <tr><td><code>Get-Service</code></td><td>Windows-services</td><td>Name, DisplayName, Status</td></tr>
+      <tr><td><code>Get-LocalUser</code></td><td>Lokale gebruikers</td><td>Name, Enabled, PasswordLastSet</td></tr>
+      <tr><td><code>Get-LocalGroup</code></td><td>Lokale groepen</td><td>Name, Description, SID</td></tr>
+      <tr><td><code>Get-LocalGroupMember</code></td><td>Leden van een groep</td><td>Name, ObjectClass, PrincipalSource</td></tr>
+      <tr><td><code>Get-ChildItem</code></td><td>Bestanden en mappen</td><td>Name, FullName, Extension, Length</td></tr>
+      <tr><td><code>Measure-Object</code></td><td>Statistieken over objecten</td><td>Count, Sum, Average</td></tr>
+      <tr><td><code>Out-File</code></td><td>Schrijft tekst naar bestand</td><td>-FilePath</td></tr>
+    </tbody></table>
+    <div class="info-note"><strong>ℹ Tip</strong> — Weet je niet welke eigenschappen een object heeft? Pipe naar <code>Get-Member</code>: <code>Get-Process | Get-Member</code>. Dit toont alle beschikbare eigenschappen en methoden.</div>
+  </div>
+</div>
 
-# Alle gebruikers tonen
-Get-ADUser -Filter *
+<div class="section-title">Oefeningen</div>
 
-# Gebruiker met specifieke naam
-Get-ADUser -Filter "GivenName -eq 'Annelies'"
-
-# Gebruikers in een specifieke OU
-Get-ADUser -Filter * -SearchBase "OU=Lectoren,OU=Users,OU=pxldigital,DC=pxldigital,DC=local"</div><div class="cmd"># Nieuwe gebruiker aanmaken
-New-ADUser -Name "Jan Janssen" -GivenName "Jan" -Surname "Janssen" `
-  -SamAccountName "jan.janssen" -UserPrincipalName "jan.janssen@pxldigital.local" `
-  -Path "OU=Lectoren,OU=Users,OU=pxldigital,DC=pxldigital,DC=local" `
-  -AccountPassword (ConvertTo-SecureString "Wachtwoord123!" -AsPlainText -Force) `
-  -Enabled $true</div><div class="warn-note"><strong>⚠ Let op</strong> — Let op de volgorde van de OU-paden in -SearchBase en -Path: van specifiek naar algemeen (OU=Lectoren,OU=Users,...,DC=local).</div>
-      </div>
+<div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 03</div>
+      <div class="task-title">Vraag 1 — Lokale groepen + leden via pipeline</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
     </div>
-    <div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 06</div>
-          <div class="task-title">AD-groepen beheren via PowerShell</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<div class="cmd"># Alle groepen tonen
-Get-ADGroup -Filter *
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Geef het volledige PowerShell-commando dat alle lokale gebruikersgroepen weergeeft, inclusief alle bijbehorende objecten. Maak gebruik van een pipeline.</em></p>
+    <div class="cmd">Get-LocalGroup | Get-LocalGroupMember</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-LocalGroup</code> — haalt alle lokale groepen op van de machine</li>
+      <li><code>|</code> — stuurt elk groepsobject door naar het volgende commando</li>
+      <li><code>Get-LocalGroupMember</code> — voor elke ontvangen groep haalt dit de bijbehorende leden op</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Waarom werkt dit?</strong> — <code>Get-LocalGroupMember</code> accepteert groepsobjecten via de pipeline op de <code>-Group</code>-parameter. PS matcht dit automatisch.</div>
+  </div>
+</div>
 
-# Groepen die beginnen met GL
-Get-ADGroup -Filter "Name -like 'GL*'"
-
-# Domain Local groepen
-Get-ADGroup -Filter "GroupScope -eq 'DomainLocal'"
-
-# Members van een groep opvragen
-Get-ADGroupMember -Identity "GL_Lectoren"
-
-# Gebruiker toevoegen aan groep
-Add-ADGroupMember -Identity "GL_Lectoren" -Members "jan.janssen"
-
-# Gebruiker verwijderen uit groep
-Remove-ADGroupMember -Identity "GL_Lectoren" -Members "jan.janssen" -Confirm:$false</div><div class="verify-block"><strong>✔ Verificatie</strong>Controleer in ADUC of de gebruiker zichtbaar is in de groep na de Add-opdracht.</div>
-      </div>
-    </div><div class="section-title">Scripts</div>
-    <div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 07</div>
-          <div class="task-title">Execution Policy instellen voor scripts</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Vóór je scripts kunt uitvoeren, moet je de Execution Policy controleren en eventueel aanpassen.</p><div class="cmd">Get-ExecutionPolicy</div><table><thead><tr><th>Policy</th><th>Betekenis</th></tr></thead><tbody><tr><td>Restricted</td><td>Geen scripts toegestaan (default)</td></tr><tr><td>AllSigned</td><td>Enkel gesigneerde scripts</td></tr><tr><td>RemoteSigned</td><td>Eigen scripts OK, gedownloade moeten gesigneerd zijn</td></tr><tr><td>Unrestricted</td><td>Alles toegestaan (waarschuwing bij downloads)</td></tr><tr><td>Bypass</td><td>Alles zonder waarschuwingen</td></tr></tbody></table><div class="cmd">Set-ExecutionPolicy RemoteSigned -Scope CurrentUser</div><div class="warn-note"><strong>⚠ Let op</strong> — Gebruik nooit Bypass in productie. RemoteSigned is de veilige keuze voor labs.</div>
-      </div>
+<div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 04</div>
+      <div class="task-title">Vraag 2 — Services filteren op status Stopped</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
     </div>
-    <div class="task-card" id="tc-08" onclick="toggleTask('08',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 08</div>
-          <div class="task-title">Eerste PowerShell-script schrijven</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-t">test</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Maak een script dat meerdere AD-gebruikers aanmaakt vanuit een lijst.</p><p>Open PowerShell ISE of VS Code, maak een nieuw bestand: <code>C:\Scripts\maak_users.ps1</code></p><div class="cmd"># maak_users.ps1
-Import-Module ActiveDirectory
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Geef een lijst van alle services weer en toon alleen de objecten ID, Naam en Status. Filter zodat alleen de services met status Stopped worden weergegeven.</em></p>
+    <div class="cmd">Get-Service | Select-Object -Property Name, DisplayName, Status | Where-Object -Property Status -EQ "Stopped"</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-Service</code> — haalt alle Windows-services op</li>
+      <li><code>Select-Object -Property Name, DisplayName, Status</code> — beperkt de output tot de drie gevraagde kolommen (<code>Name</code> = ID, <code>DisplayName</code> = Naam)</li>
+      <li><code>Where-Object -Property Status -EQ "Stopped"</code> — filtert enkel de gestopte services</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Volgorde</strong> — Select-Object staat voor Where-Object. Dat kan, maar filter eerst voor betere performance bij grote datasets: <code>Get-Service | Where-Object ... | Select-Object ...</code></div>
+  </div>
+</div>
 
-$users = @(
-    @{Naam="student1"; OU="OU=Studenten,OU=Users,OU=pxldigital,DC=pxldigital,DC=local"},
-    @{Naam="student2"; OU="OU=Studenten,OU=Users,OU=pxldigital,DC=pxldigital,DC=local"}
-)
-
-foreach ($user in $users) {
-    New-ADUser -Name $user.Naam `
-      -SamAccountName $user.Naam `
-      -Path $user.OU `
-      -AccountPassword (ConvertTo-SecureString "Welkom123!" -AsPlainText -Force) `
-      -Enabled $true
-    Write-Host "Aangemaakt: $($user.Naam)"
-}</div><p>Voer het script uit:</p><div class="cmd">.\maak_users.ps1</div><div class="verify-block"><strong>✔ Verificatie</strong>Controleer in ADUC of de nieuwe gebruikers zichtbaar zijn in de OU Studenten.</div>
-      </div>
+<div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 05</div>
+      <div class="task-title">Vraag 3 — EXE-bestanden exporteren naar TXT</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
     </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Wat is de oneliner om alle bestanden in de Windows-directory met extensie EXE te exporteren naar een TXT met naam "Uitvoerbaar.txt"? Gebruik pure PowerShell cmdlets, geen aliassen, parameters volledig uitgeschreven.</em></p>
+    <div class="cmd">Get-ChildItem -Path "C:\Windows" -Filter "*.exe" | Out-File -FilePath "Uitvoerbaar.txt"</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-ChildItem</code> — lijst bestanden en mappen op (alias <code>ls</code>/<code>dir</code> is hier verboden)</li>
+      <li><code>-Path "C:\Windows"</code> — de directory om in te zoeken</li>
+      <li><code>-Filter "*.exe"</code> — filtert op bestanden met extensie .exe (efficiënter dan <code>Where-Object</code>)</li>
+      <li><code>Out-File -FilePath "Uitvoerbaar.txt"</code> — schrijft de tekstrepresentatie van de objecten weg naar het opgegeven bestand</li>
+    </ul>
+    <div class="warn-note"><strong>⚠ Let op aliassen</strong> — <code>ls</code>, <code>dir</code> en <code>></code> zijn aliassen en worden niet aanvaard. Schrijf <code>Get-ChildItem</code> en <code>Out-File</code>.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 06</div>
+      <div class="task-title">Vraag 4 — Processen met "explorer" filteren</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Geef een lijst van alle processen waarin de procesnaam "explorer" voorkomt. Zorg dat de objecten ID, Name, WorkingSet en CPU zichtbaar zijn.</em></p>
+    <div class="cmd">Get-Process -Name "*explorer*" | Select-Object -Property Id, Name, WorkingSet, CPU</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-Process -Name "*explorer*"</code> — filtert meteen op naam via de <code>-Name</code>-parameter; de asterisken zorgen voor een wildcard-match (ook <code>iexplorer</code> zou meekomen)</li>
+      <li><code>Select-Object -Property Id, Name, WorkingSet, CPU</code> — toont enkel de vier gevraagde eigenschappen</li>
+    </ul>
+    <div class="info-note"><strong>ℹ WorkingSet</strong> — Dit is het geheugengebruik in bytes. <code>WorkingSet64</code> geeft een nauwkeurigere waarde op 64-bit systemen.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 07</div>
+      <div class="task-title">Vraag 5 — Totaal directories in Program Files</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Wat is de oneliner om het totaal van alle directories in de Windows-map "Program Files" weer te geven? Gebruik pure PowerShell cmdlets, parameters volledig uitgeschreven.</em></p>
+    <div class="cmd">Get-ChildItem -Path "C:\Program Files" -Directory | Measure-Object | Select-Object -Property Count</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-ChildItem -Path "C:\Program Files" -Directory</code> — haalt enkel de submappen op (<code>-Directory</code> filtert bestanden weg)</li>
+      <li><code>Measure-Object</code> — telt het aantal objecten in de pipeline en berekent statistieken</li>
+      <li><code>Select-Object -Property Count</code> — toont enkel het aantal (Count)</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Alternatief</strong> — <code>(Get-ChildItem -Path "C:\Program Files" -Directory | Measure-Object).Count</code> geeft enkel het getal terug als waarde, zonder object-wrapper. Beide zijn correcte antwoorden.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-08" onclick="toggleTask('08',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 08</div>
+      <div class="task-title">Vraag 6 — Lokale gebruikers met wachtwoordinfo</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Wat is het PowerShell-commando dat alle lokale gebruikers weergeeft, inclusief hun gebruikersnaam, of de gebruiker al dan niet geactiveerd is, en wanneer de gebruiker voor het laatst het wachtwoord heeft gebruikt? Maak gebruik van een pipeline.</em></p>
+    <div class="cmd">Get-LocalUser | Select-Object -Property Name, Enabled, PasswordLastSet</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-LocalUser</code> — haalt alle lokale gebruikersaccounts op</li>
+      <li><code>Select-Object -Property Name, Enabled, PasswordLastSet</code> — toont de drie gevraagde eigenschappen:</li>
+    </ul>
+    <table><thead><tr><th>Eigenschap</th><th>Wat het is</th></tr></thead><tbody>
+      <tr><td><code>Name</code></td><td>Gebruikersnaam</td></tr>
+      <tr><td><code>Enabled</code></td><td>True/False — of het account actief is</td></tr>
+      <tr><td><code>PasswordLastSet</code></td><td>Datum/tijd van de laatste wachtwoordwijziging</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="task-card" id="tc-09" onclick="toggleTask('09',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-09" onclick="checkTask('09',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 09</div>
+      <div class="task-title">Vraag 7 — Services met "app" + alle objecten</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Geef een lijst van alle services waarin de procesnaam "app" voorkomt en selecteer vervolgens alle objecten. Gebruik een pipeline en gebruik Select-Object * om de objecten te selecteren.</em></p>
+    <div class="cmd">Get-Service -Name "*app*" | Select-Object -Property *</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-Service -Name "*app*"</code> — filtert services waarvan de naam "app" bevat, via wildcards</li>
+      <li><code>Select-Object -Property *</code> — toont <strong>alle</strong> beschikbare eigenschappen van elk service-object (in plaats van enkel Name, Status, DisplayName die standaard worden getoond)</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Verschil</strong> — Zonder <code>Select-Object *</code> verbergt PS automatisch minder relevante eigenschappen. Met <code>*</code> zie je alles, inclusief <code>ServiceType</code>, <code>StartType</code>, <code>BinaryPathName</code>, enz.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-10" onclick="toggleTask('10',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-10" onclick="checkTask('10',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 10</div>
+      <div class="task-title">Vraag 8 — Alle processen gesorteerd op Id</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Wat is de oneliner om een overzicht te hebben van alle processen die op dit ogenblik aan het draaien zijn, gesorteerd op Id? Gebruik pure PowerShell cmdlets, geen aliassen, parameters volledig uitgeschreven.</em></p>
+    <div class="cmd">Get-Process | Sort-Object -Property Id</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-Process</code> — haalt alle actieve processen op (alias <code>ps</code>/<code>gps</code> is verboden)</li>
+      <li><code>Sort-Object -Property Id</code> — sorteert de processen op process-ID in oplopende volgorde (standaard)</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Aflopend sorteren</strong> — Voeg <code>-Descending</code> toe voor omgekeerde volgorde: <code>Sort-Object -Property Id -Descending</code></div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-11" onclick="toggleTask('11',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-11" onclick="checkTask('11',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 11</div>
+      <div class="task-title">Vraag 9 — Complexe pipeline: processen op CPU gefilterd</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Geef het volledige PowerShell-commando dat een lijst van alle processen weergeeft. Toon alleen de objecten Proces-ID, Procesnaam en CPU-gebruik. Sorteer op CPU-gebruik in aflopende volgorde en filter zodat alleen processen met een CPU-gebruik groter dan 10 worden weergegeven.</em></p>
+    <p>Stappen: (1) oplisten → (2) Select-Object → (3) Sort-Object → (4) Where-Object</p>
+    <div class="cmd">Get-Process | Select-Object -Property Id, Name, CPU | Sort-Object -Property CPU -Descending | Where-Object -Property CPU -GT 10</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-Process</code> — alle actieve processen</li>
+      <li><code>Select-Object -Property Id, Name, CPU</code> — beperkt tot de drie gevraagde eigenschappen</li>
+      <li><code>Sort-Object -Property CPU -Descending</code> — sorteert van hoog naar laag CPU-gebruik</li>
+      <li><code>Where-Object -Property CPU -GT 10</code> — filtert enkel processen met CPU-waarde groter dan 10 (<code>-GT</code> = greater than)</li>
+    </ul>
+    <div class="warn-note"><strong>⚠ Volgorde is cruciaal</strong> — De volgorde in de opgave is ook de volgorde in het commando. Select-Object staat vóór Sort-Object en Where-Object — dit is opzettelijk zo opgegeven en moet zo gevolgd worden.</div>
+    <div class="concept-box"><strong>Vergelijkingsoperatoren in PS</strong><code>-EQ</code> (gelijk) · <code>-NE</code> (niet gelijk) · <code>-GT</code> (groter dan) · <code>-LT</code> (kleiner dan) · <code>-GE</code> (groter of gelijk) · <code>-LE</code> (kleiner of gelijk) · <code>-Like</code> (wildcard)</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-12" onclick="toggleTask('12',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-12" onclick="checkTask('12',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 12</div>
+      <div class="task-title">Vraag 10 — Uitgeschakelde lokale gebruikers</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-ps">powershell</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><em>Geef het volledige PowerShell-commando dat alle lokale gebruikers opvraagt en zorg ervoor dat alleen de uitgeschakelde gebruikers worden weergegeven.</em></p>
+    <div class="cmd">Get-LocalUser | Where-Object -Property Enabled -EQ $false</div>
+    <p><strong>Uitleg per onderdeel:</strong></p>
+    <ul>
+      <li><code>Get-LocalUser</code> — alle lokale gebruikersaccounts</li>
+      <li><code>Where-Object -Property Enabled -EQ $false</code> — filtert enkel de accounts waar <code>Enabled</code> gelijk is aan <code>$false</code> (uitgeschakeld)</li>
+    </ul>
+    <div class="info-note"><strong>ℹ $false vs "False"</strong> — <code>$false</code> is een Boolean in PS. Gebruik nooit <code>"False"</code> (string) want dat geeft een fout of onverwacht resultaat bij een Boolean vergelijking.</div>
+  </div>
+</div>
 
 <footer>
-  <p>Windows Advanced · Lab 08 · PowerShell · 8 taken</p>
+  <p>Windows Advanced · Lab 08 · PowerShell · 12 taken</p>
   <button class="reset-btn" onclick="resetLab()">↺ Reset lab</button>
 </footer>
 
 </div>
 <script>
 const STORAGE_KEY = 'win_lab08_state';
-const TOTAL = 8;
+const TOTAL = 12;
 const RANKS = [
-  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',              sub:'Voltooi je eerste taak'},
   {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
-  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'🥇', cls:'rank-gold',     sub:'Goed bezig!'},
   {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
-  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
-  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'💠', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'⚔️',cls:'rank-challenger',sub:'Lab voltooid!'},
 ];
-
-function loadState(){
-  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
-}
-function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
 function checkTask(id,e){
   e.stopPropagation();
-  const s=loadState();
-  s[id]=!s[id];
-  saveState(s);
-  render();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
 }
 function toggleTask(id,e){
   if(e.target.closest('.task-check')) return;
-  const card=document.getElementById('tc-'+id);
-  card.classList.toggle('open');
+  document.getElementById('tc-'+id).classList.toggle('open');
 }
-
 function render(){
-  const s=loadState();
-  let done=0;
+  const s=loadState(); let done=0;
   document.querySelectorAll('.task-card').forEach(card=>{
     const id=card.id.replace('tc-','');
-    const checked=!!s[id];
-    if(checked) done++;
+    const checked=!!s[id]; if(checked) done++;
     card.classList.toggle('done',checked);
     const chk=document.getElementById('chk-'+id);
     if(chk) chk.classList.toggle('checked',checked);
   });
-  // pips
   let pipIdx=1;
   document.querySelectorAll('.task-card').forEach(card=>{
-    const id=card.id.replace('tc-','');
     const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
     if(pip) pip.classList.toggle('done',!!s[id]);
     pipIdx++;
   });
   const pct=TOTAL>0?(done/TOTAL)*100:0;
-  const bf=document.getElementById('bar-fill');
-  if(bf) bf.style.width=pct+'%';
-  const bc=document.getElementById('bar-count');
-  if(bc) bc.textContent=done+' / '+TOTAL;
-  const pc=document.getElementById('ps-count');
-  if(pc) pc.textContent=done;
-  // rank
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
   let ri=0;
   for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
   const r=RANKS[ri];
@@ -378,40 +491,40 @@ function render(){
   const ri2=document.getElementById('ps-rank-icon');
   const rn=document.getElementById('ps-rank-name');
   const rs=document.getElementById('ps-rank-sub');
-  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
   if(ri2) ri2.textContent=r.icon;
   if(rn) rn.textContent=r.name;
   if(rs) rs.textContent=r.sub;
-  // next rank
   const nxt=document.getElementById('ps-next');
   if(nxt){
     if(ri<RANKS.length-1){
-      const nr=RANKS[ri+1];
-      const need=nr.min-done;
+      const nr=RANKS[ri+1]; const need=nr.min-done;
       nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
     } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
   }
 }
 function resetLab(){
   if(!confirm('Voortgang van dit lab wissen?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+  localStorage.removeItem(STORAGE_KEY); render();
 }
-// copy buttons — capture the clean command text BEFORE adding the button,
-// so the button label can never leak into the clipboard.
-document.querySelectorAll('.cmd').forEach(block=>{
-  const original=block.innerText.trim();
-  const btn=document.createElement('button');
-  btn.className='copy-btn'; btn.textContent='kopieer';
-  btn.onclick=e=>{
-    e.stopPropagation();
-    navigator.clipboard.writeText(original).then(()=>{
-      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
-    });
-  };
-  block.appendChild(btn);
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='✓ Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
 });
-render();
 </script>
 </body>
 </html>

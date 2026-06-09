@@ -110,7 +110,6 @@
 </head>
 <body>
 <div class="container">
-
 <nav class="lab-nav">
   <a class="home-btn" href="windows_index.html">⌂ Index</a>
   <a class="nav-side" href="win_lab_gpo.html">← Vorige</a>
@@ -121,9 +120,13 @@
   <div class="ps-label">Voortgang</div>
   <div class="ps-count-row">
     <span class="ps-count" id="ps-count">0</span>
-    <span class="ps-total">/ 5</span>
+    <span class="ps-total">/ 13</span>
   </div>
-  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div></div>
+  <div class="ps-pips" id="ps-pips">
+    <div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div>
+    <div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div>
+    <div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div><div class="ps-pip" id="pip-9"></div><div class="ps-pip" id="pip-10"></div><div class="ps-pip" id="pip-11"></div><div class="ps-pip" id="pip-12"></div><div class="ps-pip" id="pip-13"></div>
+  </div>
   <div class="ps-rank-card" id="ps-rank-card">
     <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
     <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
@@ -135,150 +138,484 @@
 <header>
   <div class="label">Lab 05 · Windows Advanced</div>
   <h1>Domain — Replication</h1>
-  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+  <p>Voeg een tweede Domain Controller toe aan het bestaande domein voor redundantie en failover. Begrijp hoe AD-replicatie werkt en hoe je die verifieert.</p>
 </header>
 
 <div class="progress-bar-wrap">
   <span>Voortgang</span>
   <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
-  <span class="progress-count" id="bar-count">0 / 5</span>
+  <span class="progress-count" id="bar-count">0 / 13</span>
 </div>
 
-<div class="section-title">Theorie Replicatie</div>
-    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 01</div>
-          <div class="task-title">Multi-master replicatie begrijpen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>In Active Directory kan <strong>elke DC wijzigingen doorvoeren</strong>. Dit heet multi-master replicatie — er is geen single primary server nodig.</p><div class="concept-box"><strong>Hoe werkt het?</strong>Elke wijziging op een DC wordt lokaal opgeslagen in NTDS.dit. Daarna stuurt de DC een replicatieverzoek naar zijn partners (pull-model). DC's gebruiken USN (Update Sequence Numbers) om bij te houden welke wijzigingen nog gesynchroniseerd moeten worden.</div><table><thead><tr><th>Term</th><th>Uitleg</th></tr></thead><tbody><tr><td>USN</td><td>Update Sequence Number — uniek volgnummer per wijziging</td></tr><tr><td>GUID</td><td>Globale unieke ID van een DC</td></tr><tr><td>KCC</td><td>Knowledge Consistency Checker — bepaalt replicatietopologie automatisch</td></tr><tr><td>repadmin</td><td>CLI-tool voor replicatiebeheer en -diagnose</td></tr></tbody></table><div class="info-note"><strong>ℹ Info</strong> — Standaard repliceert AD binnen een site elke 15 seconden, tussen sites elke 15 minuten (configureerbaar).</div>
-      </div>
+<div class="section-title">Theorie · Replicatie</div>
+
+<div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 01</div>
+      <div class="task-title">Multi-master replicatie begrijpen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 02</div>
-          <div class="task-title">Global Catalog Server en FSMO-rollen kennen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>De <strong>Global Catalog (GC)</strong> is een DC die een gedeeltelijke kopie bijhoudt van alle objecten in het volledige AD-forest.</p><ul><li>Bevat de meest gezochte attributen van elk object</li><li>Noodzakelijk voor Universal Group membership in multi-domein forests</li><li>Standaard is de eerste DC automatisch GC-server</li></ul><p><strong>FSMO-rollen</strong> (Flexible Single Master Operations) — 5 speciale rollen die slechts op één DC tegelijk mogen staan:</p><table><thead><tr><th>FSMO-rol</th><th>Functie</th><th>Scope</th></tr></thead><tbody><tr><td>Schema Master</td><td>Wijzigingen aan AD-schema</td><td>Forest</td></tr><tr><td>Domain Naming Master</td><td>Domeinen toevoegen/verwijderen</td><td>Forest</td></tr><tr><td>PDC Emulator</td><td>Tijdsynchronisatie, wachtwoord policies</td><td>Domein</td></tr><tr><td>RID Master</td><td>Unieke SIDs toewijzen aan objecten</td><td>Domein</td></tr><tr><td>Infrastructure Master</td><td>Verwijzingen naar objecten in andere domeinen</td><td>Domein</td></tr></tbody></table><div class="cmd">netdom query fsmo</div><p>Toont welke DC welke FSMO-rollen heeft.</p>
-      </div>
-    </div><div class="section-title">AD Failover configureren</div>
-    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 03</div>
-          <div class="task-title">Tweede Domain Controller toevoegen (AD-failover)</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Een tweede DC toevoegen zorgt voor redundantie — als DC1 uitvalt, blijft het domein beschikbaar.</p><p><strong>Vereisten voor DC2:</strong></p><ul><li>Nieuwe Windows Server VM met naam <code>WINADV-DC2</code></li><li>Statisch IP in hetzelfde subnet</li><li>DNS verwijst naar DC1</li></ul><p><strong>Joinen aan bestaand domein:</strong></p><ul><li>Installeer AD DS-rol op DC2 (zelfde stappen als Lab 02)</li><li>Promoveer: kies <strong>"Add a domain controller to an existing domain"</strong></li><li>Domein: <code>pxldigital.local</code></li><li>Gebruik domain admin credentials</li><li>Vink aan: DNS Server, Global Catalog</li><li>DSRM-wachtwoord instellen → Install</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Na herstart: controleer in ADUC of DC2 zichtbaar is onder Domain Controllers.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>In Active Directory kan <strong>elke DC wijzigingen doorvoeren</strong>. Dit heet multi-master replicatie — er is geen single primary server nodig.</p>
+    <div class="concept-box"><strong>Hoe werkt het?</strong>Elke wijziging op een DC wordt lokaal opgeslagen in NTDS.dit. Daarna stuurt de DC een replicatieverzoek naar zijn partners (pull-model). DC's gebruiken USN (Update Sequence Numbers) om bij te houden welke wijzigingen nog gesynchroniseerd moeten worden.</div>
+    <table><thead><tr><th>Term</th><th>Uitleg</th></tr></thead><tbody>
+      <tr><td>USN</td><td>Update Sequence Number — uniek volgnummer per wijziging op een DC</td></tr>
+      <tr><td>KCC</td><td>Knowledge Consistency Checker — bepaalt replicatietopologie automatisch</td></tr>
+      <tr><td>repadmin</td><td>CLI-tool voor replicatiebeheer en -diagnose</td></tr>
+    </tbody></table>
+    <div class="info-note"><strong>ℹ Info</strong> — Standaard repliceert AD binnen een site elke 15 seconden, tussen sites elke 15 minuten (configureerbaar via Sites and Services).</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 02</div>
+      <div class="task-title">Global Catalog Server en FSMO-rollen kennen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 04</div>
-          <div class="task-title">Replicatie verifiëren met repadmin</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">test</span><span class="tag tag-d">debug</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Gebruik <code>repadmin</code> om de replicatiestatus te controleren.</p><div class="cmd">repadmin /replsummary</div><p>Geeft een samenvatting van de replicatiestatus per DC.</p><div class="cmd">repadmin /showrepl</div><p>Toont gedetailleerde replicatiepartners en laatste synchronisatietijden.</p><div class="cmd">repadmin /syncall /AdeP</div><p>Forceert onmiddellijke replicatie van alle partities naar alle partners.</p><div class="verify-block"><strong>✔ Verificatie</strong>Geen fouten in de output? Replicatie werkt correct. Maak een testgebruiker aan op DC1 en controleer of die na synchronisatie ook op DC2 zichtbaar is.</div>
-      </div>
-    </div><div class="section-title">AD Delegation</div>
-    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 05</div>
-          <div class="task-title">Delegatie instellen op een OU</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Via delegatie geef je een gebruiker beperkte beheertaken in AD, zonder volledige Domain Admin-rechten.</p><p>Voorbeelden:</p><ul><li>Helpdesk mag wachtwoorden resetten in OU Studenten</li><li>Junior admin mag computers joinen aan het domein</li><li>Teamleider mag users aanmaken in zijn OU</li></ul><p><strong>Delegatie instellen:</strong></p><ul><li>In ADUC: rechtsklik op de OU waarop je wil delegeren → "Delegate Control"</li><li>Klik Next → Add → selecteer de gebruiker of groep</li><li>Kies een vooraf gedefinieerde taak (bijv. "Reset user passwords")</li><li>Of kies "Create a custom task" voor specifieke controle</li><li>Finish</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — Delegatie werkt op OU-niveau. Gebruikers buiten die OU vallen niet onder de gedelegeerde rechten.</div><div class="info-note"><strong>ℹ Info</strong> — Delegatie lost het probleem op van "te veel Domain Admins" — principe van least privilege.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>De <strong>Global Catalog (GC)</strong> is een DC die een gedeeltelijke kopie bijhoudt van alle objecten in het volledige AD-forest. Noodzakelijk voor inloggen en Universal Group membership.</p>
+    <p><strong>FSMO-rollen</strong> — 5 speciale rollen die slechts op één DC tegelijk mogen staan:</p>
+    <table><thead><tr><th>FSMO-rol</th><th>Functie</th><th>Scope</th></tr></thead><tbody>
+      <tr><td>Schema Master</td><td>Wijzigingen aan AD-schema</td><td>Forest</td></tr>
+      <tr><td>Domain Naming Master</td><td>Domeinen toevoegen/verwijderen</td><td>Forest</td></tr>
+      <tr><td>PDC Emulator</td><td>Tijdsynchronisatie, wachtwoord policies</td><td>Domein</td></tr>
+      <tr><td>RID Master</td><td>Unieke SIDs toewijzen aan objecten</td><td>Domein</td></tr>
+      <tr><td>Infrastructure Master</td><td>Verwijzingen naar objecten in andere domeinen</td><td>Domein</td></tr>
+    </tbody></table>
+    <div class="cmd">netdom query fsmo</div>
+    <p>Toont welke DC welke FSMO-rollen heeft. Na het toevoegen van een tweede DC staan alle rollen nog op DC1 — dit is normaal.</p>
+  </div>
+</div>
+
+<div class="section-title">Tweede Domain Controller</div>
+
+<div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 03</div>
+      <div class="task-title">WINADV-DD2 aanmaken en joinen aan het domein</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span><span class="tag tag-c">config</span></div>
     </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak een nieuwe Windows Server 2025 VM aan met de naam <code>WINADV-DD2</code> en voeg die toe aan het domein <code>pxldigital.local</code>.</p>
+    <p><strong>VM aanmaken:</strong></p>
+    <ul>
+      <li>Installeer Windows Server 2025 (zelfde procedure als Lab 01)</li>
+      <li>Geef de server de naam <code>WINADV-DD2</code></li>
+      <li>Stel een statisch IP in hetzelfde subnet als DC1</li>
+      <li>DNS-server: IP-adres van <code>WINADV-DC1XX</code> (DC1 is de DNS-server)</li>
+    </ul>
+    <p><strong>Joinen aan het domein:</strong></p>
+    <ul>
+      <li>Settings → System → About → "Domain or workgroup" → Change → Domain: <code>pxldigital.local</code></li>
+      <li>    <p><strong>Via PowerShell (op WINADV-DD2):</strong></p>
+    <div class="cmd">Add-Computer -DomainName "pxldigital.local" -Credential (Get-Credential) -Restart</div>
+    Gebruik domain Administrator-credentials</li>
+      <li>Herstart na het joinen</li>
+    </ul>
+    <p><strong>Juiste OU:</strong></p>
+    <ul>
+      <li>Na het joinen staat de server standaard in de container <code>Computers</code></li>
+      <li>    <p><strong>Via PowerShell (op DC1):</strong></p>
+    <div class="cmd">$dc2 = Get-ADComputer "WINADV-DD2"
+Move-ADObject -Identity $dc2 -TargetPath "OU=Domain Controllers,DC=pxldigital,DC=local"</div>
+    Open ADUC op DC1 → verplaats <code>WINADV-DD2</code> naar de OU <strong>Domain Controllers</strong></li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In ADUC op DC1 is <code>WINADV-DD2</code> zichtbaar in de OU Domain Controllers.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 04</div>
+      <div class="task-title">WINADV-DD2 promoveren als additionele Domain Controller</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Installeer de AD DS-rol op DD2 en promoveer de server als tweede DC in het bestaande domein.</p>
+    <p><strong>AD DS-rol installeren:</strong></p>
+    <ul>
+      <li>Server Manager → Manage → Add Roles and Features</li>
+      <li>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Install-WindowsFeature AD-Domain-Services -IncludeManagementTools</div>
+    Vink aan: <strong>Active Directory Domain Services</strong> (+ DNS Server)</li>
+      <li>Install → wacht tot klaar</li>
+    </ul>
+    <p><strong>Promoveren als additionele DC:</strong></p>
+    <ul>
+      <li>Klik op de gele waarschuwing → "Promote this server to a domain controller"</li>
+      <li>Kies: <strong>Add a domain controller to an existing domain</strong></li>
+      <li>Domein: <code>pxldigital.local</code> — gebruik domain admin credentials</li>
+      <li>Vink aan: <strong>DNS Server</strong>, <strong>Global Catalog</strong></li>
+      <li>    <p><strong>Via PowerShell — promoveren als additionele DC:</strong></p>
+    <div class="cmd">Install-ADDSDomainController `
+  -DomainName "pxldigital.local" `
+  -InstallDns `
+  -Credential (Get-Credential) `
+  -SafeModeAdministratorPassword (ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force) `
+  -Force</div>
+    Stel een DSRM-wachtwoord in → Next → Install</li>
+      <li>Server herstart automatisch na promotie</li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In ADUC op DC1: <code>WINADV-DD2</code> verschijnt in de OU Domain Controllers als volwaardige DC. Replicatie start automatisch.</div>
+  </div>
+</div>
+
+<div class="section-title">Replicatie verifiëren</div>
+
+<div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 05</div>
+      <div class="task-title">Replicatie verifiëren met repadmin</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">test</span><span class="tag tag-d">debug</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Gebruik <code>repadmin</code> op DC1 om de replicatiestatus te controleren.</p>
+    <div class="cmd">repadmin /replsummary</div>
+    <p>Geeft een samenvatting van de replicatiestatus per DC — ideaal voor een snelle OK/NOK check.</p>
+    <div class="cmd">repadmin /showrepl</div>
+    <p>Toont gedetailleerde replicatiepartners en de tijdstempel van de laatste synchronisatie.</p>
+    <div class="cmd">repadmin /syncall /AdeP</div>
+    <p>Forceert onmiddellijke replicatie van alle partities naar alle partners. Gebruik dit na een configuratiewijziging om niet te wachten op het standaard interval.</p>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Geen fouten in de output van replsummary. Maak een testgebruiker aan op DC1 en controleer of die na een korte wacht of na <code>/syncall</code> ook zichtbaar is op DD2.</div>
+  </div>
+</div>
+
+
+<div class="section-title">IT-afdeling opzetten</div>
+
+<div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 06</div>
+      <div class="task-title">OU IT aanmaken met gebruikers en groepen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>De hogeschool neemt IT-medewerkers aan. Maak de structuur aan in AD.</p>
+    <p><strong>OU aanmaken:</strong></p>
+    <ul>
+      <li>In ADUC: rechtsklik op <code>OU=Users</code> → New → Organizational Unit → naam: <code>IT</code></li>
+    </ul>
+    <p><strong>Gebruikers aanmaken in OU IT:</strong></p>
+    <table><thead><tr><th>Naam</th><th>Logon name</th></tr></thead><tbody>
+      <tr><td>Lars van Dijk</td><td><code>lars.van.dijk</code></td></tr>
+      <tr><td>Fatima El Amrani</td><td><code>fatima.el.amrani</code></td></tr>
+      <tr><td>Thomas Jansen</td><td><code>thomas.jansen</code></td></tr>
+    </tbody></table>
+    <p><strong>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">$pw = ConvertTo-SecureString "TestTest2025" -AsPlainText -Force
+$it = "OU=IT,OU=Users,DC=pxldigital,DC=local"
+New-ADOrganizationalUnit -Name "IT" -Path "OU=Users,DC=pxldigital,DC=local"
+New-ADUser -Name "Lars van Dijk"    -SamAccountName "lars.van.dijk"    -Path $it -AccountPassword $pw -Enabled $true
+New-ADUser -Name "Fatima El Amrani" -SamAccountName "fatima.el.amrani" -Path $it -AccountPassword $pw -Enabled $true
+New-ADUser -Name "Thomas Jansen"    -SamAccountName "thomas.jansen"    -Path $it -AccountPassword $pw -Enabled $true
+$grp = "OU=Groups,DC=pxldigital,DC=local"
+New-ADGroup -Name "GL_IT" -GroupScope Global      -GroupCategory Security -Path $grp
+New-ADGroup -Name "DL_IT" -GroupScope DomainLocal -GroupCategory Security -Path $grp
+Add-ADGroupMember -Identity "GL_IT" -Members "lars.van.dijk","fatima.el.amrani","thomas.jansen"
+Add-ADGroupMember -Identity "DL_IT" -Members "GL_IT"</div>
+    Groepen aanmaken in OU Groups (AGDLP):</strong></p>
+    <ul>
+      <li>Maak <code>GL_IT</code> (Global Security) aan in <code>OU=Groups</code></li>
+      <li>Maak <code>DL_IT</code> (Domain Local Security) aan in <code>OU=Groups</code></li>
+      <li>Voeg Lars, Fatima en Thomas toe als member van <code>GL_IT</code></li>
+      <li>Voeg <code>GL_IT</code> toe als member van <code>DL_IT</code></li>
+    </ul>
+  </div>
+</div>
+
+<div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 07</div>
+      <div class="task-title">Lars als Domain Admin + Allow log on locally op DC</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-a">security</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>Lars aanduiden als Domain Administrator:</strong></p>
+    <ul>
+      <li>ADUC → Lars van Dijk → Properties → Member Of → Add → <code>Domain Admins</code></li>
+    </ul>
+    <p><strong>IT-medewerkers toestaan in te loggen op Domain Controllers:</strong></p>
+    <ul>
+      <li>GPMC → Domain Controllers → <strong>Default Domain Controllers Policy</strong> → Edit</li>
+      <li>Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → <strong>User Rights Assignment</strong></li>
+      <li>Dubbelklik <strong>Allow log on locally</strong> → voeg <code>DL_IT</code> toe</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Waarom DL_IT?</strong> — Als later meer IT-medewerkers komen, voeg je ze toe aan GL_IT en ze krijgen automatisch DC-toegang zonder de GPO opnieuw te wijzigen.</div>
+  </div>
+</div>
+
+<div class="section-title">Helpdesk Delegation</div>
+
+<div class="task-card" id="tc-08" onclick="toggleTask('08',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 08</div>
+      <div class="task-title">Thomas — helpdesk rechten via delegation</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Thomas Jansen bemant de helpdesk en moet wachtwoorden kunnen resetten en accounts kunnen unlocken voor alle domeingebruikers. Hij mag <strong>geen</strong> lid worden van een ingebouwde standaard security groep.</p>
+    <p><strong>Aanpak via delegation met een aparte groep:</strong></p>
+    <ul>
+      <li>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">New-ADGroup -Name "GL_Helpdesk" -GroupScope Global -GroupCategory Security -Path "OU=Groups,DC=pxldigital,DC=local"
+Add-ADGroupMember -Identity "GL_Helpdesk" -Members "thomas.jansen"</div>
+    Maak een nieuwe groep aan in <code>OU=Groups</code>: <code>GL_Helpdesk</code> (Global Security)</li>
+      <li>Voeg Thomas toe als member van <code>GL_Helpdesk</code></li>
+      <li>ADUC → rechtsklik op <code>pxldigital.local</code> → <strong>Delegate Control</strong></li>
+      <li>Voeg <code>GL_Helpdesk</code> toe → kies:</li>
+    </ul>
+    <ul>
+      <li><strong>Reset user passwords and force password change at next logon</strong></li>
+      <li><strong>Read all user information</strong></li>
+    </ul>
+    <p>Voor account unlock: kies "Create a custom task" → User objects → vink <strong>Write lockoutTime</strong> aan.</p>
+    <div class="warn-note"><strong>⚠ Let op</strong> — Delegeer op <strong>domeinniveau</strong> zodat Thomas rechten heeft voor alle users in alle OUs.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-09" onclick="toggleTask('09',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-09" onclick="checkTask('09',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 09</div>
+      <div class="task-title">Fatima en Thomas — groepsbeheer in OU Groups</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Fatima en Thomas worden verantwoordelijk voor groepsbeheer — leden toevoegen/verwijderen aan groepen in <code>OU=Groups</code>.</p>
+    <ul>
+      <li>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">New-ADGroup -Name "GL_GroupManagers" -GroupScope Global -GroupCategory Security -Path "OU=Groups,DC=pxldigital,DC=local"
+Add-ADGroupMember -Identity "GL_GroupManagers" -Members "fatima.el.amrani","thomas.jansen"</div>
+    Maak een nieuwe groep aan: <code>GL_GroupManagers</code> in <code>OU=Groups</code></li>
+      <li>Voeg Fatima en Thomas toe als member</li>
+      <li>ADUC → rechtsklik op <code>OU=Groups</code> → <strong>Delegate Control</strong></li>
+      <li>Voeg <code>GL_GroupManagers</code> toe → "Create a custom task"</li>
+      <li>Selecteer: <strong>Group objects</strong> → vink <strong>Read</strong> en <strong>Write Member</strong> aan</li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Ingelogd als Fatima of Thomas: member toevoegen aan groep in OU=Groups lukt. Hetzelfde in een andere OU mislukt.</div>
+  </div>
+</div>
+
+<div class="section-title">Service Account &amp; Domain Join</div>
+
+<div class="task-card" id="tc-10" onclick="toggleTask('10',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-10" onclick="checkTask('10',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 10</div>
+      <div class="task-title">Service account aanmaken voor imaging + WINADV-PC2 joinen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-a">security</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>De imaging-tool heeft een service account nodig met enkel het recht om computers aan het domein te joinen — niet meer. Het account mag nergens interactief aanmelden.</p>
+    <p><strong>Service account aanmaken:</strong></p>
+    <ul>
+      <li>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">New-ADUser -Name "svc_domainjoin" -SamAccountName "svc_domainjoin" `
+  -Path "OU=IT,OU=Users,DC=pxldigital,DC=local" `
+  -AccountPassword (ConvertTo-SecureString "P@ssw0rd!2025" -AsPlainText -Force) `
+  -PasswordNeverExpires $true -Enabled $true</div>
+    Maak gebruiker aan: <code>svc_domainjoin</code> — wachtwoord complex, "Password never expires"</li>
+    </ul>
+    <p><strong>Custom delegation op OU Computers:</strong></p>
+    <ul>
+      <li>ADUC → rechtsklik op <code>OU=Computers</code> → Delegate Control → voeg <code>svc_domainjoin</code> toe</li>
+      <li>"Create a custom task" → <strong>Computer objects</strong> → vink <strong>Create selected objects in this folder</strong> aan</li>
+    </ul>
+    <p><strong>GPO om interactief aanmelden te blokkeren:</strong></p>
+    <ul>
+      <li>Maak GPO aan: <code>GPO_ServiceAccount_Restrictions</code> → koppel aan het domein</li>
+      <li>Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → User Rights Assignment</li>
+      <li>Voeg <code>svc_domainjoin</code> toe aan:</li>
+    </ul>
+    <table><thead><tr><th>Setting</th><th>Effect</th></tr></thead><tbody>
+      <tr><td>Deny log on locally</td><td>Geen interactief inloggen</td></tr>
+      <tr><td>Deny log on through Remote Desktop Services</td><td>Geen RDP-toegang</td></tr>
+      <tr><td>Deny access to this computer from the network</td><td>Geen netwerktoegang</td></tr>
+    </tbody></table>
+    <p><strong>WINADV-PC2 joinen via het service account:</strong></p>
+    <ul>
+      <li>Installeer nieuwe Windows 11 VM met naam <code>WINADV-PC2</code></li>
+      <li>Join aan <code>pxldigital.local</code> met credentials van <code>svc_domainjoin</code></li>
+      <li>Ga op DC1 naar <strong>Windows Security Event Log</strong> → zoek event ID <strong>4741</strong></li>
+      <li>Controleer of het event verwijst naar <code>WINADV-PC2</code></li>
+    </ul>
+    <div class="info-note"><strong>ℹ Event ID 4741</strong> — "A computer account was created" — wordt gelogd op de DC die het computerobject aanmaakte, met vermelding van wie het aanmaakte (svc_domainjoin).</div>
+  </div>
+</div>
+
+<div class="section-title">GPO Delegation</div>
+
+<div class="task-card" id="tc-11" onclick="toggleTask('11',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-11" onclick="checkTask('11',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 11</div>
+      <div class="task-title">Fatima — GPO's aanmaken en linken via delegation</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Fatima moet GPO's kunnen aanmaken en linken op domeinniveau. Dit zijn twee aparte permissies.</p>
+    <p><strong>Groep aanmaken:</strong></p>
+    <ul>
+      <li>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">New-ADGroup -Name "GL_GPO_Managers" -GroupScope Global -GroupCategory Security -Path "OU=Groups,DC=pxldigital,DC=local"
+Add-ADGroupMember -Identity "GL_GPO_Managers" -Members "fatima.el.amrani"
+# GPO link-permissie instellen:
+New-GPO -Name "TestGPO" | Remove-GPO  # vervang door echte GPO
+# Delegation via GPMC GUI — geen directe PS-cmdlet beschikbaar voor GPO-delegation</div>
+    Maak <code>GL_GPO_Managers</code> aan in <code>OU=Groups</code> → voeg Fatima toe als member</li>
+    </ul>
+    <p><strong>GPO's mogen linken op domeinniveau:</strong></p>
+    <ul>
+      <li>GPMC → rechtsklik op <code>pxldigital.local</code> → <strong>Delegate</strong></li>
+      <li>Voeg <code>GL_GPO_Managers</code> toe → permissie: <strong>Link GPOs</strong></li>
+    </ul>
+    <p><strong>GPO's mogen aanmaken:</strong></p>
+    <ul>
+      <li>GPMC → klik op map <strong>Group Policy Objects</strong> → tabblad <strong>Delegation</strong> → Add</li>
+      <li>Voeg <code>GL_GPO_Managers</code> toe → permissie: <strong>Edit settings, delete, modify security</strong></li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Ingelogd als Fatima: nieuwe GPO aanmaken lukt. Ingelogd als Thomas: mislukt — Thomas heeft deze rechten niet.</div>
+    <div class="warn-note"><strong>⚠ Let op</strong> — Zonder link-permissie kan een GPO wel worden aangemaakt maar nooit worden toegepast. Beide permissies zijn nodig.</div>
+  </div>
+</div>
+
+<div class="section-title">Theorie · Delegation</div>
+
+<div class="task-card" id="tc-12" onclick="toggleTask('12',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-12" onclick="checkTask('12',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 12</div>
+      <div class="task-title">Delegation en Least Privilege begrijpen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Delegatie laat toe om specifieke beheertaken te geven aan gebruikers of groepen, zonder hen volledige Domain Admin-rechten te geven. Dit is de praktische toepassing van het <strong>principe van least privilege</strong>.</p>
+    <div class="concept-box"><strong>Least Privilege</strong>Geef elke gebruiker of service enkel de minimale rechten die nodig zijn voor hun taak. Meer rechten = groter aanvalsoppervlak bij een compromis.</div>
+    <table><thead><tr><th>Scenario</th><th>Oplossing</th></tr></thead><tbody>
+      <tr><td>Helpdesk reset wachtwoorden</td><td>Delegation op domein: Reset passwords</td></tr>
+      <tr><td>IT-admin logt in op DC</td><td>DL-groep toevoegen aan GPO User Rights</td></tr>
+      <tr><td>Imaging-tool joint computers</td><td>Service account met custom delegation op Computers OU</td></tr>
+      <tr><td>Medewerker maakt GPOs aan</td><td>Groep toevoegen aan GPMC Delegation tabblad</td></tr>
+    </tbody></table>
+    <div class="warn-note"><strong>⚠ Delegeer altijd aan een groep</strong> — nooit aan een individuele gebruiker. Zo kun je later mensen toevoegen zonder de delegation opnieuw in te stellen.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-13" onclick="toggleTask('13',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-13" onclick="checkTask('13',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 13</div>
+      <div class="task-title">Service accounts en security best practices</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span><span class="tag tag-a">security</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Een <strong>service account</strong> is een gebruikersaccount dat niet door een mens wordt gebruikt, maar door een applicatie of geautomatiseerd proces.</p>
+    <table><thead><tr><th>Best practice</th><th>Waarom</th></tr></thead><tbody>
+      <tr><td>Complexe wachtwoorden, nooit verlopen</td><td>Services crashen bij verlopen wachtwoord</td></tr>
+      <tr><td>Interactief aanmelden blokkeren</td><td>Voorkomt misbruik als credentials lekken</td></tr>
+      <tr><td>Minimale rechten via delegation</td><td>Least privilege — service doet enkel wat nodig is</td></tr>
+      <tr><td>Aparte OU voor service accounts</td><td>Duidelijk onderscheid, makkelijker te beheren</td></tr>
+      <tr><td>Naam duidelijk prefixen (<code>svc_</code>)</td><td>Direct herkenbaar als service account in logs</td></tr>
+    </tbody></table>
+    <div class="concept-box"><strong>Event ID 4741</strong>Elke keer dat een computerobject wordt aangemaakt in AD, logt Windows dit event op de betrokken DC. Het bevat wie het aanmaakte en voor welke computer — essentieel voor audit en troubleshooting.</div>
+  </div>
+</div>
 
 <footer>
-  <p>Windows Advanced · Lab 05 · Domain — Replication · 5 taken</p>
+  <p>Windows Advanced · Lab 05 · Domain — Replication · 13 taken</p>
   <button class="reset-btn" onclick="resetLab()">↺ Reset lab</button>
 </footer>
 
 </div>
 <script>
 const STORAGE_KEY = 'win_lab05_state';
-const TOTAL = 5;
+const TOTAL = 13;
 const RANKS = [
-  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',              sub:'Voltooi je eerste taak'},
   {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
-  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'🥇', cls:'rank-gold',     sub:'Goed bezig!'},
   {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
-  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
-  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'💠', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'⚔️',cls:'rank-challenger',sub:'Lab voltooid!'},
 ];
-
-function loadState(){
-  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
-}
-function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
 function checkTask(id,e){
   e.stopPropagation();
-  const s=loadState();
-  s[id]=!s[id];
-  saveState(s);
-  render();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
 }
 function toggleTask(id,e){
   if(e.target.closest('.task-check')) return;
-  const card=document.getElementById('tc-'+id);
-  card.classList.toggle('open');
+  document.getElementById('tc-'+id).classList.toggle('open');
 }
-
 function render(){
-  const s=loadState();
-  let done=0;
+  const s=loadState(); let done=0;
   document.querySelectorAll('.task-card').forEach(card=>{
     const id=card.id.replace('tc-','');
-    const checked=!!s[id];
-    if(checked) done++;
+    const checked=!!s[id]; if(checked) done++;
     card.classList.toggle('done',checked);
     const chk=document.getElementById('chk-'+id);
     if(chk) chk.classList.toggle('checked',checked);
   });
-  // pips
   let pipIdx=1;
   document.querySelectorAll('.task-card').forEach(card=>{
-    const id=card.id.replace('tc-','');
     const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
     if(pip) pip.classList.toggle('done',!!s[id]);
     pipIdx++;
   });
   const pct=TOTAL>0?(done/TOTAL)*100:0;
-  const bf=document.getElementById('bar-fill');
-  if(bf) bf.style.width=pct+'%';
-  const bc=document.getElementById('bar-count');
-  if(bc) bc.textContent=done+' / '+TOTAL;
-  const pc=document.getElementById('ps-count');
-  if(pc) pc.textContent=done;
-  // rank
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
   let ri=0;
   for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
   const r=RANKS[ri];
@@ -286,40 +623,40 @@ function render(){
   const ri2=document.getElementById('ps-rank-icon');
   const rn=document.getElementById('ps-rank-name');
   const rs=document.getElementById('ps-rank-sub');
-  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
   if(ri2) ri2.textContent=r.icon;
   if(rn) rn.textContent=r.name;
   if(rs) rs.textContent=r.sub;
-  // next rank
   const nxt=document.getElementById('ps-next');
   if(nxt){
     if(ri<RANKS.length-1){
-      const nr=RANKS[ri+1];
-      const need=nr.min-done;
+      const nr=RANKS[ri+1]; const need=nr.min-done;
       nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
     } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
   }
 }
 function resetLab(){
   if(!confirm('Voortgang van dit lab wissen?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+  localStorage.removeItem(STORAGE_KEY); render();
 }
-// copy buttons — capture the clean command text BEFORE adding the button,
-// so the button label can never leak into the clipboard.
-document.querySelectorAll('.cmd').forEach(block=>{
-  const original=block.innerText.trim();
-  const btn=document.createElement('button');
-  btn.className='copy-btn'; btn.textContent='kopieer';
-  btn.onclick=e=>{
-    e.stopPropagation();
-    navigator.clipboard.writeText(original).then(()=>{
-      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
-    });
-  };
-  block.appendChild(btn);
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='✓ Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
 });
-render();
 </script>
 </body>
 </html>

@@ -110,7 +110,6 @@
 </head>
 <body>
 <div class="container">
-
 <nav class="lab-nav">
   <a class="home-btn" href="windows_index.html">⌂ Index</a>
   <a class="nav-side" href="win_lab_replication.html">← Vorige</a>
@@ -123,7 +122,12 @@
     <span class="ps-count" id="ps-count">0</span>
     <span class="ps-total">/ 7</span>
   </div>
-  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div></div>
+  <div class="ps-pips" id="ps-pips">
+    <div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div>
+    <div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div>
+    <div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div>
+    <div class="ps-pip" id="pip-7"></div>
+  </div>
   <div class="ps-rank-card" id="ps-rank-card">
     <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
     <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
@@ -134,8 +138,8 @@
 
 <header>
   <div class="label">Lab 06 · Windows Advanced</div>
-  <h1>Hybrid</h1>
-  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+  <h1>Hybrid — Entra &amp; Intune</h1>
+  <p>Synchroniseer Active Directory met Microsoft Entra via Entra Connect, configureer Hybrid Join voor automatische Intune-registratie en vervang GPO-restricties door Intune-policies.</p>
 </header>
 
 <div class="progress-bar-wrap">
@@ -144,108 +148,267 @@
   <span class="progress-count" id="bar-count">0 / 7</span>
 </div>
 
-<div class="section-title">Theorie Hybrid</div>
-    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 01</div>
-          <div class="task-title">Hybride identiteitsmodel begrijpen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Bedrijven beheren gebruikers in één van drie modellen:</p><table><thead><tr><th>Model</th><th>Beschrijving</th><th>Aandeel (2026)</th></tr></thead><tbody><tr><td>On-Premises</td><td>Alle beheer via lokale DC's. M365 optioneel maar niet gesynchroniseerd.</td><td>~15%</td></tr><tr><td>Hybrid</td><td>On-premises DC + Microsoft Entra ID gesynchroniseerd. Meest voorkomend.</td><td>~55%</td></tr><tr><td>Cloud-Only</td><td>Geen lokale servers. Alles via Entra ID en Intune.</td><td>~30%</td></tr></tbody></table><div class="concept-box"><strong>Microsoft Entra ID</strong>Vroeger "Azure Active Directory" — de cloud directory service van Microsoft. Beheert identiteiten voor M365, Azure en andere SaaS-apps.</div><p>In een hybride omgeving synchroniseer je on-premises AD-objecten naar Entra ID. Gebruikers hebben dan één identiteit voor zowel lokale als cloud-diensten.</p>
-      </div>
-    </div><div class="section-title">Domain Verificatie</div>
-    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 02</div>
-          <div class="task-title">Custom domein toevoegen en verifiëren in Entra ID</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Voor synchronisatie moet het UPN-suffix van je AD-gebruikers overeenkomen met een geverifieerd domein in Entra ID.</p><div class="warn-note"><strong>⚠ Let op</strong> — In dit lab gebruiken we het standaard <code>xxxx.onmicrosoft.com</code>-domein — geen eigen domeinnaam vereist (kost geld).</div><p>Hoe werkt domeinverificatie in de praktijk:</p><ul><li>Registreer een publiek domein (bijv. <code>pxl.be</code>) bij een registrar</li><li>Voeg het domein toe in het Entra Admin Center</li><li>Microsoft geeft een TXT-record dat je in je publieke DNS moet plaatsen</li><li>Entra verifieert het domein door de TXT-record op te zoeken</li><li>Na verificatie kun je het domein gebruiken als UPN-suffix</li></ul><div class="info-note"><strong>ℹ Info</strong> — Surf naar <code>admin.cloud.microsoft</code> → Microsoft Entra ID → Custom domain names om dit te zien.</div>
-      </div>
-    </div><div class="section-title">Entra Connect</div>
-    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 03</div>
-          <div class="task-title">Entra Connect vs. Entra Cloud Sync kiezen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Microsoft biedt twee synchronisatietools:</p><table><thead><tr><th>Kenmerk</th><th>Entra Cloud Sync</th><th>Entra Connect Sync</th></tr></thead><tbody><tr><td>AD-clients synchroniseren</td><td>Nee</td><td>Ja</td></tr><tr><td>Installatie</td><td>Lichtgewicht agent</td><td>Aparte installatiewizard</td></tr><tr><td>Complexe filtering</td><td>Beperkt</td><td>Uitgebreid</td></tr><tr><td>Multi-forest</td><td>Ja</td><td>Ja</td></tr></tbody></table><div class="info-note"><strong>ℹ Info</strong> — Omdat wij domein-gejointe clients hebben die we willen synchroniseren, kiezen we voor <strong>Entra Connect Sync</strong>.</div>
-      </div>
+<div class="section-title">Theorie · Hybrid Identity</div>
+
+<div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 01</div>
+      <div class="task-title">Hybrid identiteitsmodel begrijpen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 04</div>
-          <div class="task-title">Microsoft Entra Connect installeren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Download en installeer Entra Connect op de DC (of een aparte server in productie).</p><ul><li>Download via: <code>microsoft.com/download/details.aspx?id=47594</code></li><li>Voer <code>AzureADConnect.msi</code> uit</li><li>Accepteer licentievoorwaarden → Continue</li><li>Kies: <strong>Use express settings</strong> (voor eenvoudige setup)</li><li>Meld aan met je Microsoft 365 Global Admin-account</li><li>Meld aan met je AD Domain Admin-account</li><li>Klik Install</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — Zorg dat je M365-sandbox actief is via je PXL-studentaccount. Laat de Entra Connect-client nooit open staan — dit pauzeert de synchronisatie!</div>
-      </div>
-    </div><div class="section-title">Synchronisatie</div>
-    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 05</div>
-          <div class="task-title">Synchronisatie-OU's configureren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Na installatie selecteer je welke OUs gesynchroniseerd worden (standaard: alles).</p><ul><li>Open de Azure AD Connect-snelkoppeling op het bureaublad</li><li>Kies Configure → Customize synchronization options → Next</li><li>Meld aan met M365 admin credentials</li><li>Bij "Connect your directories" → Next</li><li>Kies: <strong>Sync selected domains and OUs</strong></li><li>Selecteer enkel de OU <code>Users</code> (en/of Computers)</li><li>Klik Next → Configure → Exit</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — Onnodige OUs synchroniseren verhoogt complexiteit en vertraagt sync-cycli. Synchroniseer enkel wat nodig is.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Een <strong>hybride identiteitsmodel</strong> combineert een on-premises Active Directory met Microsoft Entra ID (vroeger Azure AD). Gebruikers hebben één identiteit die zowel lokaal als in de cloud werkt.</p>
+    <div class="concept-box"><strong>Entra Connect</strong>De tool die AD-objecten (gebruikers, groepen) synchroniseert naar Entra ID. Wijzigingen in AD worden automatisch doorgevoerd naar de cloud.</div>
+    <table><thead><tr><th>Begrip</th><th>Wat doet het?</th></tr></thead><tbody>
+      <tr><td>Entra ID (Azure AD)</td><td>Cloud-identiteitsprovider van Microsoft — authenticatie voor M365, Teams, enz.</td></tr>
+      <tr><td>Entra Connect</td><td>Synchroniseert on-premises AD naar Entra ID</td></tr>
+      <tr><td>Hybrid Join</td><td>Computers zijn tegelijk lid van on-premises AD én geregistreerd in Entra/Intune</td></tr>
+      <tr><td>Intune</td><td>MDM-platform (Mobile Device Management) voor cloud-gebaseerd apparaatbeheer</td></tr>
+      <tr><td>LAPS</td><td>Local Administrator Password Solution — automatisch beheer van lokale admin-wachtwoorden</td></tr>
+    </tbody></table>
+    <div class="info-note"><strong>ℹ GPO vs. Intune</strong> — GPO werkt enkel op apparaten die rechtstreeks met het domein verbonden zijn. Intune werkt overal via het internet — ideaal voor thuiswerkers en laptops buiten het schoolnetwerk.</div>
+  </div>
+</div>
+
+<div class="section-title">Entra Connect</div>
+
+<div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 02</div>
+      <div class="task-title">WINADV-EC aanmaken en Entra Connect Agent installeren</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 06</div>
-          <div class="task-title">Synchronisatie testen en monitoren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">test</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Controleer of de synchronisatie werkt door een gebruiker op te zoeken in Entra ID.</p><div class="cmd">Start-ADSyncSyncCycle -PolicyType Delta</div><p>Forceert een delta-synchronisatie via PowerShell op de DC.</p><ul><li>Surf naar <code>portal.azure.com</code> → Microsoft Entra ID → Users</li><li>Zoek een gesynchroniseerde AD-gebruiker op</li><li>De source moet "Windows Server AD" zijn, niet "Microsoft Entra ID"</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Gesynchroniseerde gebruikers hebben een speciaal icoon (grijs wolk-icoontje) in de Entra-portal.</div>
-      </div>
-    </div><div class="section-title">GPO & Intune</div>
-    <div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 07</div>
-          <div class="task-title">Intune en GPO-coëxistentie begrijpen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>In een hybride omgeving kunnen zowel <strong>GPO</strong> (on-premises) als <strong>Intune</strong> (cloud) policies configureren. Dat leidt tot conflicten.</p><div class="concept-box"><strong>Intune wint altijd</strong>Als GPO en Intune dezelfde instelling configureren, wint Intune. Dit is bewuste keuze van Microsoft om cloudmigratie te stimuleren.</div><p>Best practice migratiestrategie:</p><ul><li>Controleer per GPO: kan dit vervangen worden door Intune?</li><li>JA → test de Intune-policy → verwijder de GPO → rol Intune uit</li><li>NEE → behoud de GPO tot Microsoft deze functie in Intune implementeert</li><li>Gebruik nooit GPO én Intune voor dezelfde instelling tegelijk</li></ul><p><strong>LAPS (Local Administrator Password Solution)</strong>: automatisch beheer van het lokale admin-wachtwoord op domeincomputers. Beschikbaar via zowel GPO als Intune.</p><div class="info-note"><strong>ℹ Info</strong> — Microsoft verwacht dat bedrijven geleidelijk volledig overstappen op cloud-beheer via Intune. GPO is de on-premises legacy-tegenhanger.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak een nieuwe Windows Server 2025 VM aan speciaal voor Entra Connect. Deze server moet internettoegang hebben om te communiceren met Microsoft 365.</p>
+    <p><strong>VM aanmaken en configureren:</strong></p>
+    <ul>
+      <li>Naam: <code>WINADV-EC</code></li>
+      <li>Voeg een <strong>tweede netwerkinterface</strong> toe in VMware ingesteld op <strong>NAT</strong> — dit simuleert internettoegang</li>
+      <li>Eerste NIC: intern netwerk (verbinding met DC)</li>
+      <li>Tweede NIC: NAT (verbinding met internet via M365)</li>
+      <li>Voeg de server toe aan het domein <code>pxldigital.local</code></li>
+    </ul>
+    <p><strong>Entra Connect Agent installeren:</strong></p>
+    <ul>
+      <li>Download de <strong>Microsoft Entra Connect</strong> installer via de Microsoft-downloadpagina of Entra Admin Center</li>
+      <li>Voer de installer uit op <code>WINADV-EC</code></li>
+      <li>Kies: <strong>Express settings</strong> of Custom (afhankelijk van je situatie)</li>
+      <li>Meld aan met je M365 Global Admin-account</li>
+      <li>Selecteer de te synchroniseren OUs</li>
+      <li>Start de initiële synchronisatie</li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In Entra Admin Center (entra.microsoft.com) zijn de AD-gebruikers en -groepen zichtbaar. Controleer ook de Audit Logs voor bevestiging van de synchronisatie.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 03</div>
+      <div class="task-title">Nieuwe studenten aanmaken + sync + licentiegroep</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Er komt in elke klas een nieuwe student bij. Maak ze aan in AD — ze worden via Entra Connect automatisch gesynchroniseerd naar Entra.</p>
+    <table><thead><tr><th>Klas</th><th>Naam</th><th>Logon name</th></tr></thead><tbody>
+      <tr><td>1SNEa</td><td>Daan Vermeulen</td><td><code>d.vermeulen</code></td></tr>
+      <tr><td>1SNEb</td><td>Lotte Van Hecke</td><td><code>l.van.hecke</code></td></tr>
+      <tr><td>1SNEc</td><td>Nathan De Pauw</td><td><code>n.de.pauw</code></td></tr>
+      <tr><td>1SNEd</td><td>Hanne Coppens</td><td><code>h.coppens</code></td></tr>
+      <tr><td>1SNEe</td><td>Jasper Moens</td><td><code>j.moens</code></td></tr>
+    </tbody></table>
+    <p>    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">$pw = ConvertTo-SecureString "TestTest2025" -AsPlainText -Force
+$base = "OU=Studenten,DC=pxldigital,DC=local"
+@(
+  @{Name="Daan Vermeulen";  Sam="d.vermeulen";  OU="1SNEa"},
+  @{Name="Lotte Van Hecke"; Sam="l.van.hecke";  OU="1SNEb"},
+  @{Name="Nathan De Pauw";  Sam="n.de.pauw";    OU="1SNEc"},
+  @{Name="Hanne Coppens";   Sam="h.coppens";    OU="1SNEd"},
+  @{Name="Jasper Moens";    Sam="j.moens";      OU="1SNEe"}
+) | ForEach-Object {
+  New-ADUser -Name $_.Name -SamAccountName $_.Sam `
+    -Path "OU=$($_.OU),$base" `
+    -AccountPassword $pw -Enabled $true
+}</div>
+    Maak elke student aan in de juiste sub-OU van <code>OU=Studenten</code>, dan in de juiste GL-klasgroep. Na de volgende sync-cyclus (max. 30 min, of forceer via <code>Start-ADSyncSyncCycle</code> op WINADV-EC) zijn ze zichtbaar in Entra.</p>
+    <div class="cmd">Start-ADSyncSyncCycle -PolicyType Delta</div>
+    <p><strong>CG_Demo_E5 — licentiegroep aanmaken:</strong></p>
+    <ul>
+      <li>Maak in Entra Admin Center een nieuwe security groep aan: <code>CG_Demo_E5</code></li>
+      <li>Ga naar Microsoft 365 Admin Center → Billing → Licenses</li>
+      <li>Selecteer de E5-licentie → Assign licenses → kies de groep <code>CG_Demo_E5</code></li>
+      <li>Alle members van deze groep krijgen automatisch een E5-licentie toegewezen</li>
+    </ul>
+    <div class="info-note"><strong>ℹ Group-based licensing</strong> — Door licenties aan een groep toe te wijzen in plaats van aan individuele gebruikers, beheer je licenties automatisch. User erbij = licentie erbij. User weg = licentie vrijgegeven.</div>
+  </div>
+</div>
+
+<div class="section-title">Hybrid Join &amp; Intune</div>
+
+<div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 04</div>
+      <div class="task-title">CG_Hybrid_Devices + automatische Hybrid Join registratie</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>Let op:</strong> verwijder eerst alle bestaande device groepen in Entra/Intune om conflicten te vermijden.</p>
+    <p><strong>Dynamische device groep aanmaken:</strong></p>
+    <ul>
+      <li>Maak in Entra Admin Center een nieuwe groep aan: <code>CG_Hybrid_Devices</code></li>
+      <li>Membership type: <strong>Dynamic Device</strong></li>
+      <li>Dynamic rule: toestellen waarvan de naam begint met <code>WINADV</code></li>
+      <li>Rule syntax: <code>(device.displayName -startsWith "WINADV")</code></li>
+    </ul>
+    <p><strong>Hybrid Join configureren (automatische Intune-registratie):</strong></p>
+    <ul>
+      <li>Volg de handleiding "Hybrid Join - Entra + MDM" uit de cursus</li>
+      <li>Alle huidige en toekomstige computers die aan het domein zijn toegevoegd, registreren zich automatisch in Entra en Intune</li>
+      <li>Voer op de client <code>dsregcmd /status</code> uit ter verificatie:</li>
+    </ul>
+    <div class="cmd">dsregcmd /status</div>
+    <p>In de output moet je zien: <code>AzureAdJoined: YES</code> en <code>DomainJoined: YES</code>. Dit bevestigt dat het toestel zowel on-premises als in Entra geregistreerd is.</p>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In Intune Admin Center (intune.microsoft.com) → Devices: de client verschijnt. In Entra: het apparaat is zichtbaar in de groep <code>CG_Hybrid_Devices</code>.</div>
+  </div>
+</div>
+
+<div class="section-title">Intune Policies</div>
+
+<div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 05</div>
+      <div class="task-title">Intune policies: achtergrond, Control Panel, Task Manager</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Vervang GPO-restricties door Intune policies. <strong>Stap 1:</strong> unlink de GPO in GPMC zodat die niet meer actief is. <strong>Stap 2:</strong> maak de equivalente Intune policy aan.</p>
+    <p>Alle Intune policies maak je aan via: <strong>Intune Admin Center → Devices → Configuration → Create policy → Windows 10 and later → Settings Catalog</strong></p>
+
+    <p><strong>1. Bureaublad achtergrond — CG_Hybrid_Devices</strong></p>
+    <ul>
+      <li>Geen GPO te unlinken — dit is een nieuwe Intune-only policy</li>
+      <li>Stel een achtergrond in die <em>anders</em> is dan de GPO-achtergrond (zodat je het verschil ziet)</li>
+      <li>Zoekterm in Settings Catalog: <strong>Desktop Image URL</strong> of <strong>Personalization</strong></li>
+      <li>Toewijzen aan groep: <code>CG_Hybrid_Devices</code></li>
+    </ul>
+
+    <p><strong>2. Control Panel verbieden — 1SNEe</strong></p>
+    <ul>
+      <li>Unlink in GPMC de GPO <code>GPO_1SNEe_NoControlPanel</code> van <code>OU=1SNEe</code></li>
+      <li>Test op client: Control Panel is terug toegankelijk (bevestigt dat GPO weg is)</li>
+      <li>Maak nieuwe Entra-groep aan: <code>CG_1SNEe</code> — voeg de 1SNEe-studenten toe</li>
+      <li>Nieuwe Intune policy → Settings Catalog → zoek: <strong>Prohibit access to Control Panel</strong></li>
+      <li>Toewijzen aan groep: <code>CG_1SNEe</code></li>
+    </ul>
+
+    <p><strong>3. Task Manager verbieden — 1SNEa</strong></p>
+    <ul>
+      <li>Unlink in GPMC de GPO <code>GPO_1SNEa_NoTaskManager</code> van <code>OU=1SNEa</code></li>
+      <li>Maak nieuwe Entra-groep aan: <code>CG_1SNEa</code> — voeg de 1SNEa-studenten toe</li>
+      <li>Nieuwe Intune policy → Settings Catalog → zoek: <strong>Remove Task Manager</strong></li>
+      <li>Toewijzen aan groep: <code>CG_1SNEa</code></li>
+    </ul>
+    <div class="warn-note"><strong>⚠ Let op</strong> — Intune policies worden toegepast op gebruikers of apparaten, niet op OUs. Zorg dat de juiste studenten in de CG_-groepen zitten voordat je de policy toewijst.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 06</div>
+      <div class="task-title">Intune policies: C-schijf, CMD/PS en regedit</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>4. C-schijf verbieden — 1SNEb</strong></p>
+    <ul>
+      <li>Unlink in GPMC de GPO <code>GPO_1SNEb_NoC_Drive</code> van <code>OU=1SNEb</code></li>
+      <li>Maak nieuwe Entra-groep aan: <code>CG_1SNEb</code> — voeg de 1SNEb-studenten toe</li>
+      <li>Nieuwe Intune policy → Settings Catalog → zoek: <strong>Prevent access to drives from My Computer</strong></li>
+      <li>Toewijzen aan groep: <code>CG_1SNEb</code></li>
+    </ul>
+
+    <p><strong>5. CMD en PowerShell verbieden — alle studenten</strong></p>
+    <ul>
+      <li>Unlink in GPMC de GPO <code>GPO_Studenten_NoShell</code> van <code>OU=Studenten</code></li>
+      <li>Test op client: CMD en PowerShell zijn terug toegankelijk</li>
+      <li>Nieuwe Intune policy → Settings Catalog → zoek: <strong>Prevent access to the command prompt</strong></li>
+      <li>Voeg ook toe: <strong>Don't run specified Windows applications</strong> → voeg <code>powershell.exe</code> toe</li>
+      <li>Toewijzen aan bestaande groep: <code>DL_All_Students</code></li>
+    </ul>
+
+    <p><strong>6. Regedit verbieden — alle studenten</strong></p>
+    <ul>
+      <li>Unlink in GPMC de regedit-GPO van <code>OU=Studenten</code></li>
+      <li>Nieuwe Intune policy → Settings Catalog → zoek: <strong>Prevent access to registry editing tools</strong></li>
+      <li>Toewijzen aan groep: <code>DL_All_Students</code></li>
+    </ul>
+    <div class="info-note"><strong>ℹ DL_All_Students in Intune?</strong> — Intune werkt met Entra-groepen. De <code>DL_All_Students</code> groep wordt via Entra Connect gesynchroniseerd vanuit AD. Zorg dat ze zichtbaar is in Entra Admin Center vóór je de policy toewijst.</div>
+  </div>
+</div>
+
+<div class="section-title">C$ Toegang &amp; LAPS</div>
+
+<div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 07</div>
+      <div class="task-title">IT-medewerkers C$ toegang + Entra LAPS configureren</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-a">security</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>IT-medewerkers toegang geven tot de verborgen C$-share:</strong></p>
+    <p>Standaard hebben enkel Domain Admins toegang tot de C$-share van een computer. IT-medewerkers hebben die toegang ook nodig. De oplossing is hen toe te voegen aan de <strong>lokale Administrators-groep</strong> op de clientcomputers, via GPO.</p>
+    <ul>
+      <li>Maak een nieuwe GPO aan of gebruik de bestaande Firewall-GPO</li>
+      <li>Computer Configuration → Preferences → Control Panel Settings → <strong>Local Users and Groups</strong></li>
+      <li>Rechtsklik → New → Local Group</li>
+      <li>Group name: <strong>Administrators (built-in)</strong> → Action: Update</li>
+      <li>Voeg <code>DL_IT</code> toe als member</li>
+      <li>Koppel de GPO aan de OU waar de clientcomputers staan</li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Log in als IT-medewerker op computer 1 en probeer via Verkenner <code>\\WINADV-PC1\C$</code> te openen. Dit moet lukken.</div>
+
+    <p><strong>Entra LAPS configureren op CG_Hybrid_Devices:</strong></p>
+    <p>LAPS (Local Administrator Password Solution) genereert automatisch een uniek, roterend wachtwoord voor het lokale Administrator-account op elk apparaat.</p>
+    <ul>
+      <li>Volg de "Entra LAPS"-handleiding uit de cursus</li>
+      <li>Ga in Intune Admin Center naar: Endpoint Security → Account protection → Create policy → Local admin password solution (Windows LAPS)</li>
+      <li>Toewijzen aan groep: <code>CG_Hybrid_Devices</code></li>
+    </ul>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In Intune Admin Center → Devices → selecteer een toestel uit <code>CG_Hybrid_Devices</code> → tabblad <strong>Local admin password</strong>: het LAPS-wachtwoord is zichtbaar en heeft een rotatieschema.</div>
+    <div class="concept-box"><strong>Waarom LAPS?</strong>Zonder LAPS gebruiken beheerders overal hetzelfde lokale admin-wachtwoord. Als dat uitlekt, is elke computer kwetsbaar. LAPS geeft elk toestel een uniek wachtwoord dat automatisch roteert — een gecompromitteerd wachtwoord geeft enkel toegang tot dat ene toestel.</div>
+  </div>
+</div>
 
 <footer>
-  <p>Windows Advanced · Lab 06 · Hybrid · 7 taken</p>
+  <p>Windows Advanced · Lab 06 · Hybrid — Entra &amp; Intune · 7 taken</p>
   <button class="reset-btn" onclick="resetLab()">↺ Reset lab</button>
 </footer>
 
@@ -254,59 +417,43 @@
 const STORAGE_KEY = 'win_lab06_state';
 const TOTAL = 7;
 const RANKS = [
-  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',              sub:'Voltooi je eerste taak'},
   {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
-  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'🥇', cls:'rank-gold',     sub:'Goed bezig!'},
   {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
-  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
-  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'💠', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'⚔️',cls:'rank-challenger',sub:'Lab voltooid!'},
 ];
-
-function loadState(){
-  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
-}
-function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
 function checkTask(id,e){
   e.stopPropagation();
-  const s=loadState();
-  s[id]=!s[id];
-  saveState(s);
-  render();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
 }
 function toggleTask(id,e){
   if(e.target.closest('.task-check')) return;
-  const card=document.getElementById('tc-'+id);
-  card.classList.toggle('open');
+  document.getElementById('tc-'+id).classList.toggle('open');
 }
-
 function render(){
-  const s=loadState();
-  let done=0;
+  const s=loadState(); let done=0;
   document.querySelectorAll('.task-card').forEach(card=>{
     const id=card.id.replace('tc-','');
-    const checked=!!s[id];
-    if(checked) done++;
+    const checked=!!s[id]; if(checked) done++;
     card.classList.toggle('done',checked);
     const chk=document.getElementById('chk-'+id);
     if(chk) chk.classList.toggle('checked',checked);
   });
-  // pips
   let pipIdx=1;
   document.querySelectorAll('.task-card').forEach(card=>{
-    const id=card.id.replace('tc-','');
     const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
     if(pip) pip.classList.toggle('done',!!s[id]);
     pipIdx++;
   });
   const pct=TOTAL>0?(done/TOTAL)*100:0;
-  const bf=document.getElementById('bar-fill');
-  if(bf) bf.style.width=pct+'%';
-  const bc=document.getElementById('bar-count');
-  if(bc) bc.textContent=done+' / '+TOTAL;
-  const pc=document.getElementById('ps-count');
-  if(pc) pc.textContent=done;
-  // rank
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
   let ri=0;
   for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
   const r=RANKS[ri];
@@ -314,40 +461,40 @@ function render(){
   const ri2=document.getElementById('ps-rank-icon');
   const rn=document.getElementById('ps-rank-name');
   const rs=document.getElementById('ps-rank-sub');
-  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
   if(ri2) ri2.textContent=r.icon;
   if(rn) rn.textContent=r.name;
   if(rs) rs.textContent=r.sub;
-  // next rank
   const nxt=document.getElementById('ps-next');
   if(nxt){
     if(ri<RANKS.length-1){
-      const nr=RANKS[ri+1];
-      const need=nr.min-done;
+      const nr=RANKS[ri+1]; const need=nr.min-done;
       nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
     } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
   }
 }
 function resetLab(){
   if(!confirm('Voortgang van dit lab wissen?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+  localStorage.removeItem(STORAGE_KEY); render();
 }
-// copy buttons — capture the clean command text BEFORE adding the button,
-// so the button label can never leak into the clipboard.
-document.querySelectorAll('.cmd').forEach(block=>{
-  const original=block.innerText.trim();
-  const btn=document.createElement('button');
-  btn.className='copy-btn'; btn.textContent='kopieer';
-  btn.onclick=e=>{
-    e.stopPropagation();
-    navigator.clipboard.writeText(original).then(()=>{
-      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
-    });
-  };
-  block.appendChild(btn);
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='✓ Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
 });
-render();
 </script>
 </body>
 </html>

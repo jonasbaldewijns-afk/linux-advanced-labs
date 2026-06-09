@@ -110,7 +110,6 @@
 </head>
 <body>
 <div class="container">
-
 <nav class="lab-nav">
   <a class="home-btn" href="windows_index.html">⌂ Index</a>
   <a class="nav-side" href="win_lab_hybrid.html">← Vorige</a>
@@ -121,9 +120,15 @@
   <div class="ps-label">Voortgang</div>
   <div class="ps-count-row">
     <span class="ps-count" id="ps-count">0</span>
-    <span class="ps-total">/ 7</span>
+    <span class="ps-total">/ 10</span>
   </div>
-  <div class="ps-pips" id="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div></div>
+  <div class="ps-pips" id="ps-pips">
+    <div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div>
+    <div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div>
+    <div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div>
+    <div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div>
+    <div class="ps-pip" id="pip-9"></div><div class="ps-pip" id="pip-10"></div>
+  </div>
   <div class="ps-rank-card" id="ps-rank-card">
     <span class="ps-rank-icon" id="ps-rank-icon">🔒</span>
     <span class="ps-rank-name" id="ps-rank-name">Unranked</span>
@@ -134,181 +139,354 @@
 
 <header>
   <div class="label">Lab 07 · Windows Advanced</div>
-  <h1>Services — DNS & DHCP</h1>
-  <p>Doorloop de taken hieronder. Klik op een taak om de inhoud te bekijken, vink af wanneer je klaar bent.</p>
+  <h1>Services — DNS &amp; DHCP</h1>
+  <p>Beheer DNS-records, zones en forwarders, en configureer DHCP-scopes op Windows Server. Elke taak met zowel de GUI-methode als het PowerShell-equivalent.</p>
 </header>
 
 <div class="progress-bar-wrap">
   <span>Voortgang</span>
   <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
-  <span class="progress-count" id="bar-count">0 / 7</span>
+  <span class="progress-count" id="bar-count">0 / 10</span>
 </div>
 
 <div class="section-title">DNS</div>
-    <div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 01</div>
-          <div class="task-title">DNS-recordtypes kennen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>DNS vertaalt hostnamen naar IP-adressen. Een DNS-zone bevat verschillende recordtypes:</p><table><thead><tr><th>Record</th><th>Functie</th><th>Voorbeeld</th></tr></thead><tbody><tr><td>SOA</td><td>Start of Authority — beheersinfo over de zone</td><td>Primaire nameserver, serial number, TTL</td></tr><tr><td>A</td><td>IPv4-adres voor een hostname</td><td>dc1.pxldigital.local → 192.168.10.10</td></tr><tr><td>AAAA</td><td>IPv6-adres voor een hostname</td><td></td></tr><tr><td>CNAME</td><td>Alias die verwijst naar een A-record</td><td>www → webserver.pxldigital.local</td></tr><tr><td>PTR</td><td>Reverse lookup (IP → naam)</td><td>192.168.10.10 → dc1.pxldigital.local</td></tr><tr><td>MX</td><td>Mail exchanger voor een domein</td><td>pxldigital.local → mail.pxldigital.local</td></tr><tr><td>NS</td><td>Nameserver voor de zone</td><td></td></tr><tr><td>SRV</td><td>Verwijzing naar een specifieke service (gebruikt door AD)</td><td>_ldap._tcp</td></tr></tbody></table><div class="info-note"><strong>ℹ Info</strong> — Active Directory is zwaar afhankelijk van DNS — SRV-records worden automatisch aangemaakt door AD bij DC-promotie.</div>
-      </div>
+
+<div class="task-card" id="tc-01" onclick="toggleTask('01',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Theorie 01</div>
+      <div class="task-title">DNS-recordtypes en zones begrijpen</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
     </div>
-    <div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 02</div>
-          <div class="task-title">DNS-rol installeren en configureren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>DNS wordt normaal automatisch geïnstalleerd bij AD DS. Als dat niet het geval is:</p><ul><li>Server Manager → Add Roles and Features → DNS Server</li><li>Na installatie: open <strong>DNS Manager</strong> via Server Manager → Tools</li></ul><p><strong>Forward lookup zone aanmaken (indien niet aanwezig):</strong></p><ul><li>Rechtsklik op "Forward Lookup Zones" → New Zone</li><li>Primary zone, zonebestand bewaren → Next</li><li>Zone name: <code>pxldigital.local</code> → Finish</li></ul><p><strong>Reverse lookup zone aanmaken:</strong></p><ul><li>Rechtsklik op "Reverse Lookup Zones" → New Zone</li><li>Primary zone → Next</li><li>IPv4 Reverse Lookup Zone → vul in je netwerk-ID (bijv. <code>192.168.10</code>)</li><li>Finish</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Voer uit in CMD: <code>nslookup WINADV-DC1</code> — je moet het IP-adres terugkrijgen.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>DNS vertaalt namen naar IP-adressen (en omgekeerd). Op een Windows DC draait DNS automatisch mee als AD-geïntegreerde service.</p>
+    <table><thead><tr><th>Recordtype</th><th>Functie</th><th>Voorbeeld</th></tr></thead><tbody>
+      <tr><td>A</td><td>Naam → IPv4-adres</td><td><code>top.pxldigital.local → 7.7.7.7</code></td></tr>
+      <tr><td>AAAA</td><td>Naam → IPv6-adres</td><td><code>web → 2001:db8::1</code></td></tr>
+      <tr><td>CNAME</td><td>Alias → andere naam</td><td><code>DC1 → winadv-dc1jb.pxldigital.local</code></td></tr>
+      <tr><td>PTR</td><td>IP → naam (reverse)</td><td><code>10.10.10.1 → winadv-dc1jb</code></td></tr>
+      <tr><td>MX</td><td>Mailserver van een domein</td><td><code>pxldigital.local → mail.pxldigital.local</code></td></tr>
+      <tr><td>NS</td><td>Nameserver van een zone</td><td><code>pxldigital.local → winadv-dc1jb</code></td></tr>
+    </tbody></table>
+    <div class="concept-box"><strong>Forward vs. Reverse zones</strong>Een forward lookup zone vertaalt namen naar IPs. Een reverse lookup zone doet het omgekeerde (IP → naam) via PTR-records, en is genoemd naar het subnet in omgekeerde volgorde: <code>10.10.10.x</code> → zone <code>10.10.10.in-addr.arpa</code>.</div>
+    <p>Testen doe je met <code>nslookup</code> of het modernere PowerShell-commando:</p>
+    <div class="cmd">Resolve-DnsName top.pxldigital.local</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-02" onclick="toggleTask('02',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 02</div>
+      <div class="task-title">A-record toevoegen (top.pxldigital.local → 7.7.7.7)</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 03</div>
-          <div class="task-title">DNS-records toevoegen en testen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-t">test</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Maak handmatig een A-record en PTR-record aan.</p><ul><li>In DNS Manager → Forward Lookup Zones → pxldigital.local</li><li>Rechtsklik → New Host (A or AAAA)</li><li>Name: <code>webserver</code>, IP: <code>192.168.10.20</code></li><li>Vink "Create associated pointer (PTR) record" aan → Add Host</li></ul><div class="cmd">nslookup webserver.pxldigital.local
-nslookup 192.168.10.20</div><div class="verify-block"><strong>✔ Verificatie</strong>Beide lookups geven het correcte resultaat. Forward geeft het IP, reverse geeft de naam.</div>
-      </div>
-    </div><div class="section-title">DHCP</div>
-    <div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Theorie 04</div>
-          <div class="task-title">DHCP-werking begrijpen (DORA)</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>DHCP wijst automatisch IP-adressen toe. Het DORA-proces:</p><table><thead><tr><th>Stap</th><th>Richting</th><th>Beschrijving</th></tr></thead><tbody><tr><td>Discover</td><td>Client → broadcast</td><td>Client zoekt een DHCP-server</td></tr><tr><td>Offer</td><td>Server → client</td><td>Server biedt een IP-adres aan</td></tr><tr><td>Request</td><td>Client → broadcast</td><td>Client vraagt officieel het aangeboden IP op</td></tr><tr><td>Acknowledge</td><td>Server → client</td><td>Server bevestigt de lease</td></tr></tbody></table><div class="concept-box"><strong>Lease-tijd</strong>IP-adressen worden tijdelijk toegewezen. Korte lease = snel vrijgeven bij mobiele devices. Lange lease = stabiele omgeving met vaste toestellen.</div><table><thead><tr><th>Begrip</th><th>Uitleg</th></tr></thead><tbody><tr><td>Scope</td><td>Reeks beschikbare IP-adressen</td></tr><tr><td>Lease</td><td>Tijdelijke toewijzing van een IP aan een device</td></tr><tr><td>Reservatie</td><td>Altijd hetzelfde IP voor een specifiek MAC-adres</td></tr><tr><td>Exclusion</td><td>IP-adressen uitsluiten van de scope (bijv. voor statische servers)</td></tr></tbody></table>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>Via de GUI:</strong></p>
+    <ul>
+      <li>Open <strong>DNS Manager</strong> (Server Manager → Tools → DNS)</li>
+      <li>Forward Lookup Zones → <code>pxldigital.local</code></li>
+      <li>Rechtsklik → <strong>New Host (A or AAAA)</strong></li>
+      <li>Name: <code>top</code> → IP address: <code>7.7.7.7</code> → Add Host</li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-DnsServerResourceRecordA -ZoneName "pxldigital.local" -Name "top" -IPv4Address "7.7.7.7"</div>
+    <p><strong>Lookup testen:</strong></p>
+    <div class="cmd">Resolve-DnsName top.pxldigital.local</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>De lookup geeft <code>7.7.7.7</code> terug als A-record.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-03" onclick="toggleTask('03',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 03</div>
+      <div class="task-title">Aliassen DC1 en DC2 aanmaken (CNAME)</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 05</div>
-          <div class="task-title">DHCP-rol installeren en autoriseren</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Installeer de DHCP Server-rol en autoriseer hem in Active Directory.</p><ul><li>Server Manager → Add Roles and Features → DHCP Server → Install</li><li>Na installatie: klik op de gele notificatie → "Complete DHCP configuration"</li><li>Klik "Authorize" om de DHCP-server te autoriseren in AD → Commit → Close</li></ul><div class="warn-note"><strong>⚠ Let op</strong> — Een niet-geautoriseerde DHCP-server in een AD-domein werkt niet. AD beschermt het netwerk tegen rogue DHCP-servers.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak twee aliassen die verwijzen naar je eerste en tweede AD-server.</p>
+    <table><thead><tr><th>Alias</th><th>Verwijst naar</th></tr></thead><tbody>
+      <tr><td><code>DC1.pxldigital.local</code></td><td><code>WINADV-DC1XX.pxldigital.local</code> (eerste DC)</td></tr>
+      <tr><td><code>DC2.pxldigital.local</code></td><td><code>WINADV-DD2.pxldigital.local</code> (tweede DC)</td></tr>
+    </tbody></table>
+    <p><strong>Via de GUI:</strong></p>
+    <ul>
+      <li>DNS Manager → Forward Lookup Zones → <code>pxldigital.local</code></li>
+      <li>Rechtsklik → <strong>New Alias (CNAME)</strong></li>
+      <li>Alias name: <code>DC1</code> → FQDN of target host: <code>WINADV-DC1XX.pxldigital.local</code></li>
+      <li>Herhaal voor <code>DC2</code> → <code>WINADV-DD2.pxldigital.local</code></li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-DnsServerResourceRecordCName -ZoneName "pxldigital.local" -Name "DC1" -HostNameAlias "WINADV-DC1XX.pxldigital.local"
+Add-DnsServerResourceRecordCName -ZoneName "pxldigital.local" -Name "DC2" -HostNameAlias "WINADV-DD2.pxldigital.local"</div>
+    <p><strong>Lookup testen:</strong></p>
+    <div class="cmd">Resolve-DnsName DC1.pxldigital.local
+Resolve-DnsName DC2.pxldigital.local</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>Beide lookups tonen het CNAME-record én het onderliggende A-record van de juiste DC.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-04" onclick="toggleTask('04',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 04</div>
+      <div class="task-title">Nieuwe zone xx.local aanmaken met records</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 06</div>
-          <div class="task-title">DHCP-scope aanmaken</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Maak een scope aan voor het lab-netwerk.</p><ul><li>Open DHCP-console via Server Manager → Tools → DHCP</li><li>Rechtsklik op "IPv4" → New Scope</li><li>Naam: <code>LabScope</code></li><li>IP-range: <code>192.168.10.100</code> t/m <code>192.168.10.200</code></li><li>Subnetmasker: <code>255.255.255.0</code></li><li>Exclusions: voeg eventueel <code>192.168.10.100</code>-<code>192.168.10.110</code> toe als buffer</li><li>Lease-duur: 8 uur (voor lab)</li><li>Scope Options: Router = <code>192.168.10.1</code>, DNS = <code>192.168.10.10</code></li><li>Activeer de scope → Finish</li></ul><div class="verify-block"><strong>✔ Verificatie</strong>Zet de client op DHCP (automatisch IP). Controleer of de client een IP uit de range krijgt via <code>ipconfig</code>.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak een nieuwe forward lookup zone aan met je initialen, bijv. <code>jb.local</code>, en voeg er twee records aan toe.</p>
+    <p><strong>Zone aanmaken via de GUI:</strong></p>
+    <ul>
+      <li>DNS Manager → rechtsklik op <strong>Forward Lookup Zones</strong> → New Zone</li>
+      <li>Zone type: <strong>Primary zone</strong> (AD-integrated mag aangevinkt blijven)</li>
+      <li>Zone name: <code>jb.local</code> (jouw initialen)</li>
+      <li>Volg de wizard verder met de standaardinstellingen</li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-DnsServerPrimaryZone -Name "jb.local" -ReplicationScope "Domain"</div>
+    <p><strong>Records toevoegen:</strong></p>
+    <table><thead><tr><th>Record</th><th>Type</th><th>Waarde</th></tr></thead><tbody>
+      <tr><td><code>winadv</code></td><td>A</td><td><code>1.1.1.1</code></td></tr>
+      <tr><td><code>rules</code></td><td>CNAME</td><td>verwijst naar <code>winadv.jb.local</code></td></tr>
+    </tbody></table>
+    <div class="cmd">Add-DnsServerResourceRecordA -ZoneName "jb.local" -Name "winadv" -IPv4Address "1.1.1.1"
+Add-DnsServerResourceRecordCName -ZoneName "jb.local" -Name "rules" -HostNameAlias "winadv.jb.local"</div>
+    <p><strong>Resolve testen:</strong></p>
+    <div class="cmd">Resolve-DnsName winadv.jb.local
+Resolve-DnsName rules.jb.local</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong><code>winadv.jb.local</code> resolvet naar 1.1.1.1, en <code>rules.jb.local</code> volgt de alias naar hetzelfde adres.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-05" onclick="toggleTask('05',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 05</div>
+      <div class="task-title">DNS forwarders configureren (8.8.8.8 en 1.1.1.1)</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
-    <div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
-      <div class="task-header">
-        <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
-        <div class="task-meta">
-          <div class="task-num">Taak 07</div>
-          <div class="task-title">DHCP-reservatie instellen</div>
-          <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
-        </div>
-        <div class="expand-icon">›</div>
-      </div>
-      <div class="task-body">
-<p>Reserveer altijd hetzelfde IP-adres voor de client op basis van zijn MAC-adres.</p><div class="cmd">ipconfig /all</div><p>Noteer het Physical Address (MAC) van de client-interface.</p><ul><li>In DHCP-console → Scope → Reservations → rechtsklik → New Reservation</li><li>Naam: <code>WINADV-PC1</code></li><li>IP: <code>192.168.10.150</code></li><li>MAC: vul het MAC-adres in (zonder koppeltekens, of met — afhankelijk van versie)</li><li>OK</li></ul><div class="cmd">ipconfig /release
-ipconfig /renew</div><div class="verify-block"><strong>✔ Verificatie</strong>De client krijgt nu altijd IP <code>192.168.10.150</code>.</div>
-      </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Een forwarder is de DNS-server waarnaar jouw server vragen doorstuurt die hij zelf niet kan beantwoorden (alles buiten je eigen zones).</p>
+    <p><strong>Via de GUI:</strong></p>
+    <ul>
+      <li>DNS Manager → rechtsklik op de servernaam → <strong>Properties</strong></li>
+      <li>Tabblad <strong>Forwarders</strong> → Edit</li>
+      <li>Voeg toe: <code>8.8.8.8</code> (Google) en <code>1.1.1.1</code> (Cloudflare)</li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Set-DnsServerForwarder -IPAddress 8.8.8.8, 1.1.1.1</div>
+    <p><strong>Controleren:</strong></p>
+    <div class="cmd">Get-DnsServerForwarder</div>
+    <div class="info-note"><strong>ℹ Volgorde telt</strong> — De server probeert forwarders in volgorde. Pas als de eerste niet antwoordt, gaat hij naar de tweede.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-06" onclick="toggleTask('06',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 06</div>
+      <div class="task-title">Reverse lookup zone aanmaken</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
     </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak een reverse lookup zone aan voor het subnet van <code>pxldigital.local</code> zodat IP-adressen terug naar namen vertaald kunnen worden.</p>
+    <p><strong>Via de GUI:</strong></p>
+    <ul>
+      <li>DNS Manager → rechtsklik op <strong>Reverse Lookup Zones</strong> → New Zone</li>
+      <li>Zone type: <strong>Primary zone</strong> → IPv4 Reverse Lookup Zone</li>
+      <li>Network ID: vul je subnet in, bijv. <code>10.10.10</code></li>
+      <li>Volg de wizard verder met de standaardinstellingen</li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-DnsServerPrimaryZone -NetworkId "10.10.10.0/24" -ReplicationScope "Domain"</div>
+    <p><strong>PTR-records:</strong> bestaande A-records krijgen niet automatisch een PTR. Vink bij nieuwe A-records "Create associated pointer (PTR) record" aan, of voeg ze manueel toe:</p>
+    <div class="cmd">Add-DnsServerResourceRecordPtr -ZoneName "10.10.10.in-addr.arpa" -Name "1" -PtrDomainName "WINADV-DC1XX.pxldigital.local"</div>
+    <p><strong>Reverse lookup testen:</strong></p>
+    <div class="cmd">Resolve-DnsName 10.10.10.1</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>De reverse lookup van het IP-adres geeft de hostnaam van de server terug.</div>
+  </div>
+</div>
+
+<div class="section-title">DHCP</div>
+
+<div class="task-card" id="tc-07" onclick="toggleTask('07',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 07</div>
+      <div class="task-title">DHCP-rol installeren op de eerste DC</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-i">installatie</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p><strong>Via de GUI:</strong></p>
+    <ul>
+      <li>Server Manager → Manage → Add Roles and Features</li>
+      <li>Vink aan: <strong>DHCP Server</strong> → Add Features → Install</li>
+      <li>Na installatie: klik op de gele waarschuwing → <strong>Complete DHCP configuration</strong></li>
+      <li>Dit autoriseert de DHCP-server in Active Directory</li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Install-WindowsFeature DHCP -IncludeManagementTools</div>
+    <p>Autoriseren in AD:</p>
+    <div class="cmd">Add-DhcpServerInDC -DnsName "WINADV-DC1XX.pxldigital.local"</div>
+    <div class="concept-box"><strong>Waarom autorisatie?</strong>In een AD-omgeving moet elke DHCP-server geautoriseerd zijn. Dit voorkomt dat een rogue DHCP-server in het netwerk foute IP-configuraties uitdeelt.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-08" onclick="toggleTask('08',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 08</div>
+      <div class="task-title">DHCP-scope aanmaken (x.x.x.200 – x.x.x.250)</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak een scope aan voor je huidige subnet. De range loopt van <code>x.x.x.200</code> tot <code>x.x.x.250</code> (vervang x.x.x door jouw subnet, bijv. 10.10.10). De lease moet ook de domeinnaam, DNS en gateway meegeven.</p>
+    <p><strong>Via de GUI:</strong></p>
+    <ul>
+      <li>Server Manager → Tools → <strong>DHCP</strong></li>
+      <li>Vouw de server open → rechtsklik op <strong>IPv4</strong> → New Scope</li>
+      <li>Name: bijv. <code>Scope-Intern</code></li>
+      <li>IP range: <code>10.10.10.200</code> t/m <code>10.10.10.250</code>, subnet mask <code>255.255.255.0</code></li>
+      <li>Router (gateway): jouw gateway-adres</li>
+      <li>DNS server: IP van je DC → Parent domain: <code>pxldigital.local</code></li>
+      <li>Activate scope: Yes</li>
+    </ul>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-DhcpServerv4Scope -Name "Scope-Intern" -StartRange 10.10.10.200 -EndRange 10.10.10.250 -SubnetMask 255.255.255.0 -State Active</div>
+    <p>Scope-opties instellen (DNS, gateway, domeinnaam):</p>
+    <div class="cmd">Set-DhcpServerv4OptionValue -ScopeId 10.10.10.0 -DnsServer 10.10.10.1 -Router 10.10.10.254 -DnsDomain "pxldigital.local"</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In de DHCP-console staat de scope met een groen icoon (actief). Scope Options tonen optie 003 (Router), 006 (DNS) en 015 (Domain Name).</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-09" onclick="toggleTask('09',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-09" onclick="checkTask('09',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 09</div>
+      <div class="task-title">Client IP laten ophalen via DHCP</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span><span class="tag tag-d">test</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Zet de client om van statisch IP naar DHCP zodat hij voortaan zijn adres van de DHCP-server krijgt.</p>
+    <p><strong>Via de GUI (op de client):</strong></p>
+    <ul>
+      <li>Settings → Network &amp; Internet → Ethernet → IP assignment → Edit</li>
+      <li>Zet op <strong>Automatic (DHCP)</strong></li>
+    </ul>
+    <p><strong>Via PowerShell (op de client, als admin):</strong></p>
+    <div class="cmd">Set-NetIPInterface -InterfaceAlias "Ethernet0" -Dhcp Enabled
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ResetServerAddresses</div>
+    <p><strong>Lease vernieuwen en controleren:</strong></p>
+    <div class="cmd">ipconfig /release
+ipconfig /renew
+ipconfig /all</div>
+    <div class="verify-block"><strong>✔ Verificatie</strong>In <code>ipconfig /all</code>: "DHCP Enabled: Yes", een IP in de range .200–.250, en de juiste DNS/gateway/DNS-suffix. Op de server verschijnt de lease onder Address Leases.</div>
+  </div>
+</div>
+
+<div class="task-card" id="tc-10" onclick="toggleTask('10',event)">
+  <div class="task-header">
+    <div class="task-check" id="chk-10" onclick="checkTask('10',event)"></div>
+    <div class="task-meta">
+      <div class="task-num">Taak 10</div>
+      <div class="task-title">Tweede scope aanmaken (10.11.12.0/24)</div>
+      <div style="margin-top:0.35rem"><span class="tag tag-c">config</span></div>
+    </div>
+    <div class="expand-icon">›</div>
+  </div>
+  <div class="task-body">
+    <p>Maak een tweede scope aan met de volgende instellingen:</p>
+    <table><thead><tr><th>Instelling</th><th>Waarde</th></tr></thead><tbody>
+      <tr><td>Subnet</td><td><code>10.11.12.0/24</code></td></tr>
+      <tr><td>DNS</td><td><code>10.11.12.2</code></td></tr>
+      <tr><td>Gateway</td><td><code>10.11.12.254</code></td></tr>
+      <tr><td>Domain</td><td><code>jb.local</code> (jouw initialen — de zone uit Taak 04)</td></tr>
+    </tbody></table>
+    <p><strong>Via PowerShell:</strong></p>
+    <div class="cmd">Add-DhcpServerv4Scope -Name "Scope-JB" -StartRange 10.11.12.1 -EndRange 10.11.12.250 -SubnetMask 255.255.255.0 -State Active</div>
+    <div class="cmd">Set-DhcpServerv4OptionValue -ScopeId 10.11.12.0 -DnsServer 10.11.12.2 -Router 10.11.12.254 -DnsDomain "jb.local"</div>
+    <p><strong>Alle scopes controleren:</strong></p>
+    <div class="cmd">Get-DhcpServerv4Scope
+Get-DhcpServerv4OptionValue -ScopeId 10.11.12.0</div>
+    <div class="info-note"><strong>ℹ Meerdere scopes</strong> — Een DHCP-server bedient maar één scope per fysiek netwerksegment. Een tweede scope wordt pas relevant met een DHCP-relay of een tweede interface in dat subnet — voor dit lab volstaat de configuratie zelf.</div>
+  </div>
+</div>
 
 <footer>
-  <p>Windows Advanced · Lab 07 · Services — DNS & DHCP · 7 taken</p>
+  <p>Windows Advanced · Lab 07 · Services — DNS &amp; DHCP · 10 taken</p>
   <button class="reset-btn" onclick="resetLab()">↺ Reset lab</button>
 </footer>
 
 </div>
 <script>
 const STORAGE_KEY = 'win_lab07_state';
-const TOTAL = 7;
+const TOTAL = 10;
 const RANKS = [
-  {min:0,   name:'Unranked',   icon:'🔒', cls:'',             sub:'Voltooi je eerste taak'},
+  {min:0,   name:'Unranked',   icon:'🔒', cls:'',              sub:'Voltooi je eerste taak'},
   {min:1,   name:'Silver',     icon:'🥈', cls:'rank-silver',   sub:'Je bent op weg!'},
-  {min:Math.ceil(TOTAL*0.4), name:'Gold', icon:'🥇', cls:'rank-gold', sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'🥇', cls:'rank-gold',     sub:'Goed bezig!'},
   {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'🏅', cls:'rank-platinum', sub:'Bijna daar!'},
-  {min:Math.ceil(TOTAL*0.85), name:'Diamond', icon:'💠', cls:'rank-diamond', sub:'Uitstekend werk!'},
-  {min:TOTAL, name:'Challenger', icon:'⚔️', cls:'rank-challenger', sub:'Lab voltooid!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'💠', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'⚔️',cls:'rank-challenger',sub:'Lab voltooid!'},
 ];
-
-function loadState(){
-  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}}
-}
-function saveState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
 function checkTask(id,e){
   e.stopPropagation();
-  const s=loadState();
-  s[id]=!s[id];
-  saveState(s);
-  render();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
 }
 function toggleTask(id,e){
   if(e.target.closest('.task-check')) return;
-  const card=document.getElementById('tc-'+id);
-  card.classList.toggle('open');
+  document.getElementById('tc-'+id).classList.toggle('open');
 }
-
 function render(){
-  const s=loadState();
-  let done=0;
+  const s=loadState(); let done=0;
   document.querySelectorAll('.task-card').forEach(card=>{
     const id=card.id.replace('tc-','');
-    const checked=!!s[id];
-    if(checked) done++;
+    const checked=!!s[id]; if(checked) done++;
     card.classList.toggle('done',checked);
     const chk=document.getElementById('chk-'+id);
     if(chk) chk.classList.toggle('checked',checked);
   });
-  // pips
   let pipIdx=1;
   document.querySelectorAll('.task-card').forEach(card=>{
-    const id=card.id.replace('tc-','');
     const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
     if(pip) pip.classList.toggle('done',!!s[id]);
     pipIdx++;
   });
   const pct=TOTAL>0?(done/TOTAL)*100:0;
-  const bf=document.getElementById('bar-fill');
-  if(bf) bf.style.width=pct+'%';
-  const bc=document.getElementById('bar-count');
-  if(bc) bc.textContent=done+' / '+TOTAL;
-  const pc=document.getElementById('ps-count');
-  if(pc) pc.textContent=done;
-  // rank
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
   let ri=0;
   for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
   const r=RANKS[ri];
@@ -316,40 +494,40 @@ function render(){
   const ri2=document.getElementById('ps-rank-icon');
   const rn=document.getElementById('ps-rank-name');
   const rs=document.getElementById('ps-rank-sub');
-  if(rc){rc.className='ps-rank-card '+(r.cls||'');}
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
   if(ri2) ri2.textContent=r.icon;
   if(rn) rn.textContent=r.name;
   if(rs) rs.textContent=r.sub;
-  // next rank
   const nxt=document.getElementById('ps-next');
   if(nxt){
     if(ri<RANKS.length-1){
-      const nr=RANKS[ri+1];
-      const need=nr.min-done;
+      const nr=RANKS[ri+1]; const need=nr.min-done;
       nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
     } else { nxt.innerHTML='<span>Max rank bereikt! 🎉</span>'; }
   }
 }
 function resetLab(){
   if(!confirm('Voortgang van dit lab wissen?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+  localStorage.removeItem(STORAGE_KEY); render();
 }
-// copy buttons — capture the clean command text BEFORE adding the button,
-// so the button label can never leak into the clipboard.
-document.querySelectorAll('.cmd').forEach(block=>{
-  const original=block.innerText.trim();
-  const btn=document.createElement('button');
-  btn.className='copy-btn'; btn.textContent='kopieer';
-  btn.onclick=e=>{
-    e.stopPropagation();
-    navigator.clipboard.writeText(original).then(()=>{
-      btn.textContent='✓'; setTimeout(()=>btn.textContent='kopieer',1500);
-    });
-  };
-  block.appendChild(btn);
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='✓ Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
 });
-render();
 </script>
 </body>
 </html>
