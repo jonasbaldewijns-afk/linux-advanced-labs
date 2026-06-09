@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLANs & Trunking · Trikks' Labs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+  :root {
+    --bg:#0a0f14;--surface:#131b24;--surface2:#1b2733;--border:#2a3744;
+    --accent:#fb923c;--accent2:#fbbf24;--theme:#fb923c;
+    --warn:#fbbf24;--danger:#f87171;--purple:#a78bfa;--green:#4ade80;--orange:#fb923c;
+    --text:#e2e8f0;--muted:#7d8da0;--code-bg:#0a0f14;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);background-image:radial-gradient(circle at 15% 10%,rgba(251,146,60,0.07),transparent 42%),radial-gradient(circle at 85% 90%,rgba(251,191,36,0.04),transparent 42%);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem}
+  .container{max-width:1300px;margin:0 auto}
+  header{border-left:4px solid var(--theme);padding-left:1.5rem;margin-bottom:2rem}
+  header .label{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--theme);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.5rem}
+  header h1{font-size:2.2rem;font-weight:800;line-height:1.1}
+  header p{color:var(--muted);margin-top:0.75rem;font-size:0.95rem;line-height:1.6}
+  .progress-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.5rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:1rem}
+  .progress-bar-wrap span{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);white-space:nowrap}
+  .bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--theme),var(--accent2));border-radius:3px;transition:width 0.4s ease;width:0%}
+  .progress-count{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--theme)}
+  .section-title{font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.75rem;margin-top:2.5rem;display:flex;align-items:center;gap:0.75rem}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+  .task-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;overflow:hidden;transition:border-color 0.2s}
+  .task-card.done{border-color:var(--accent)}
+  .task-card.done .task-header{background:rgba(251,146,60,0.05)}
+  .task-header{padding:1rem 1.25rem;cursor:pointer;display:flex;align-items:flex-start;gap:1rem;user-select:none;transition:background 0.15s}
+  .task-header:hover{background:var(--surface2)}
+  .task-check{width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;margin-top:1px}
+  .task-check.checked{background:var(--accent);border-color:var(--accent)}
+  .task-check.checked::after{content:'✓';color:#000;font-size:13px;font-weight:700}
+  .task-meta{flex:1}
+  .task-num{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-bottom:0.25rem}
+  .task-title{font-weight:600;font-size:0.95rem;line-height:1.4}
+  .task-card.done .task-title{color:var(--muted);text-decoration:line-through}
+  .expand-icon{color:var(--muted);font-size:0.8rem;font-family:'JetBrains Mono',monospace;transition:transform 0.2s;flex-shrink:0;margin-top:3px}
+  .task-card.open .expand-icon{transform:rotate(90deg)}
+  .task-body{display:none;padding:0 1.25rem 1.25rem 1.25rem;border-top:1px solid var(--border)}
+  .task-card.open .task-body{display:block}
+  .task-body p{color:var(--text);line-height:1.7;font-size:0.9rem;margin-top:1rem;margin-bottom:0.75rem}
+  .task-body ul,.task-body ol{color:var(--text);line-height:1.8;font-size:0.9rem;margin-top:0.5rem;margin-bottom:0.75rem;padding-left:1.5rem}
+  .task-body li{margin-bottom:0.25rem}
+  .task-body code{background:var(--surface2);padding:0.1rem 0.35rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent2)}
+  .task-body table{width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:0.85rem}
+  .task-body th{background:var(--surface2);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;padding:0.5rem 0.75rem;border:1px solid var(--border);text-align:left}
+  .task-body td{padding:0.45rem 0.75rem;border:1px solid var(--border);color:var(--text);line-height:1.5}
+  .task-body tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+  .cmd{position:relative;background:var(--code-bg);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:5px;padding:0.75rem 2.5rem 0.75rem 1rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#7dd3fc;margin:0.5rem 0;white-space:pre-wrap;overflow-x:auto;line-height:1.6}
+  .concept-box{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);border-radius:6px;font-size:0.85rem;line-height:1.65}
+  .concept-box strong{font-family:'JetBrains Mono',monospace;color:var(--purple);display:block;margin-bottom:0.4rem;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:0.82rem;line-height:1.6}
+  .verify-block strong{font-family:'JetBrains Mono',monospace;color:var(--green);display:block;margin-bottom:0.4rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block code{color:var(--green);background:rgba(74,222,128,0.08)}
+  .warn-note{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#d4a853}
+  .warn-note strong{color:var(--warn)}
+  .info-note{background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.25);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#fdba74}
+  .info-note strong{color:var(--accent)}
+  .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.4rem}
+  .tag-t{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-c{background:rgba(167,139,250,0.15);color:var(--purple)}
+  .tag-n{background:rgba(251,146,60,0.15);color:var(--orange)}
+  .tag-v{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-s{background:rgba(248,113,113,0.15);color:var(--danger)}
+  .tag-a{background:rgba(251,191,36,0.15);color:var(--warn)}
+  .copy-btn{position:absolute;top:6px;right:6px;font-family:'JetBrains Mono',monospace;font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);opacity:0.55;transition:opacity 0.15s,color 0.15s,border-color 0.15s}
+  .cmd:hover .copy-btn,.copy-btn:focus{opacity:1}
+  .copy-btn:hover{color:var(--accent2);border-color:var(--accent2)}
+  .lab-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;gap:0.75rem;position:fixed;left:max(0.5rem,calc(50% - 650px - 148px));top:50vh;transform:translateY(-50%);flex-direction:column;align-items:stretch;width:130px;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem}
+  .lab-nav a,.lab-nav span{font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-decoration:none;padding:0.45rem 0.9rem;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--surface);transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:0.4rem}
+  .lab-nav a:hover{border-color:var(--accent);color:var(--accent);background:var(--surface2)}
+  .lab-nav .home-btn{border-color:var(--accent);color:var(--accent)}
+  .lab-nav .home-btn:hover{background:var(--accent);color:#000}
+  .lab-nav .disabled{opacity:0.25;pointer-events:none}
+  .progress-sidebar{position:fixed;right:max(0.5rem,calc(50% - 650px - 210px));top:50vh;transform:translateY(-50%);width:190px;z-index:100;display:flex;flex-direction:column;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+  .ps-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em}
+  .ps-count-row{display:flex;align-items:baseline;gap:0.35rem}
+  .ps-count{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+  .ps-total{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted)}
+  .ps-pips{display:flex;flex-wrap:wrap;gap:3px}
+  .ps-pip{width:10px;height:10px;border-radius:2px;background:var(--border);transition:background 0.3s,box-shadow 0.3s;flex-shrink:0}
+  .ps-pip.done{background:var(--accent);box-shadow:0 0 4px rgba(251,146,60,0.5)}
+  .ps-rank-card{border-radius:8px;padding:0.7rem 0.75rem;border:1px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;gap:0.3rem;transition:all 0.4s}
+  .ps-rank-icon{font-size:1.4rem;line-height:1}
+  .ps-rank-name{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em}
+  .ps-rank-sub{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted)}
+  .ps-rank-card.rank-silver{border-color:rgba(168,184,200,0.4);background:rgba(168,184,200,0.07)}.ps-rank-card.rank-silver .ps-rank-name{color:#a8b8c8}
+  .ps-rank-card.rank-gold{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.07);box-shadow:0 0 12px rgba(251,191,36,0.1)}.ps-rank-card.rank-gold .ps-rank-name{color:#fbbf24}
+  .ps-rank-card.rank-platinum{border-color:rgba(148,163,184,0.5);background:rgba(148,163,184,0.09)}.ps-rank-card.rank-platinum .ps-rank-name{color:#e2e8f0}
+  .ps-rank-card.rank-diamond{border-color:rgba(251,146,60,0.5);background:rgba(251,146,60,0.08);box-shadow:0 0 16px rgba(251,146,60,0.2)}.ps-rank-card.rank-diamond .ps-rank-name{color:#fb923c}
+  .ps-rank-card.rank-challenger{border-color:rgba(167,139,250,0.5);background:rgba(167,139,250,0.1);box-shadow:0 0 18px rgba(167,139,250,0.3)}.ps-rank-card.rank-challenger .ps-rank-name{color:#a78bfa}
+  .ps-next{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:0.6rem}
+  .ps-next span{color:var(--warn);font-weight:700}
+  footer{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  footer p{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted)}
+  .reset-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:0.4rem 0.9rem;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s}
+  .reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+  @media(min-width:1200px){.progress-bar-wrap{display:none}}
+  @media(max-width:1199px){.lab-nav{position:static;transform:none;flex-direction:row;width:auto;margin-bottom:1.75rem}.progress-sidebar{display:none}.progress-bar-wrap{display:flex}}
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="lab-nav"><a class="home-btn" href="network_index.html">⌂ Index</a><a class="nav-side" href="net_lab_01_basic_ip.html">← Vorige</a><a class="nav-side right" href="net_lab_03_etherchannel.html">Volgende →</a></nav><div class="progress-sidebar"><div class="ps-label">Voortgang</div><div class="ps-count-row"><span class="ps-count" id="ps-count">0</span><span class="ps-total">/ 8</span></div><div class="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div></div><div class="ps-rank-card" id="ps-rank-card"><span class="ps-rank-icon" id="ps-rank-icon">🔒</span><span class="ps-rank-name" id="ps-rank-name">Unranked</span><span class="ps-rank-sub" id="ps-rank-sub">Voltooi je eerste taak</span></div><div class="ps-next" id="ps-next"></div></div><div class="progress-bar-wrap"><span>Voortgang</span><div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div><span class="progress-count" id="bar-count">0 / 8</span></div><header><div class="label">Lab 02 · Networks Advanced</div><h1>VLANs & Trunking</h1><p>Segmenteer een netwerk met VLANs, configureer 802.1Q trunk links en beveilig ongebruikte poorten met een parkinglot-VLAN.</p></header><div class="section-title">Opstel</div><div class="task-card" id="tc-01" onclick="toggleTask('01',event)"><div class="task-header"><div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div><div class="task-meta"><div class="task-num">Taak 01</div><div class="task-title">Topologie opbouwen in Packet Tracer</div><div style="margin-top:0.35rem"><span class="tag tag-n">packet tracer</span><span class="tag tag-c">opstel</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Bouw de onderstaande topologie op in Packet Tracer vóór je begint met configureren.</p><p><strong>Apparaten:</strong></p><ul><li>2x Switch 2960-24TT (SW1, SW2)</li><li>4x PC (PC-Sales, PC-Eng, PC-Mgmt, PC-Test)</li><li>1x Router 2911 (R1 — optioneel voor inter-VLAN routing later)</li></ul><p><strong>Verbindingstabel:</strong></p><table><thead><tr><th>Van</th><th>Poort</th><th>Naar</th><th>Poort</th><th>Kabel</th></tr></thead><tbody><tr><td>SW1</td><td><code>Gi0/1</code></td><td>SW2</td><td><code>Gi0/1</code></td><td>Cross-Over</td></tr><tr><td>SW1</td><td><code>Fa0/1</code></td><td>PC-Sales</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW1</td><td><code>Fa0/2</code></td><td>PC-Eng</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW2</td><td><code>Fa0/1</code></td><td>PC-Mgmt</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW2</td><td><code>Fa0/2</code></td><td>PC-Test</td><td><code>Fa0</code></td><td>Straight-Through</td></tr></tbody></table><div class="concept-box"><strong>Kabeltypes in PT</strong><strong>Straight-through</strong>: PC/server → switch, switch → router. <strong>Cross-over</strong>: switch → switch, router → router (Ethernet). <strong>Automatisch</strong>: PT detecteert het juiste type als je "Automatically Choose" selecteert.</div><div class="warn-note"><strong>&#9888; Packet Tracer</strong>In PT maakt het voor switch↔switch links niet uit of je straight-through of cross-over gebruikt — Auto-MDIX is standaard actief op de 2960. Gebruik "Automatically Choose" als je twijfelt.</div></div></div><div class="section-title">Theorie</div><div class="task-card" id="tc-02" onclick="toggleTask('02',event)"><div class="task-header"><div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div><div class="task-meta"><div class="task-num">Theorie 02</div><div class="task-title">VLANs en 802.1Q trunking begrijpen</div><div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Een VLAN segmenteert een fysiek netwerk in logische deelnetwerken. Hosts in verschillende VLANs kunnen zonder router <em>niet</em> met elkaar communiceren — ook al zitten ze op dezelfde fysieke switch.</p><table><thead><tr><th>Concept</th><th>Uitleg</th><th>Voorbeeld</th></tr></thead><tbody><tr><td>VLAN</td><td>Logisch netwerksegment</td><td>VLAN 10 = Sales</td></tr><tr><td>Access port</td><td>Poort in één VLAN (voor hosts)</td><td>Fa0/1 → VLAN 10</td></tr><tr><td>Trunk port</td><td>Poort die meerdere VLANs draagt (802.1Q tags)</td><td>Gi0/1 tussen switches</td></tr><tr><td>Native VLAN</td><td>VLAN voor untagged frames op trunk</td><td>VLAN 99</td></tr><tr><td>Parkinglot</td><td>Ongebruikte poorten — uitgeschakeld</td><td>VLAN 999</td></tr></tbody></table><p><strong>IP-schema voor dit lab:</strong></p><table><thead><tr><th>VLAN</th><th>Naam</th><th>Subnet</th><th>Hosts</th></tr></thead><tbody><tr><td>10</td><td>Sales</td><td>192.168.10.0/24</td><td>PC-Sales</td></tr><tr><td>20</td><td>Engineering</td><td>192.168.20.0/24</td><td>PC-Eng</td></tr><tr><td>99</td><td>Management/Native</td><td>192.168.99.0/24</td><td>Switch mgmt</td></tr><tr><td>999</td><td>Parkinglot</td><td>—</td><td>Ongebruikte poorten</td></tr></tbody></table><div class="concept-box"><strong>Waarom een Native VLAN?</strong>Op een trunk worden frames getagd met hun VLAN-ID. Frames van het native VLAN worden echter <em>niet</em> getagd. Gebruik nooit VLAN 1 als native VLAN — dat is een bekend aanvalspunt (VLAN hopping). Gebruik een dedicated VLAN zoals 99.</div></div></div><div class="section-title">Configuratie</div><div class="task-card" id="tc-03" onclick="toggleTask('03',event)"><div class="task-header"><div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div><div class="task-meta"><div class="task-num">Taak 03</div><div class="task-title">VLANs aanmaken op beide switches</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Maak alle VLANs aan op <strong>elk</strong> switch. VLANs bestaan enkel lokaal op de switch — ze worden niet automatisch gesynchroniseerd (tenzij VTP actief is).</p><div class="cmd">! Op SW1 ÉN SW2 uitvoeren
+vlan 10
+ name Sales
+vlan 20
+ name Engineering
+vlan 99
+ name Management
+vlan 999
+ name Parkinglot
+ exit
+
+show vlan brief</div><div class="warn-note"><strong>⚠ VLAN 1</strong> — Gebruik VLAN 1 nooit als management- of native VLAN. Het is het standaard-VLAN en een bekend doelwit voor VLAN hopping-aanvallen.</div></div></div><div class="task-card" id="tc-04" onclick="toggleTask('04',event)"><div class="task-header"><div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div><div class="task-meta"><div class="task-num">Taak 04</div><div class="task-title">Access ports configureren</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Wijs elke host-poort toe aan het juiste VLAN. Een access port draagt slechts één VLAN en stuurt geen tags.</p><div class="cmd">! Op SW1
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ exit
+
+interface FastEthernet0/2
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ exit
+
+! Op SW2 — zelfde patroon
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ exit</div><div class="concept-box"><strong>spanning-tree portfast</strong>Laat een access port direct in forwarding-state gaan, zonder de normale STP listening/learning-fasen te doorlopen (normaal 30 seconden wachten). Gebruik <em>uitsluitend</em> op access ports richting hosts — nooit op trunk ports.</div><div class="info-note"><strong>ℹ PC IP-adressen instellen</strong>Stel op PC-Sales in PT een statisch IP in: 192.168.10.10/24, gateway 192.168.10.1 (nog niet actief — later bij inter-VLAN). Op PC-Eng: 192.168.20.10/24.</div></div></div><div class="task-card" id="tc-05" onclick="toggleTask('05',event)"><div class="task-header"><div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div><div class="task-meta"><div class="task-num">Taak 05</div><div class="task-title">Trunk port configureren tussen SW1 en SW2</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>De trunk draagt alle VLAN-verkeer tussen de twee switches. Native VLAN moet <strong>identiek</strong> zijn op beide kanten.</p><div class="cmd">! Op SW1 — Gi0/1 naar SW2
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,99
+ switchport nonegotiate
+ exit
+
+! Op SW2 — Gi0/1 naar SW1 (identieke config)
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,99
+ switchport nonegotiate
+ exit</div><div class="verify-block"><strong>✓ Verificatie</strong><code>show interfaces trunk</code> — toont trunk ports, native VLAN en allowed VLANs<br><code>show interfaces Gi0/1 switchport</code> — gedetailleerde info van één poort</div></div></div><div class="task-card" id="tc-06" onclick="toggleTask('06',event)"><div class="task-header"><div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div><div class="task-meta"><div class="task-num">Taak 06</div><div class="task-title">DTP uitschakelen en parkinglot instellen</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-s">security</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>DTP (Dynamic Trunking Protocol) onderhandelt automatisch over trunk-modus — dit is een veiligheidsrisico. Schakel het uit op alle poorten.</p><div class="cmd">! DTP uitschakelen op trunk: switchport nonegotiate (al gedaan in taak 05)
+
+! Parkinglot: ongebruikte poorten
+interface range FastEthernet0/3-24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit
+
+! CDP uitschakelen op externe poorten (geen device-info lekken)
+interface FastEthernet0/1
+ no cdp enable
+ exit</div><div class="info-note"><strong>ℹ Wat is DTP?</strong>DTP is een Cisco-protocol dat automatisch trunk-verbindingen opzet tussen switches. Het probleem: een aanvaller kan zelf ook DTP sturen en zo een trunk forceren naar zijn eigen apparaat — waarna hij toegang heeft tot alle VLANs.</div></div></div><div class="task-card" id="tc-07" onclick="toggleTask('07',event)"><div class="task-header"><div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div><div class="task-meta"><div class="task-num">Taak 07</div><div class="task-title">Switch management-IP en verificatie</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-v">verificatie</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Stel de management-IP in op VLAN 99 zodat je de switch via SSH kan bereiken.</p><div class="cmd">! Op SW1
+interface vlan 99
+ ip address 192.168.99.2 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 192.168.99.1
+
+! Op SW2
+interface vlan 99
+ ip address 192.168.99.3 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 192.168.99.1</div><p><strong>Volledige verificatie:</strong></p><div class="cmd">show vlan brief
+show interfaces trunk
+show interfaces FastEthernet0/1 switchport
+show mac address-table
+show spanning-tree vlan 10</div><div class="info-note"><strong>ℹ Connectiviteitstest</strong>Ping van PC-Sales naar PC-Eng zal <em>niet</em> werken — ze zitten in verschillende VLANs. Dit is correct! Voor inter-VLAN verkeer heb je een router of MLS nodig (zie labs 06-09).</div></div></div><div class="task-card" id="tc-08" onclick="toggleTask('08',event)"><div class="task-header"><div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div><div class="task-meta"><div class="task-num">Taak 08</div><div class="task-title">Troubleshooting — veelgemaakte fouten</div><div style="margin-top:0.35rem"><span class="tag tag-v">verificatie</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Als iets niet werkt, doorloop deze checklist:</p><ol><li><strong>VLAN bestaat niet op de switch</strong> — <code>show vlan brief</code>: staat het VLAN er? Maak het aan als het ontbreekt.</li><li><strong>Trunk native VLAN mismatch</strong> — <code>show interfaces trunk</code>: native VLAN hetzelfde op beide kanten?</li><li><strong>VLAN niet allowed op trunk</strong> — is VLAN 10 wel in de allowed-lijst van de trunk?</li><li><strong>Access port in verkeerd VLAN</strong> — <code>show interfaces Fa0/1 switchport</code>: klopt het access VLAN?</li><li><strong>STP blokkeert poort</strong> — <code>show spanning-tree vlan 10</code>: is de poort in FWD of BLK?</li></ol><div class="cmd">! Snel troubleshoot-commando
+show vlan brief
+show interfaces trunk
+show spanning-tree vlan 10 brief</div></div></div><footer><p>Networks Advanced · Lab 02 · VLANs & Trunking · 8 taken</p><button class="reset-btn" onclick="resetLab()">↺ Reset lab</button></footer></div><script>
+const STORAGE_KEY = 'net_lab02_state';
+const TOTAL = 8;
+const RANKS = [
+  {min:0,   name:'Unranked',   icon:'\uD83D\uDD12', cls:'',              sub:'Voltooi je eerste taak'},
+  {min:1,   name:'Silver',     icon:'\uD83E\uDD48', cls:'rank-silver',   sub:'Je bent op weg!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'\uD83E\uDD47', cls:'rank-gold',     sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'\uD83C\uDFC5', cls:'rank-platinum', sub:'Bijna daar!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'\uD83D\uDCA0', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'\u2694\uFE0F',cls:'rank-challenger',sub:'Lab voltooid!'},
+];
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
+function checkTask(id,e){
+  e.stopPropagation();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
+}
+function toggleTask(id,e){
+  if(e.target.closest('.task-check')) return;
+  document.getElementById('tc-'+id).classList.toggle('open');
+}
+function render(){
+  const s=loadState(); let done=0;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const id=card.id.replace('tc-','');
+    const checked=!!s[id]; if(checked) done++;
+    card.classList.toggle('done',checked);
+    const chk=document.getElementById('chk-'+id);
+    if(chk) chk.classList.toggle('checked',checked);
+  });
+  let pipIdx=1;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
+    if(pip) pip.classList.toggle('done',!!s[id]);
+    pipIdx++;
+  });
+  const pct=TOTAL>0?(done/TOTAL)*100:0;
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
+  let ri=0;
+  for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
+  const r=RANKS[ri];
+  const rc=document.getElementById('ps-rank-card');
+  const ri2=document.getElementById('ps-rank-icon');
+  const rn=document.getElementById('ps-rank-name');
+  const rs=document.getElementById('ps-rank-sub');
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
+  if(ri2) ri2.textContent=r.icon;
+  if(rn) rn.textContent=r.name;
+  if(rs) rs.textContent=r.sub;
+  const nxt=document.getElementById('ps-next');
+  if(nxt){
+    if(ri<RANKS.length-1){
+      const nr=RANKS[ri+1]; const need=nr.min-done;
+      nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
+    } else { nxt.innerHTML='<span>Max rank bereikt! \uD83C\uDF89</span>'; }
+  }
+}
+function resetLab(){
+  if(!confirm('Voortgang van dit lab wissen?')) return;
+  localStorage.removeItem(STORAGE_KEY); render();
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='\u2713 Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
+});
+</script>
+</body>
+</html>

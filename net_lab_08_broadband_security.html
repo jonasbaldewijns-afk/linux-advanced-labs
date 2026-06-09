@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broadband & Security · Trikks' Labs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+  :root {
+    --bg:#0a0f14;--surface:#131b24;--surface2:#1b2733;--border:#2a3744;
+    --accent:#fb923c;--accent2:#fbbf24;--theme:#fb923c;
+    --warn:#fbbf24;--danger:#f87171;--purple:#a78bfa;--green:#4ade80;--orange:#fb923c;
+    --text:#e2e8f0;--muted:#7d8da0;--code-bg:#0a0f14;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);background-image:radial-gradient(circle at 15% 10%,rgba(251,146,60,0.07),transparent 42%),radial-gradient(circle at 85% 90%,rgba(251,191,36,0.04),transparent 42%);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem}
+  .container{max-width:1300px;margin:0 auto}
+  header{border-left:4px solid var(--theme);padding-left:1.5rem;margin-bottom:2rem}
+  header .label{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--theme);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.5rem}
+  header h1{font-size:2.2rem;font-weight:800;line-height:1.1}
+  header p{color:var(--muted);margin-top:0.75rem;font-size:0.95rem;line-height:1.6}
+  .progress-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.5rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:1rem}
+  .progress-bar-wrap span{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);white-space:nowrap}
+  .bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--theme),var(--accent2));border-radius:3px;transition:width 0.4s ease;width:0%}
+  .progress-count{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--theme)}
+  .section-title{font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.75rem;margin-top:2.5rem;display:flex;align-items:center;gap:0.75rem}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+  .task-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;overflow:hidden;transition:border-color 0.2s}
+  .task-card.done{border-color:var(--accent)}
+  .task-card.done .task-header{background:rgba(251,146,60,0.05)}
+  .task-header{padding:1rem 1.25rem;cursor:pointer;display:flex;align-items:flex-start;gap:1rem;user-select:none;transition:background 0.15s}
+  .task-header:hover{background:var(--surface2)}
+  .task-check{width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;margin-top:1px}
+  .task-check.checked{background:var(--accent);border-color:var(--accent)}
+  .task-check.checked::after{content:'✓';color:#000;font-size:13px;font-weight:700}
+  .task-meta{flex:1}
+  .task-num{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-bottom:0.25rem}
+  .task-title{font-weight:600;font-size:0.95rem;line-height:1.4}
+  .task-card.done .task-title{color:var(--muted);text-decoration:line-through}
+  .expand-icon{color:var(--muted);font-size:0.8rem;font-family:'JetBrains Mono',monospace;transition:transform 0.2s;flex-shrink:0;margin-top:3px}
+  .task-card.open .expand-icon{transform:rotate(90deg)}
+  .task-body{display:none;padding:0 1.25rem 1.25rem 1.25rem;border-top:1px solid var(--border)}
+  .task-card.open .task-body{display:block}
+  .task-body p{color:var(--text);line-height:1.7;font-size:0.9rem;margin-top:1rem;margin-bottom:0.75rem}
+  .task-body ul,.task-body ol{color:var(--text);line-height:1.8;font-size:0.9rem;margin-top:0.5rem;margin-bottom:0.75rem;padding-left:1.5rem}
+  .task-body li{margin-bottom:0.25rem}
+  .task-body code{background:var(--surface2);padding:0.1rem 0.35rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent2)}
+  .task-body table{width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:0.85rem}
+  .task-body th{background:var(--surface2);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;padding:0.5rem 0.75rem;border:1px solid var(--border);text-align:left}
+  .task-body td{padding:0.45rem 0.75rem;border:1px solid var(--border);color:var(--text);line-height:1.5}
+  .task-body tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+  .cmd{position:relative;background:var(--code-bg);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:5px;padding:0.75rem 2.5rem 0.75rem 1rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#7dd3fc;margin:0.5rem 0;white-space:pre-wrap;overflow-x:auto;line-height:1.6}
+  .concept-box{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);border-radius:6px;font-size:0.85rem;line-height:1.65}
+  .concept-box strong{font-family:'JetBrains Mono',monospace;color:var(--purple);display:block;margin-bottom:0.4rem;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:0.82rem;line-height:1.6}
+  .verify-block strong{font-family:'JetBrains Mono',monospace;color:var(--green);display:block;margin-bottom:0.4rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block code{color:var(--green);background:rgba(74,222,128,0.08)}
+  .warn-note{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#d4a853}
+  .warn-note strong{color:var(--warn)}
+  .info-note{background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.25);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#fdba74}
+  .info-note strong{color:var(--accent)}
+  .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.4rem}
+  .tag-t{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-c{background:rgba(167,139,250,0.15);color:var(--purple)}
+  .tag-n{background:rgba(251,146,60,0.15);color:var(--orange)}
+  .tag-v{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-s{background:rgba(248,113,113,0.15);color:var(--danger)}
+  .tag-a{background:rgba(251,191,36,0.15);color:var(--warn)}
+  .copy-btn{position:absolute;top:6px;right:6px;font-family:'JetBrains Mono',monospace;font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);opacity:0.55;transition:opacity 0.15s,color 0.15s,border-color 0.15s}
+  .cmd:hover .copy-btn,.copy-btn:focus{opacity:1}
+  .copy-btn:hover{color:var(--accent2);border-color:var(--accent2)}
+  .lab-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;gap:0.75rem;position:fixed;left:max(0.5rem,calc(50% - 650px - 148px));top:50vh;transform:translateY(-50%);flex-direction:column;align-items:stretch;width:130px;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem}
+  .lab-nav a,.lab-nav span{font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-decoration:none;padding:0.45rem 0.9rem;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--surface);transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:0.4rem}
+  .lab-nav a:hover{border-color:var(--accent);color:var(--accent);background:var(--surface2)}
+  .lab-nav .home-btn{border-color:var(--accent);color:var(--accent)}
+  .lab-nav .home-btn:hover{background:var(--accent);color:#000}
+  .lab-nav .disabled{opacity:0.25;pointer-events:none}
+  .progress-sidebar{position:fixed;right:max(0.5rem,calc(50% - 650px - 210px));top:50vh;transform:translateY(-50%);width:190px;z-index:100;display:flex;flex-direction:column;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+  .ps-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em}
+  .ps-count-row{display:flex;align-items:baseline;gap:0.35rem}
+  .ps-count{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+  .ps-total{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted)}
+  .ps-pips{display:flex;flex-wrap:wrap;gap:3px}
+  .ps-pip{width:10px;height:10px;border-radius:2px;background:var(--border);transition:background 0.3s,box-shadow 0.3s;flex-shrink:0}
+  .ps-pip.done{background:var(--accent);box-shadow:0 0 4px rgba(251,146,60,0.5)}
+  .ps-rank-card{border-radius:8px;padding:0.7rem 0.75rem;border:1px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;gap:0.3rem;transition:all 0.4s}
+  .ps-rank-icon{font-size:1.4rem;line-height:1}
+  .ps-rank-name{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em}
+  .ps-rank-sub{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted)}
+  .ps-rank-card.rank-silver{border-color:rgba(168,184,200,0.4);background:rgba(168,184,200,0.07)}.ps-rank-card.rank-silver .ps-rank-name{color:#a8b8c8}
+  .ps-rank-card.rank-gold{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.07);box-shadow:0 0 12px rgba(251,191,36,0.1)}.ps-rank-card.rank-gold .ps-rank-name{color:#fbbf24}
+  .ps-rank-card.rank-platinum{border-color:rgba(148,163,184,0.5);background:rgba(148,163,184,0.09)}.ps-rank-card.rank-platinum .ps-rank-name{color:#e2e8f0}
+  .ps-rank-card.rank-diamond{border-color:rgba(251,146,60,0.5);background:rgba(251,146,60,0.08);box-shadow:0 0 16px rgba(251,146,60,0.2)}.ps-rank-card.rank-diamond .ps-rank-name{color:#fb923c}
+  .ps-rank-card.rank-challenger{border-color:rgba(167,139,250,0.5);background:rgba(167,139,250,0.1);box-shadow:0 0 18px rgba(167,139,250,0.3)}.ps-rank-card.rank-challenger .ps-rank-name{color:#a78bfa}
+  .ps-next{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:0.6rem}
+  .ps-next span{color:var(--warn);font-weight:700}
+  footer{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  footer p{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted)}
+  .reset-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:0.4rem 0.9rem;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s}
+  .reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+  @media(min-width:1200px){.progress-bar-wrap{display:none}}
+  @media(max-width:1199px){.lab-nav{position:static;transform:none;flex-direction:row;width:auto;margin-bottom:1.75rem}.progress-sidebar{display:none}.progress-bar-wrap{display:flex}}
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="lab-nav"><a class="home-btn" href="network_index.html">⌂ Index</a><a class="nav-side" href="net_lab_07_tech_innovation.html">← Vorige</a><a class="nav-side right" href="net_lab_09_advanced.html">Volgende →</a></nav><div class="progress-sidebar"><div class="ps-label">Voortgang</div><div class="ps-count-row"><span class="ps-count" id="ps-count">0</span><span class="ps-total">/ 11</span></div><div class="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div><div class="ps-pip" id="pip-8"></div><div class="ps-pip" id="pip-9"></div><div class="ps-pip" id="pip-10"></div><div class="ps-pip" id="pip-11"></div></div><div class="ps-rank-card" id="ps-rank-card"><span class="ps-rank-icon" id="ps-rank-icon">🔒</span><span class="ps-rank-name" id="ps-rank-name">Unranked</span><span class="ps-rank-sub" id="ps-rank-sub">Voltooi je eerste taak</span></div><div class="ps-next" id="ps-next"></div></div><div class="progress-bar-wrap"><span>Voortgang</span><div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div><span class="progress-count" id="bar-count">0 / 11</span></div><header><div class="label">Lab 08 · Networks Advanced</div><h1>Broadband Access & Layered Security</h1><p>Het meest complexe lab: HSRP, 6 Etherchannels, DHCP snooping, Dynamic ARP Inspection en Port Security in één topologie.</p></header><div class="section-title">Opstel</div><div class="task-card" id="tc-01" onclick="toggleTask('01',event)"><div class="task-header"><div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div><div class="task-meta"><div class="task-num">Taak 01</div><div class="task-title">Topologie opbouwen in Packet Tracer</div><div style="margin-top:0.35rem"><span class="tag tag-n">packet tracer</span><span class="tag tag-c">opstel</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Bouw de onderstaande topologie op in Packet Tracer vóór je begint met configureren.</p><p><strong>Apparaten:</strong></p><ul><li>1x Layer-3 Switch 3560 (MLS)</li><li>4x Switch 2960-24TT (SW-1, SW-2, SW-3, SW-4)</li><li>1x Server (DHCP-server)</li><li>1x Server (Fileserver/TFTP)</li><li>3x PC (Sales-1, Engineering-1, Admin-1)</li><li>→ Etherchannels 1-4: 2 kabels | Etherchannels 5-6: 3 kabels</li></ul><p><strong>Verbindingstabel:</strong></p><table><thead><tr><th>Van</th><th>Poort</th><th>Naar</th><th>Poort</th><th>Kabel</th></tr></thead><tbody><tr><td>MLS</td><td><code>Gi0/1 + Gi0/2</code></td><td>SW-1</td><td><code>Gi0/1 + Gi0/2</code></td><td>Cross-Over (EC1 — 2 kabels)</td></tr><tr><td>MLS</td><td><code>Gi0/3 + Gi0/4</code></td><td>SW-3</td><td><code>Gi0/1 + Gi0/2</code></td><td>Cross-Over (EC2 — 2 kabels)</td></tr><tr><td>SW-1</td><td><code>Fa0/1 + Fa0/2</code></td><td>SW-2</td><td><code>Fa0/1 + Fa0/2</code></td><td>Cross-Over (EC3 — 2 kabels)</td></tr><tr><td>SW-3</td><td><code>Fa0/1 + Fa0/2</code></td><td>SW-4</td><td><code>Fa0/1 + Fa0/2</code></td><td>Cross-Over (EC4 — 2 kabels)</td></tr><tr><td>SW-1</td><td><code>Fa0/21+22+23</code></td><td>SW-3</td><td><code>Fa0/21+22+23</code></td><td>Cross-Over (EC5 — 3 kabels)</td></tr><tr><td>SW-2</td><td><code>Fa0/21+22+23</code></td><td>SW-4</td><td><code>Fa0/21+22+23</code></td><td>Cross-Over (EC6 — 3 kabels)</td></tr><tr><td>MLS</td><td><code>Gi1/0</code></td><td>DHCP-server</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>MLS</td><td><code>Gi1/1</code></td><td>Fileserver</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW-1</td><td><code>Fa0/10</code></td><td>Sales-1</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW-2</td><td><code>Fa0/10</code></td><td>Engineering-1</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW-4</td><td><code>Fa0/10</code></td><td>Admin-1</td><td><code>Fa0</code></td><td>Straight-Through</td></tr></tbody></table><div class="concept-box"><strong>Kabeltypes in PT</strong><strong>Straight-through</strong>: PC/server → switch, switch → router. <strong>Cross-over</strong>: switch → switch, router → router (Ethernet). <strong>Automatisch</strong>: PT detecteert het juiste type als je "Automatically Choose" selecteert.</div><div class="warn-note"><strong>&#9888; Packet Tracer</strong>Dit is een grote topologie — neem de tijd om alle verbindingen correct te leggen. De 6 Etherchannels zijn de kern van de topologie. In PT zie je dikke lijnen voor gebundelde verbindingen. De 3560 MLS ondersteunt HSRP.</div></div></div><div class="section-title">Configuratie</div><div class="task-card" id="tc-02" onclick="toggleTask('02',event)"><div class="task-header"><div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div><div class="task-meta"><div class="task-num">Taak 02</div><div class="task-title">VLAN-plan en basisconfiguratie</div><div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><table><thead><tr><th>VLAN</th><th>Naam</th><th>Subnet</th><th>Gateway</th></tr></thead><tbody><tr><td>10</td><td>Sales</td><td>192.168.10.0/24</td><td>192.168.10.1</td></tr><tr><td>20</td><td>Engineering</td><td>192.168.20.0/24</td><td>192.168.20.1</td></tr><tr><td>30</td><td>Admin</td><td>192.168.30.0/24</td><td>192.168.30.1</td></tr><tr><td>99</td><td>Management</td><td>192.168.99.0/24</td><td>192.168.99.1</td></tr><tr><td>100</td><td>Native</td><td>—</td><td>—</td></tr><tr><td>999</td><td>Blackhole</td><td>—</td><td>—</td></tr></tbody></table><div class="cmd">! VLANs op alle switches
+vlan 10
+ name Sales
+vlan 20
+ name Engineering
+vlan 30
+ name Admin
+vlan 99
+ name Management
+vlan 100
+ name Native
+vlan 999
+ name Blackhole
+ exit</div></div></div><div class="task-card" id="tc-03" onclick="toggleTask('03',event)"><div class="task-header"><div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div><div class="task-meta"><div class="task-num">Taak 03</div><div class="task-title">6 Etherchannels aanmaken</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Maak alle 6 Etherchannels aan. Kanalen 1-4 hebben 2 kabels, kanalen 5-6 hebben 3 kabels.</p><div class="cmd">! EC1: MLS ↔ SW-1 (2 kabels, channel-group 1)
+! Op MLS:
+interface range GigabitEthernet0/1-2
+ channel-group 1 mode active
+ exit
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,20,30,99,100
+ exit
+
+! Op SW-1:
+interface range GigabitEthernet0/1-2
+ channel-group 1 mode active
+ exit
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 100
+ switchport trunk allowed vlan 10,20,30,99,100
+ exit
+
+! EC2: MLS ↔ SW-3 — channel-group 2, zelfde patroon
+! EC3: SW-1 ↔ SW-2 — channel-group 3
+! EC4: SW-3 ↔ SW-4 — channel-group 4
+! EC5: SW-1 ↔ SW-3 (3 kabels) — channel-group 5
+! EC6: SW-2 ↔ SW-4 (3 kabels) — channel-group 6
+
+! Verifiëren
+show etherchannel summary</div><div class="warn-note"><strong>⚠ Geduld bij PT</strong>In Packet Tracer duurt het soms 10-20 seconden voor een Etherchannel actief wordt (LACP-negotiatie). Wacht tot je "SU" ziet in <code>show etherchannel summary</code>.</div></div></div><div class="task-card" id="tc-04" onclick="toggleTask('04',event)"><div class="task-header"><div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div><div class="task-meta"><div class="task-num">Taak 04</div><div class="task-title">Access ports en HSRP op MLS</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><div class="cmd">! IP routing op MLS
+ip routing
+
+! SVI per VLAN + HSRP
+interface vlan 10
+ ip address 192.168.10.2 255.255.255.0
+ standby version 2
+ standby 10 ip 192.168.10.1
+ standby 10 priority 110
+ standby 10 preempt
+ no shutdown
+ exit
+
+! Herhaal voor VLAN 20 en 30
+
+! Access ports
+interface FastEthernet0/10
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ exit</div><div class="info-note"><strong>ℹ HSRP op een L3 switch</strong>In dit lab heeft de MLS de HSRP-rol — niet een aparte router. De standby-router zou een tweede MLS zijn. Als je er maar één hebt in PT, configureer HSRP toch — het werkt gewoon met één apparaat als active.</div></div></div><div class="task-card" id="tc-05" onclick="toggleTask('05',event)"><div class="task-header"><div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div><div class="task-meta"><div class="task-num">Taak 05</div><div class="task-title">STP, DTP en CDP beveiligen</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-s">security</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><div class="cmd">! Rapid PVST+ op alle switches
+spanning-tree mode rapid-pvst
+
+! DTP uitschakelen op alle trunk ports
+interface port-channel 1
+ switchport nonegotiate
+ exit
+
+! CDP uitschakelen op externe poorten (richting hosts)
+interface FastEthernet0/10
+ no cdp enable
+ exit
+
+! Parkinglot
+interface range FastEthernet0/11-24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+ exit</div></div></div><div class="task-card" id="tc-06" onclick="toggleTask('06',event)"><div class="task-header"><div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div><div class="task-meta"><div class="task-num">Taak 06</div><div class="task-title">DHCP snooping</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-s">security</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Voorkomt dat een nep-DHCP-server valse IP-adressen uitdeelt aan clients.</p><div class="cmd">! Op alle switches
+ip dhcp snooping
+ip dhcp snooping vlan 10,20,30,99
+no ip dhcp snooping information option
+
+! Vertrouwde poort richting echte DHCP-server/MLS
+interface GigabitEthernet0/1
+ ip dhcp snooping trust
+ exit
+
+! Alle andere poorten zijn automatisch untrusted
+
+show ip dhcp snooping
+show ip dhcp snooping binding</div><div class="concept-box"><strong>Trusted vs Untrusted ports</strong>Op een <em>untrusted</em> poort worden DHCP OFFER en ACK berichten gedropt — alleen DISCOVER en REQUEST mogen. Dit voorkomt dat een client-apparaat zelf DHCP-aanbiedingen stuurt. Trusted ports zijn richting de echte DHCP-server of andere switches.</div></div></div><div class="task-card" id="tc-07" onclick="toggleTask('07',event)"><div class="task-header"><div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div><div class="task-meta"><div class="task-num">Taak 07</div><div class="task-title">Dynamic ARP Inspection (DAI)</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-s">security</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>DAI controleert ARP-pakketten aan de hand van de DHCP snooping-tabel en gooit valse ARP-antwoorden weg.</p><div class="cmd">! DHCP snooping moet al actief zijn (taak 06)
+! Op alle switches
+ip arp inspection vlan 10,20,30,99
+
+! Vertrouwde poort
+interface GigabitEthernet0/1
+ ip arp inspection trust
+ exit
+
+show ip arp inspection
+show ip arp inspection vlan 10</div><div class="warn-note"><strong>⚠ Volgorde is cruciaal</strong>Activeer DHCP snooping <em>vóór</em> DAI. DAI gebruikt de snooping-bindingtabel om te valideren of een ARP-antwoord klopt (IP↔MAC-combinatie). Zonder snooping verwerpt DAI al het ARP-verkeer.</div></div></div><div class="task-card" id="tc-08" onclick="toggleTask('08',event)"><div class="task-header"><div class="task-check" id="chk-08" onclick="checkTask('08',event)"></div><div class="task-meta"><div class="task-num">Taak 08</div><div class="task-title">Port security</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-s">security</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Beperkt hoeveel MAC-adressen op een access port mogen. Beschermt tegen MAC flooding aanvallen waarbij een switch zijn CAM-table vol gooit en alles gaat flooden.</p><div class="cmd">! Op alle access ports
+interface FastEthernet0/10
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ exit
+
+! Violation modes:
+! protect  — dropt frames, geen log, geen counter
+! restrict  — dropt frames + syslog + counter
+! shutdown  — poort in err-disabled (meest strikt)
+
+show port-security
+show port-security interface FastEthernet0/10</div></div></div><div class="task-card" id="tc-09" onclick="toggleTask('09',event)"><div class="task-header"><div class="task-check" id="chk-09" onclick="checkTask('09',event)"></div><div class="task-meta"><div class="task-num">Taak 09</div><div class="task-title">DHCP per VLAN en backup naar fileserver</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><div class="cmd">! Op de DHCP-server (stel IP in: 192.168.99.254)
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp pool SALES
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ exit
+
+! Herhaal voor Engineering en Admin
+
+! DHCP relay op MLS
+interface vlan 10
+ ip helper-address 192.168.99.254
+ exit
+
+! Config backup naar fileserver (TFTP)
+copy running-config tftp
+! Fileserver IP: 192.168.99.253
+! Bestandsnaam: MLS-backup.txt</div><p>Activeer TFTP op de Fileserver in PT: klik op Server → Services → TFTP → On.</p></div></div><div class="task-card" id="tc-10" onclick="toggleTask('10',event)"><div class="task-header"><div class="task-check" id="chk-10" onclick="checkTask('10',event)"></div><div class="task-meta"><div class="task-num">Taak 10</div><div class="task-title">SSH op alle apparaten</div><div style="margin-top:0.35rem"><span class="tag tag-s">security</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><div class="cmd">! Op MLS, SW-1 t/m SW-4
+ip domain-name bedrijf.local
+crypto key generate rsa modulus 2048
+ip ssh version 2
+username admin privilege 15 secret cisco
+line vty 0 15
+ transport input ssh
+ login local
+ exit</div></div></div><div class="task-card" id="tc-11" onclick="toggleTask('11',event)"><div class="task-header"><div class="task-check" id="chk-11" onclick="checkTask('11',event)"></div><div class="task-meta"><div class="task-num">Taak 11</div><div class="task-title">Volledige verificatie en troubleshooting</div><div style="margin-top:0.35rem"><span class="tag tag-v">verificatie</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><div class="cmd">show etherchannel summary
+show interfaces trunk
+show vlan brief
+show ip dhcp snooping
+show ip arp inspection
+show port-security
+show standby brief
+show ip route
+
+! Connectiviteit testen
+ping 192.168.10.1
+ping 192.168.20.1
+
+! DHCP werkt?
+show ip dhcp binding</div><p><strong>Veelgemaakte fouten:</strong></p><ol><li>DAI verwerpt alle ARP — check of DHCP snooping eerst aan staat</li><li>Etherchannel "suspended" — trunk-config mismatch? <code>show etherchannel detail</code></li><li>Port security err-disabled — verkeerde host aangesloten, <code>shutdown / no shutdown</code> om te resetten</li><li>DHCP snooping dropt pakket — is de uplink-poort als trusted geconfigureerd?</li></ol></div></div><footer><p>Networks Advanced · Lab 08 · Broadband Access & Layered Security · 11 taken</p><button class="reset-btn" onclick="resetLab()">↺ Reset lab</button></footer></div><script>
+const STORAGE_KEY = 'net_lab08_state';
+const TOTAL = 11;
+const RANKS = [
+  {min:0,   name:'Unranked',   icon:'\uD83D\uDD12', cls:'',              sub:'Voltooi je eerste taak'},
+  {min:1,   name:'Silver',     icon:'\uD83E\uDD48', cls:'rank-silver',   sub:'Je bent op weg!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'\uD83E\uDD47', cls:'rank-gold',     sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'\uD83C\uDFC5', cls:'rank-platinum', sub:'Bijna daar!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'\uD83D\uDCA0', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'\u2694\uFE0F',cls:'rank-challenger',sub:'Lab voltooid!'},
+];
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
+function checkTask(id,e){
+  e.stopPropagation();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
+}
+function toggleTask(id,e){
+  if(e.target.closest('.task-check')) return;
+  document.getElementById('tc-'+id).classList.toggle('open');
+}
+function render(){
+  const s=loadState(); let done=0;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const id=card.id.replace('tc-','');
+    const checked=!!s[id]; if(checked) done++;
+    card.classList.toggle('done',checked);
+    const chk=document.getElementById('chk-'+id);
+    if(chk) chk.classList.toggle('checked',checked);
+  });
+  let pipIdx=1;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
+    if(pip) pip.classList.toggle('done',!!s[id]);
+    pipIdx++;
+  });
+  const pct=TOTAL>0?(done/TOTAL)*100:0;
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
+  let ri=0;
+  for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
+  const r=RANKS[ri];
+  const rc=document.getElementById('ps-rank-card');
+  const ri2=document.getElementById('ps-rank-icon');
+  const rn=document.getElementById('ps-rank-name');
+  const rs=document.getElementById('ps-rank-sub');
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
+  if(ri2) ri2.textContent=r.icon;
+  if(rn) rn.textContent=r.name;
+  if(rs) rs.textContent=r.sub;
+  const nxt=document.getElementById('ps-next');
+  if(nxt){
+    if(ri<RANKS.length-1){
+      const nr=RANKS[ri+1]; const need=nr.min-done;
+      nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
+    } else { nxt.innerHTML='<span>Max rank bereikt! \uD83C\uDF89</span>'; }
+  }
+}
+function resetLab(){
+  if(!confirm('Voortgang van dit lab wissen?')) return;
+  localStorage.removeItem(STORAGE_KEY); render();
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='\u2713 Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
+});
+</script>
+</body>
+</html>

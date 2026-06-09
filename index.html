@@ -90,7 +90,7 @@
   /* ── COURSE CARDS ── */
   .courses {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
     width: 100%;
     max-width: 900px;
@@ -133,6 +133,21 @@
     box-shadow: 0 0 40px rgba(45,212,191,0.08) inset;
   }
   .card-linux:hover { border-color: var(--accent); }
+
+  /* Networks card */
+  .card-networks {
+    border-top: 3px solid var(--orange);
+  }
+  .card-networks::before {
+    box-shadow: 0 0 40px rgba(251,146,60,0.08) inset;
+  }
+  .card-networks:hover { border-color: var(--orange); }
+  .card-networks .card-badge {
+    background: rgba(251,146,60,0.12);
+    color: var(--orange);
+    border: 1px solid rgba(251,146,60,0.25);
+  }
+  .card-networks .card-cta { color: var(--orange); }
 
   /* Windows card */
   .card-windows {
@@ -240,7 +255,7 @@
   <div class="hero">
     <div class="hero-label">PXL · Sys &amp; Networks</div>
     <h1>Trikks' Labs</h1>
-    <p>Interactieve labgidsen voor de PXL-cursussen Linux Advanced en Windows Advanced. Kies je cursus hieronder — je voortgang wordt per lab bijgehouden in je browser.</p>
+    <p>Interactieve labgidsen voor de PXL-cursussen Linux Advanced, Windows Advanced en Networks Advanced. Kies je cursus hieronder — je voortgang wordt per lab bijgehouden in je browser.</p>
   </div>
 
   <div class="courses">
@@ -281,6 +296,26 @@
       </div>
       <div class="card-cta">
         <span>Naar Windows Labs</span>
+        <span class="card-cta-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="course-card card-networks" href="network_index.html">
+      <div class="card-icon">🌐</div>
+      <div>
+        <div class="card-badge">Networks Advanced</div>
+        <div class="card-title">Networks<br>Advanced</div>
+      </div>
+      <div class="card-desc">9 labs: Basic IP, VLANs, Etherchannel, FHRP, WLAN, inter-VLAN routing, Layered Security en Advanced Networks met IPv6. Van CCNA1 tot 3-laags hiërarchisch netwerk.</div>
+      <div class="card-meta">
+        <span class="card-tag">Cisco IOS</span>
+        <span class="card-tag">HSRP</span>
+        <span class="card-tag">IPv6</span>
+        <span class="card-tag">Packet Tracer</span>
+        <span class="card-tag">9 labs</span>
+      </div>
+      <div class="card-cta">
+        <span>Naar Networks Labs</span>
         <span class="card-cta-arrow">→</span>
       </div>
     </a>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Networks Advanced · Trikks' Labs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+  :root {
+    --bg:#0a0f14;--surface:#131b24;--surface2:#1b2733;--border:#2a3744;
+    --accent:#fb923c;--accent2:#fbbf24;--muted:#7d8da0;--text:#e2e8f0;
+    --green:#4ade80;--danger:#f87171;--purple:#a78bfa;--warn:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);background-image:radial-gradient(circle at 15% 10%,rgba(251,146,60,0.08),transparent 45%),radial-gradient(circle at 85% 90%,rgba(251,191,36,0.05),transparent 45%);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem}
+  .container{max-width:960px;margin:0 auto}
+  .back-link{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;margin-bottom:2rem;padding:0.4rem 0.8rem;border:1px solid var(--border);border-radius:5px;transition:all 0.15s}
+  .back-link:hover{border-color:var(--accent);color:var(--accent)}
+  header{margin-bottom:2.5rem}
+  .hero-label{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.6rem}
+  .hero-label::before{content:'';width:30px;height:1px;background:var(--border)}
+  header h1{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.6rem}
+  header p{color:var(--muted);font-size:0.9rem;line-height:1.65;max-width:58ch}
+  .total-progress{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:2rem}
+  .tp-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;margin-bottom:0.5rem}
+  .tp-counts{display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.6rem}
+  .tp-done{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--accent);line-height:1}
+  .tp-total{font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--muted)}
+  .tp-bar-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:0.5rem}
+  .tp-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width 0.5s ease;width:0%}
+  .tp-rank{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);opacity:0;transition:opacity 0.3s}
+  .tp-rank.show{opacity:1}
+  .section-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--muted);margin-bottom:0.75rem;margin-top:2rem;display:flex;align-items:center;gap:0.6rem}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+  .labs-grid{display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem}
+  .lab-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;text-decoration:none;color:inherit;display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:1rem;transition:border-color 0.2s,background 0.2s}
+  .lab-card:hover{border-color:var(--accent);background:var(--surface2)}
+  .lab-card.complete{border-color:var(--green)}
+  .lab-num{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);text-align:center}
+  .lab-num strong{display:block;font-size:1.1rem;color:var(--accent);line-height:1.2}
+  .lab-name{font-weight:700;font-size:0.95rem;margin-bottom:0.2rem}
+  .lab-desc{font-size:0.78rem;color:var(--muted);line-height:1.5}
+  .lab-tags{display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.4rem}
+  .ltag{font-family:'JetBrains Mono',monospace;font-size:0.6rem;padding:0.1rem 0.45rem;border-radius:3px;text-transform:uppercase;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  .progress-line{display:flex;align-items:center;gap:0.6rem;margin-top:0.3rem}
+  .lp-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;max-width:120px}
+  .lp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width 0.4s;width:0%}
+  .lp-text{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);white-space:nowrap}
+  .lab-arrow{color:var(--muted);font-size:0.9rem;transition:transform 0.2s,color 0.2s}
+  .lab-card:hover .lab-arrow{transform:translateX(4px);color:var(--accent)}
+  .lab-reset-btn{font-family:'JetBrains Mono',monospace;font-size:0.68rem;padding:0.15rem 0.4rem;border:1px solid var(--border);border-radius:3px;background:none;color:var(--muted);cursor:pointer;transition:all 0.15s}
+  .lab-reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+  footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  footer span{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted)}
+  .actions{display:flex;gap:0.75rem}
+  .expand{font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:0.35rem 0.8rem;border:1px solid var(--border);border-radius:5px;background:none;color:var(--muted);cursor:pointer;transition:all 0.15s}
+  .expand:hover{border-color:var(--accent);color:var(--accent)}
+  .reset{font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:0.35rem 0.8rem;border:1px solid var(--border);border-radius:5px;background:none;color:var(--muted);cursor:pointer;transition:all 0.15s}
+  .reset:hover{border-color:var(--danger);color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="index.html">← Terug naar hoofdmenu</a>
+  <header>
+    <div class="hero-label">Networks Advanced · PXL Hogeschool</div>
+    <h1>🌐 Networks Advanced</h1>
+    <p>Cisco IOS labs voor CCNA1, CCNA2 en bedrijfsscenario's. Van basis IP-configuratie tot 3-laags hi\xebrarchische netwerken met IPv6, VRRP en Layered Security.</p>
+  </header>
+
+  <div class="total-progress">
+    <div class="tp-label">Totale voortgang \u2014 Networks Advanced</div>
+    <div class="tp-counts">
+      <span class="tp-done" id="tp-done">0</span>
+      <span class="tp-total" id="tp-total">/ 0 taken</span>
+    </div>
+    <div class="tp-bar-track"><div class="tp-bar-fill" id="tp-bar"></div></div>
+    <span class="tp-rank" id="tp-rank"></span>
+  </div>
+
+  <div class="section-label">CCNA1 \u2014 Foundational</div>
+  <div class="labs-grid">
+    <a class="lab-card" href="net_lab_01_basic_ip.html" data-key="net_lab01_state" data-total="8">
+      <div class="lab-num"><strong>01</strong>Lab</div>
+      <div>
+        <div class="lab-name">Basic Device IP Configuration</div>
+        <div class="lab-desc">IP-adressering, SSH, DHCP en basis device security op Cisco routers en switches.</div>
+        <div class="lab-tags"><span class="ltag">IP</span><span class="ltag">SSH</span><span class="ltag">DHCP</span><span class="ltag">7 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 7</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+  </div>
+
+  <div class="section-label">CCNA2 \u2014 Switching & Redundancy</div>
+  <div class="labs-grid">
+    <a class="lab-card" href="net_lab_02_vlans.html" data-key="net_lab02_state" data-total="8">
+      <div class="lab-num"><strong>02</strong>Lab</div>
+      <div>
+        <div class="lab-name">VLANs & Trunking</div>
+        <div class="lab-desc">VLAN-segmentatie, 802.1Q trunk links, DTP uitschakelen en parkinglot-configuratie.</div>
+        <div class="lab-tags"><span class="ltag">VLAN</span><span class="ltag">802.1Q</span><span class="ltag">STP</span><span class="ltag">7 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 7</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+    <a class="lab-card" href="net_lab_03_etherchannel.html" data-key="net_lab03_state" data-total="7">
+      <div class="lab-num"><strong>03</strong>Lab</div>
+      <div>
+        <div class="lab-name">Etherchannel</div>
+        <div class="lab-desc">Link aggregation met LACP \u2014 meer bandbreedte en redundantie door bundeling van fysieke links.</div>
+        <div class="lab-tags"><span class="ltag">LACP</span><span class="ltag">Port-Channel</span><span class="ltag">LAG</span><span class="ltag">6 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 6</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+    <a class="lab-card" href="net_lab_04_fhrp.html" data-key="net_lab04_state" data-total="9">
+      <div class="lab-num"><strong>04</strong>Lab</div>
+      <div>
+        <div class="lab-name">FHRP \u2014 First Hop Redundancy</div>
+        <div class="lab-desc">HSRP voor gateway-failover, Rapid PVST+ voor lus-preventie en DHCP op redundante routers.</div>
+        <div class="lab-tags"><span class="ltag">HSRP</span><span class="ltag">PVST+</span><span class="ltag">Etherchannel</span><span class="ltag">8 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 8</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+    <a class="lab-card" href="net_lab_05_fhrp_wlan.html" data-key="net_lab05_state" data-total="10">
+      <div class="lab-num"><strong>05</strong>Lab</div>
+      <div>
+        <div class="lab-name">FHRP + WLAN</div>
+        <div class="lab-desc">Lab 04 uitgebreid met Wireless LAN Controller, Access Points, SSID en WPA2.</div>
+        <div class="lab-tags"><span class="ltag">WLC</span><span class="ltag">SSID</span><span class="ltag">WPA2</span><span class="ltag">9 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 9</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+  </div>
+
+  <div class="section-label">Bedrijfsoefeningen \u2014 Scenario-based</div>
+  <div class="labs-grid">
+    <a class="lab-card" href="net_lab_06_security_cloud.html" data-key="net_lab06_state" data-total="10">
+      <div class="lab-num"><strong>06</strong>Lab</div>
+      <div>
+        <div class="lab-name">Security, Automation & Cloud</div>
+        <div class="lab-desc">Schoolnetwerk: MLS inter-VLAN routing, Rapid PVST+ root-keuze, DHCP per VLAN. VLANs: Studenten/Lectoren/Management.</div>
+        <div class="lab-tags"><span class="ltag">MLS</span><span class="ltag">Rapid PVST+</span><span class="ltag">DHCP</span><span class="ltag">9 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 9</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+    <a class="lab-card" href="net_lab_07_tech_innovation.html" data-key="net_lab07_state" data-total="9">
+      <div class="lab-num"><strong>07</strong>Lab</div>
+      <div>
+        <div class="lab-name">Technology Innovation & Solutions</div>
+        <div class="lab-desc">Bedrijfsnetwerk met Wi-Fi VLAN, Sales, Projects en Corporate segmenten. v1.0 en v2.0 (+ webserver).</div>
+        <div class="lab-tags"><span class="ltag">Wi-Fi VLAN</span><span class="ltag">MLS</span><span class="ltag">8 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 8</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+    <a class="lab-card" href="net_lab_08_broadband_security.html" data-key="net_lab08_state" data-total="11">
+      <div class="lab-num"><strong>08</strong>Lab</div>
+      <div>
+        <div class="lab-name">Broadband Access & Layered Security</div>
+        <div class="lab-desc">Meest complex: HSRP, 6 Etherchannels, DHCP snooping, Dynamic ARP Inspection en Port Security.</div>
+        <div class="lab-tags"><span class="ltag">DHCP Snooping</span><span class="ltag">DAI</span><span class="ltag">Port Security</span><span class="ltag">10 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 10</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+    <a class="lab-card" href="net_lab_09_advanced.html" data-key="net_lab09_state" data-total="12">
+      <div class="lab-num"><strong>09</strong>Lab</div>
+      <div>
+        <div class="lab-name">Advanced Networks 2</div>
+        <div class="lab-desc">3-laags hi\xebrarchisch netwerk met IPv4+IPv6 dual-stack, VRRP, Etherchannels en statische routing.</div>
+        <div class="lab-tags"><span class="ltag">IPv6</span><span class="ltag">VRRP</span><span class="ltag">3-layer</span><span class="ltag">11 taken</span></div>
+        <div class="progress-line"><div class="lp-track"><div class="lp-fill"></div></div><span class="lp-text">0 / 11</span></div>
+      </div>
+      <span class="lab-arrow">\u203a</span>
+    </a>
+  </div>
+
+  <footer>
+    <span class="left-text">PXL Networks Advanced \u00b7 9 labs \u00b7 voortgang lokaal opgeslagen per browser</span>
+    <div class="actions">
+      <button class="expand" onclick="updateAllProgress()">&#8635; Voortgang verversen</button>
+      <button class="reset" onclick="resetEverything()">&#8634; Reset alles</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+  function getDoneCount(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return 0;
+      return Object.values(JSON.parse(raw)).filter(v => v === true).length;
+    } catch(e) { return 0; }
+  }
+
+  function updateAllProgress() {
+    let grandDone = 0, grandTotal = 0;
+    document.querySelectorAll('.lab-card').forEach(card => {
+      const key = card.dataset.key;
+      const total = parseInt(card.dataset.total, 10);
+      const done = getDoneCount(key);
+      grandDone += done; grandTotal += total;
+      const pct = total > 0 ? (done / total) * 100 : 0;
+      const fill = card.querySelector('.lp-fill');
+      const text = card.querySelector('.lp-text');
+      if (fill) fill.style.width = pct + '%';
+      if (text) text.textContent = done + ' / ' + total;
+      if (done === total && total > 0) card.classList.add('complete');
+      else card.classList.remove('complete');
+    });
+    const totalPct = grandTotal > 0 ? (grandDone / grandTotal) * 100 : 0;
+    document.getElementById('tp-done').textContent = grandDone;
+    document.getElementById('tp-total').textContent = '/ ' + grandTotal + ' taken';
+    document.getElementById('tp-bar').style.width = totalPct + '%';
+    const rankEl = document.getElementById('tp-rank');
+    if (rankEl) {
+      if      (totalPct >= 100) { rankEl.textContent = '\u2694\uFE0F Challenger'; rankEl.classList.add('show'); }
+      else if (totalPct >= 85)  { rankEl.textContent = '\uD83D\uDCA0 Diamond';    rankEl.classList.add('show'); }
+      else if (totalPct >= 70)  { rankEl.textContent = '\uD83C\uDFC5 Platinum';   rankEl.classList.add('show'); }
+      else if (totalPct >= 40)  { rankEl.textContent = '\uD83E\uDD47 Gold';       rankEl.classList.add('show'); }
+      else if (totalPct >= 1)   { rankEl.textContent = '\uD83E\uDD48 Silver';     rankEl.classList.add('show'); }
+      else { rankEl.textContent = ''; rankEl.classList.remove('show'); }
+    }
+  }
+
+  function resetEverything() {
+    if (!confirm('Voortgang van alle 9 labs wissen? Dit kan niet ongedaan gemaakt worden.')) return;
+    document.querySelectorAll('.lab-card').forEach(card => {
+      try { localStorage.removeItem(card.dataset.key); } catch(e) {}
+    });
+    updateAllProgress();
+  }
+
+  updateAllProgress();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateAllProgress(); });
+</script>
+</body>
+</html>

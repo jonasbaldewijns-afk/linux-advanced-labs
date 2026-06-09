@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etherchannel · Trikks' Labs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+  :root {
+    --bg:#0a0f14;--surface:#131b24;--surface2:#1b2733;--border:#2a3744;
+    --accent:#fb923c;--accent2:#fbbf24;--theme:#fb923c;
+    --warn:#fbbf24;--danger:#f87171;--purple:#a78bfa;--green:#4ade80;--orange:#fb923c;
+    --text:#e2e8f0;--muted:#7d8da0;--code-bg:#0a0f14;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);background-image:radial-gradient(circle at 15% 10%,rgba(251,146,60,0.07),transparent 42%),radial-gradient(circle at 85% 90%,rgba(251,191,36,0.04),transparent 42%);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem}
+  .container{max-width:1300px;margin:0 auto}
+  header{border-left:4px solid var(--theme);padding-left:1.5rem;margin-bottom:2rem}
+  header .label{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--theme);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.5rem}
+  header h1{font-size:2.2rem;font-weight:800;line-height:1.1}
+  header p{color:var(--muted);margin-top:0.75rem;font-size:0.95rem;line-height:1.6}
+  .progress-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.5rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:1rem}
+  .progress-bar-wrap span{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);white-space:nowrap}
+  .bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--theme),var(--accent2));border-radius:3px;transition:width 0.4s ease;width:0%}
+  .progress-count{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--theme)}
+  .section-title{font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.2em;margin-bottom:0.75rem;margin-top:2.5rem;display:flex;align-items:center;gap:0.75rem}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+  .task-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:1rem;overflow:hidden;transition:border-color 0.2s}
+  .task-card.done{border-color:var(--accent)}
+  .task-card.done .task-header{background:rgba(251,146,60,0.05)}
+  .task-header{padding:1rem 1.25rem;cursor:pointer;display:flex;align-items:flex-start;gap:1rem;user-select:none;transition:background 0.15s}
+  .task-header:hover{background:var(--surface2)}
+  .task-check{width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;margin-top:1px}
+  .task-check.checked{background:var(--accent);border-color:var(--accent)}
+  .task-check.checked::after{content:'✓';color:#000;font-size:13px;font-weight:700}
+  .task-meta{flex:1}
+  .task-num{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-bottom:0.25rem}
+  .task-title{font-weight:600;font-size:0.95rem;line-height:1.4}
+  .task-card.done .task-title{color:var(--muted);text-decoration:line-through}
+  .expand-icon{color:var(--muted);font-size:0.8rem;font-family:'JetBrains Mono',monospace;transition:transform 0.2s;flex-shrink:0;margin-top:3px}
+  .task-card.open .expand-icon{transform:rotate(90deg)}
+  .task-body{display:none;padding:0 1.25rem 1.25rem 1.25rem;border-top:1px solid var(--border)}
+  .task-card.open .task-body{display:block}
+  .task-body p{color:var(--text);line-height:1.7;font-size:0.9rem;margin-top:1rem;margin-bottom:0.75rem}
+  .task-body ul,.task-body ol{color:var(--text);line-height:1.8;font-size:0.9rem;margin-top:0.5rem;margin-bottom:0.75rem;padding-left:1.5rem}
+  .task-body li{margin-bottom:0.25rem}
+  .task-body code{background:var(--surface2);padding:0.1rem 0.35rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--accent2)}
+  .task-body table{width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:0.85rem}
+  .task-body th{background:var(--surface2);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;padding:0.5rem 0.75rem;border:1px solid var(--border);text-align:left}
+  .task-body td{padding:0.45rem 0.75rem;border:1px solid var(--border);color:var(--text);line-height:1.5}
+  .task-body tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+  .cmd{position:relative;background:var(--code-bg);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:5px;padding:0.75rem 2.5rem 0.75rem 1rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#7dd3fc;margin:0.5rem 0;white-space:pre-wrap;overflow-x:auto;line-height:1.6}
+  .concept-box{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);border-radius:6px;font-size:0.85rem;line-height:1.65}
+  .concept-box strong{font-family:'JetBrains Mono',monospace;color:var(--purple);display:block;margin-bottom:0.4rem;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block{margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:0.82rem;line-height:1.6}
+  .verify-block strong{font-family:'JetBrains Mono',monospace;color:var(--green);display:block;margin-bottom:0.4rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em}
+  .verify-block code{color:var(--green);background:rgba(74,222,128,0.08)}
+  .warn-note{background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#d4a853}
+  .warn-note strong{color:var(--warn)}
+  .info-note{background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.25);border-radius:6px;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.82rem;line-height:1.6;color:#fdba74}
+  .info-note strong{color:var(--accent)}
+  .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.4rem}
+  .tag-t{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-c{background:rgba(167,139,250,0.15);color:var(--purple)}
+  .tag-n{background:rgba(251,146,60,0.15);color:var(--orange)}
+  .tag-v{background:rgba(74,222,128,0.15);color:var(--green)}
+  .tag-s{background:rgba(248,113,113,0.15);color:var(--danger)}
+  .tag-a{background:rgba(251,191,36,0.15);color:var(--warn)}
+  .copy-btn{position:absolute;top:6px;right:6px;font-family:'JetBrains Mono',monospace;font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);opacity:0.55;transition:opacity 0.15s,color 0.15s,border-color 0.15s}
+  .cmd:hover .copy-btn,.copy-btn:focus{opacity:1}
+  .copy-btn:hover{color:var(--accent2);border-color:var(--accent2)}
+  .lab-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;gap:0.75rem;position:fixed;left:max(0.5rem,calc(50% - 650px - 148px));top:50vh;transform:translateY(-50%);flex-direction:column;align-items:stretch;width:130px;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.75rem}
+  .lab-nav a,.lab-nav span{font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-decoration:none;padding:0.45rem 0.9rem;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--surface);transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:0.4rem}
+  .lab-nav a:hover{border-color:var(--accent);color:var(--accent);background:var(--surface2)}
+  .lab-nav .home-btn{border-color:var(--accent);color:var(--accent)}
+  .lab-nav .home-btn:hover{background:var(--accent);color:#000}
+  .lab-nav .disabled{opacity:0.25;pointer-events:none}
+  .progress-sidebar{position:fixed;right:max(0.5rem,calc(50% - 650px - 210px));top:50vh;transform:translateY(-50%);width:190px;z-index:100;display:flex;flex-direction:column;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+  .ps-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em}
+  .ps-count-row{display:flex;align-items:baseline;gap:0.35rem}
+  .ps-count{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1}
+  .ps-total{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted)}
+  .ps-pips{display:flex;flex-wrap:wrap;gap:3px}
+  .ps-pip{width:10px;height:10px;border-radius:2px;background:var(--border);transition:background 0.3s,box-shadow 0.3s;flex-shrink:0}
+  .ps-pip.done{background:var(--accent);box-shadow:0 0 4px rgba(251,146,60,0.5)}
+  .ps-rank-card{border-radius:8px;padding:0.7rem 0.75rem;border:1px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;gap:0.3rem;transition:all 0.4s}
+  .ps-rank-icon{font-size:1.4rem;line-height:1}
+  .ps-rank-name{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em}
+  .ps-rank-sub{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted)}
+  .ps-rank-card.rank-silver{border-color:rgba(168,184,200,0.4);background:rgba(168,184,200,0.07)}.ps-rank-card.rank-silver .ps-rank-name{color:#a8b8c8}
+  .ps-rank-card.rank-gold{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.07);box-shadow:0 0 12px rgba(251,191,36,0.1)}.ps-rank-card.rank-gold .ps-rank-name{color:#fbbf24}
+  .ps-rank-card.rank-platinum{border-color:rgba(148,163,184,0.5);background:rgba(148,163,184,0.09)}.ps-rank-card.rank-platinum .ps-rank-name{color:#e2e8f0}
+  .ps-rank-card.rank-diamond{border-color:rgba(251,146,60,0.5);background:rgba(251,146,60,0.08);box-shadow:0 0 16px rgba(251,146,60,0.2)}.ps-rank-card.rank-diamond .ps-rank-name{color:#fb923c}
+  .ps-rank-card.rank-challenger{border-color:rgba(167,139,250,0.5);background:rgba(167,139,250,0.1);box-shadow:0 0 18px rgba(167,139,250,0.3)}.ps-rank-card.rank-challenger .ps-rank-name{color:#a78bfa}
+  .ps-next{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:0.6rem}
+  .ps-next span{color:var(--warn);font-weight:700}
+  footer{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+  footer p{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted)}
+  .reset-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:0.4rem 0.9rem;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s}
+  .reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+  @media(min-width:1200px){.progress-bar-wrap{display:none}}
+  @media(max-width:1199px){.lab-nav{position:static;transform:none;flex-direction:row;width:auto;margin-bottom:1.75rem}.progress-sidebar{display:none}.progress-bar-wrap{display:flex}}
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="lab-nav"><a class="home-btn" href="network_index.html">⌂ Index</a><a class="nav-side" href="net_lab_02_vlans.html">← Vorige</a><a class="nav-side right" href="net_lab_04_fhrp.html">Volgende →</a></nav><div class="progress-sidebar"><div class="ps-label">Voortgang</div><div class="ps-count-row"><span class="ps-count" id="ps-count">0</span><span class="ps-total">/ 7</span></div><div class="ps-pips"><div class="ps-pip" id="pip-1"></div><div class="ps-pip" id="pip-2"></div><div class="ps-pip" id="pip-3"></div><div class="ps-pip" id="pip-4"></div><div class="ps-pip" id="pip-5"></div><div class="ps-pip" id="pip-6"></div><div class="ps-pip" id="pip-7"></div></div><div class="ps-rank-card" id="ps-rank-card"><span class="ps-rank-icon" id="ps-rank-icon">🔒</span><span class="ps-rank-name" id="ps-rank-name">Unranked</span><span class="ps-rank-sub" id="ps-rank-sub">Voltooi je eerste taak</span></div><div class="ps-next" id="ps-next"></div></div><div class="progress-bar-wrap"><span>Voortgang</span><div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div><span class="progress-count" id="bar-count">0 / 7</span></div><header><div class="label">Lab 03 · Networks Advanced</div><h1>Etherchannel</h1><p>Bundel meerdere fysieke links tot één logische verbinding via LACP voor meer bandbreedte en redundantie.</p></header><div class="section-title">Opstel</div><div class="task-card" id="tc-01" onclick="toggleTask('01',event)"><div class="task-header"><div class="task-check" id="chk-01" onclick="checkTask('01',event)"></div><div class="task-meta"><div class="task-num">Taak 01</div><div class="task-title">Topologie opbouwen in Packet Tracer</div><div style="margin-top:0.35rem"><span class="tag tag-n">packet tracer</span><span class="tag tag-c">opstel</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Bouw de onderstaande topologie op in Packet Tracer vóór je begint met configureren.</p><p><strong>Apparaten:</strong></p><ul><li>2x Switch 2960-24TT (SW1, SW2)</li><li>2x PC (PC1, PC2)</li><li>→ 2 kabels tussen SW1 en SW2 voor de Etherchannel</li></ul><p><strong>Verbindingstabel:</strong></p><table><thead><tr><th>Van</th><th>Poort</th><th>Naar</th><th>Poort</th><th>Kabel</th></tr></thead><tbody><tr><td>SW1</td><td><code>Fa0/23</code></td><td>SW2</td><td><code>Fa0/23</code></td><td>Cross-Over</td></tr><tr><td>SW1</td><td><code>Fa0/24</code></td><td>SW2</td><td><code>Fa0/24</code></td><td>Cross-Over</td></tr><tr><td>SW1</td><td><code>Fa0/1</code></td><td>PC1</td><td><code>Fa0</code></td><td>Straight-Through</td></tr><tr><td>SW2</td><td><code>Fa0/1</code></td><td>PC2</td><td><code>Fa0</code></td><td>Straight-Through</td></tr></tbody></table><div class="concept-box"><strong>Kabeltypes in PT</strong><strong>Straight-through</strong>: PC/server → switch, switch → router. <strong>Cross-over</strong>: switch → switch, router → router (Ethernet). <strong>Automatisch</strong>: PT detecteert het juiste type als je "Automatically Choose" selecteert.</div><div class="warn-note"><strong>&#9888; Packet Tracer</strong>PT 2960-switches ondersteunen LACP op FastEthernet-poorten. Gebruik poorten Fa0/23 en Fa0/24 voor de Etherchannel — dit zijn standaard de uplink-poorten in schoollabs. In PT zie je de port-channel als een dikke lijn tussen de switches.</div></div></div><div class="section-title">Theorie</div><div class="task-card" id="tc-02" onclick="toggleTask('02',event)"><div class="task-header"><div class="task-check" id="chk-02" onclick="checkTask('02',event)"></div><div class="task-meta"><div class="task-num">Theorie 02</div><div class="task-title">Etherchannel: waarom en hoe?</div><div style="margin-top:0.35rem"><span class="tag tag-t">theorie</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Etherchannel (IEEE 802.3ad — ook Link Aggregation Group of LAG) bundelt meerdere fysieke links tot één logische verbinding. STP ziet het als één link en blokkeert niets.</p><table><thead><tr><th>Protocol</th><th>Type</th><th>Modes</th><th>Gebruik</th></tr></thead><tbody><tr><td>LACP</td><td>IEEE open standaard</td><td>active / passive</td><td>Altijd te verkiezen</td></tr><tr><td>PAgP</td><td>Cisco proprietary</td><td>desirable / auto</td><td>Enkel Cisco↔Cisco</td></tr><tr><td>Static</td><td>Geen protocol</td><td>on / on</td><td>Noodoplossing</td></tr></tbody></table><div class="concept-box"><strong>LACP-modes combinaties</strong><code>active ↔ active</code>: werkt ✔ | <code>active ↔ passive</code>: werkt ✔ | <code>passive ↔ passive</code>: werkt NIET ✘ (niemand initieert). Gebruik altijd minstens één kant op <code>active</code>.</div><div class="warn-note"><strong>⚠ Config moet identiek zijn op beide kanten</strong>Speed, duplex, VLAN-configuratie en trunk-instellingen moeten overeenkomen. Een mismatch leidt tot een suspended Etherchannel — geen verkeer!</div></div></div><div class="section-title">Configuratie</div><div class="task-card" id="tc-03" onclick="toggleTask('03',event)"><div class="task-header"><div class="task-check" id="chk-03" onclick="checkTask('03',event)"></div><div class="task-meta"><div class="task-num">Taak 03</div><div class="task-title">VLANs aanmaken</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Maak eerst de VLANs aan op beide switches — vóór je de Etherchannel configureert. De trunk erft de VLAN-configuratie.</p><div class="cmd">! Op SW1 EN SW2
+vlan 10
+ name Sales
+vlan 20
+ name Engineering
+vlan 99
+ name Native
+vlan 999
+ name Parkinglot
+ exit</div></div></div><div class="task-card" id="tc-04" onclick="toggleTask('04',event)"><div class="task-header"><div class="task-check" id="chk-04" onclick="checkTask('04',event)"></div><div class="task-meta"><div class="task-num">Taak 04</div><div class="task-title">Etherchannel aanmaken met LACP</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Groepeer de twee fysieke poorten in een port-channel. Doe dit op <strong>beide switches tegelijk</strong> — anders komt LACP niet tot stand.</p><div class="cmd">! Op SW1
+interface range FastEthernet0/23-24
+ channel-group 1 mode active
+ channel-protocol lacp
+ exit
+
+! Op SW2 — zelfde commando's
+interface range FastEthernet0/23-24
+ channel-group 1 mode active
+ channel-protocol lacp
+ exit
+
+! Direct verificeren
+show etherchannel summary</div><div class="info-note"><strong>ℹ PT tip</strong>In Packet Tracer verschijnt na het aanmaken van de Etherchannel een dikke verbindingslijn tussen de switches in de topologieweergave. Als je nog twee aparte lijnen ziet, kloppen de poort-nummers niet.</div></div></div><div class="task-card" id="tc-05" onclick="toggleTask('05',event)"><div class="task-header"><div class="task-check" id="chk-05" onclick="checkTask('05',event)"></div><div class="task-meta"><div class="task-num">Taak 05</div><div class="task-title">Port-channel als trunk configureren</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>De trunk-configuratie gaat op de <strong>logische</strong> port-channel interface — <em>niet</em> op de fysieke poorten afzonderlijk.</p><div class="cmd">! Op SW1 EN SW2
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,99
+ switchport nonegotiate
+ exit
+
+! Access ports voor PC1 en PC2
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ exit</div><div class="verify-block"><strong>✓ Verificatie</strong><code>show interfaces port-channel 1 trunk</code><br><code>show interfaces port-channel 1 switchport</code></div></div></div><div class="task-card" id="tc-06" onclick="toggleTask('06',event)"><div class="task-header"><div class="task-check" id="chk-06" onclick="checkTask('06',event)"></div><div class="task-meta"><div class="task-num">Taak 06</div><div class="task-title">Load balancing instellen</div><div style="margin-top:0.35rem"><span class="tag tag-n">cisco ios</span><span class="tag tag-c">config</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Load balancing bepaalt hoe het verkeer over de gebundelde links verdeeld wordt.</p><div class="cmd">! Globaal instellen op de switch
+port-channel load-balance src-dst-mac
+
+! Opties:
+! src-mac      — op bron-MAC (simpel)
+! dst-mac      — op doel-MAC
+! src-dst-mac  — combinatie bron+doel MAC (aanbevolen switches)
+! src-dst-ip   — combinatie bron+doel IP (aanbevolen routers)
+
+show etherchannel load-balance</div><div class="concept-box"><strong>Waarom maakt load balancing uit?</strong>Als je 2 links bundelt, verdubbelt de bandbreedte alleen als het verkeer over beide links verdeeld wordt. Met <code>src-dst-mac</code> wordt elk uniek MAC-paar consistent naar dezelfde fysieke link gestuurd — dat geeft de beste spreiding bij veel verschillende hosts.</div></div></div><div class="task-card" id="tc-07" onclick="toggleTask('07',event)"><div class="task-header"><div class="task-check" id="chk-07" onclick="checkTask('07',event)"></div><div class="task-meta"><div class="task-num">Taak 07</div><div class="task-title">Verificatie en troubleshooting</div><div style="margin-top:0.35rem"><span class="tag tag-v">verificatie</span></div></div><div class="expand-icon">&#x203a;</div></div><div class="task-body"><p>Controleer of de Etherchannel correct werkt en begrijp de output.</p><div class="cmd">show etherchannel summary
+show etherchannel 1 detail
+show lacp neighbor
+show interfaces port-channel 1
+show spanning-tree vlan 10</div><p><strong>Output van <code>show etherchannel summary</code> lezen:</strong></p><table><thead><tr><th>Flag</th><th>Betekenis</th></tr></thead><tbody><tr><td>S</td><td>Layer 2 port-channel</td></tr><tr><td>U</td><td>In use — actief</td></tr><tr><td>P</td><td>Poort is onderdeel van de bundle</td></tr><tr><td>I</td><td>Stand-alone — config mismatch!</td></tr><tr><td>D</td><td>Down — niet verbonden</td></tr></tbody></table><div class="warn-note"><strong>⚠ Troubleshooting</strong>Als je de flag <code>I</code> (stand-alone) ziet op fysieke poorten: de Etherchannel is mislukt. Controleer of speed/duplex en trunk-config identiek zijn op beide kanten.</div></div></div><footer><p>Networks Advanced · Lab 03 · Etherchannel · 7 taken</p><button class="reset-btn" onclick="resetLab()">↺ Reset lab</button></footer></div><script>
+const STORAGE_KEY = 'net_lab03_state';
+const TOTAL = 7;
+const RANKS = [
+  {min:0,   name:'Unranked',   icon:'\uD83D\uDD12', cls:'',              sub:'Voltooi je eerste taak'},
+  {min:1,   name:'Silver',     icon:'\uD83E\uDD48', cls:'rank-silver',   sub:'Je bent op weg!'},
+  {min:Math.ceil(TOTAL*0.4), name:'Gold',     icon:'\uD83E\uDD47', cls:'rank-gold',     sub:'Goed bezig!'},
+  {min:Math.ceil(TOTAL*0.7), name:'Platinum', icon:'\uD83C\uDFC5', cls:'rank-platinum', sub:'Bijna daar!'},
+  {min:Math.ceil(TOTAL*0.85),name:'Diamond',  icon:'\uD83D\uDCA0', cls:'rank-diamond',  sub:'Uitstekend werk!'},
+  {min:TOTAL,                name:'Challenger',icon:'\u2694\uFE0F',cls:'rank-challenger',sub:'Lab voltooid!'},
+];
+function loadState(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(STORAGE_KEY,JSON.stringify(s)) }
+function checkTask(id,e){
+  e.stopPropagation();
+  const s=loadState(); s[id]=!s[id]; saveState(s); render();
+}
+function toggleTask(id,e){
+  if(e.target.closest('.task-check')) return;
+  document.getElementById('tc-'+id).classList.toggle('open');
+}
+function render(){
+  const s=loadState(); let done=0;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const id=card.id.replace('tc-','');
+    const checked=!!s[id]; if(checked) done++;
+    card.classList.toggle('done',checked);
+    const chk=document.getElementById('chk-'+id);
+    if(chk) chk.classList.toggle('checked',checked);
+  });
+  let pipIdx=1;
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const pip=document.getElementById('pip-'+pipIdx);
+    const id=card.id.replace('tc-','');
+    if(pip) pip.classList.toggle('done',!!s[id]);
+    pipIdx++;
+  });
+  const pct=TOTAL>0?(done/TOTAL)*100:0;
+  const bf=document.getElementById('bar-fill'); if(bf) bf.style.width=pct+'%';
+  const bc=document.getElementById('bar-count'); if(bc) bc.textContent=done+' / '+TOTAL;
+  const pc=document.getElementById('ps-count'); if(pc) pc.textContent=done;
+  let ri=0;
+  for(let i=0;i<RANKS.length;i++){ if(done>=RANKS[i].min) ri=i; }
+  const r=RANKS[ri];
+  const rc=document.getElementById('ps-rank-card');
+  const ri2=document.getElementById('ps-rank-icon');
+  const rn=document.getElementById('ps-rank-name');
+  const rs=document.getElementById('ps-rank-sub');
+  if(rc) rc.className='ps-rank-card '+(r.cls||'');
+  if(ri2) ri2.textContent=r.icon;
+  if(rn) rn.textContent=r.name;
+  if(rs) rs.textContent=r.sub;
+  const nxt=document.getElementById('ps-next');
+  if(nxt){
+    if(ri<RANKS.length-1){
+      const nr=RANKS[ri+1]; const need=nr.min-done;
+      nxt.innerHTML='Volgende: <span>'+nr.name+'</span><br>Nog '+need+' taak'+(need===1?'':'en');
+    } else { nxt.innerHTML='<span>Max rank bereikt! \uD83C\uDF89</span>'; }
+  }
+}
+function resetLab(){
+  if(!confirm('Voortgang van dit lab wissen?')) return;
+  localStorage.removeItem(STORAGE_KEY); render();
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  render();
+  document.querySelectorAll('.cmd').forEach(cmd=>{
+    if(cmd.querySelector('.copy-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='copy-btn'; btn.textContent='Kopieer';
+    btn.onclick=e=>{ e.stopPropagation();
+      const clone=cmd.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent.trim();
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.textContent='\u2713 Gekopieerd'; btn.classList.add('copied');
+        setTimeout(()=>{ btn.textContent='Kopieer'; btn.classList.remove('copied'); },1400);
+      }).catch(()=>{ btn.textContent='Mislukt'; setTimeout(()=>btn.textContent='Kopieer',1400); });
+    };
+    cmd.appendChild(btn);
+  });
+});
+</script>
+</body>
+</html>
