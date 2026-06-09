@@ -531,9 +531,9 @@
 <div class="container">
 
   <nav class="lab-nav">
-    <a class="nav-side" href="linux_advanced_lab_netwerkbeheer.html">← Netwerkbeheer</a>
+    <a class="nav-side" href="linux_advanced_lab_netwerkbeheer.html">← Vorige</a>
     <a class="home-btn" href="index.html">⌂ Home</a>
-    <a class="nav-side right" href="linux_advanced_lab_dns.html">DNS →</a>
+    <a class="nav-side right" href="linux_advanced_lab_dns.html">Volgende →</a>
   </nav>
 
   <div class="progress-sidebar" id="progress-sidebar">
@@ -1124,7 +1124,7 @@ sudo journalctl -u kea-dhcp4 -n 50</div>
 </div>
 
 <script>
-  const TOTAL = 10;
+  const TOTAL = 11;
 
   function toggleTask(id) { document.getElementById(id).classList.toggle('open'); }
 
@@ -1134,7 +1134,7 @@ sudo journalctl -u kea-dhcp4 -n 50</div>
     card.querySelector('.task-check').classList.toggle('checked');
     card.classList.toggle('done');
     updateProgress();
-    onTaskToggled(check.classList.contains('checked'));
+    onTaskToggled(card.querySelector('.task-check').classList.contains('checked'));
     saveState();
   }
 
@@ -1235,7 +1235,7 @@ sudo journalctl -u kea-dhcp4 -n 50</div>
 
   function saveState() {
     const state = {};
-    for (let i = 1; i <= TOTAL; i++) {
+    for (let i = 0; i < TOTAL; i++) {
       const card = document.getElementById('t' + i);
       if (card) state['t' + i] = card.classList.contains('done');
     }
